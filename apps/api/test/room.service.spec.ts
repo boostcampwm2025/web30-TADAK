@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { ROOM_CONFIG } from '../../../../packages/constants/socket-event';
-import { REDIS_CLIENT } from '../redis/redis.module';
-import { RedisKeys } from '../redis/redis-key.constant';
-import { RoomService } from './room.service';
+import { ROOM_CONFIG } from '../../../packages/constants/socket-event';
+import { REDIS_CLIENT } from '../src/redis/redis.module';
+import { RedisKeys } from '../src/redis/redis-key.constant';
+import { RoomService } from '../src/room/room.service';
 
 describe('RoomService', () => {
   let service: RoomService;

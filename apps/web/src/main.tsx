@@ -18,7 +18,7 @@ const router = createBrowserRouter([
         element: <MainPage />,
       },
       {
-        path: '/room/:id',
+        path: '/room/:roomId',
         element: <BattlePage />,
       },
     ],

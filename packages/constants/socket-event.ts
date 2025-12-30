@@ -18,15 +18,14 @@ export const SOCKET_EVENT = {
   // --- Client -> Server (요청) ---
   CHECK_ROOM_AVAILABILITY: 'check-room-availability', // 방 인원 확인
   JOIN_ROOM: 'join-room', // 방 입장 (Player/Spectator)
-  UPDATE_CODE: 'update-code', // 코드 입력
   LEAVE_ROOM: 'leave-room', // 방 나가기
 
   // --- Server -> Client (응답/알림) ---
   ROOM_AVAILABILITY: 'room-availability', // 방 인원 확인 결과
-  ROOM_STATE_SYNC: 'room-state-sync', // 방 입장 시 전체 상태 동기화
+  ROOM_STATE_ROLE: 'room-state-role', // 방 입장 시 역할 부여
+  ROOM_PLAYERS: 'room-players', // 현재 방 참가자 전체 목록
   ROOM_USER_JOINED: 'room-joined', // 새 유저 입장 알림
   ROOM_USER_LEFT: 'room-left', // 유저 퇴장 알림
-  CODE_UPDATED: 'code-updated', // 다른 사람의 코드 변경 알림
   ERROR: 'error', // 에러 발생
 } as const;
 

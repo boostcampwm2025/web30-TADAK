@@ -48,7 +48,7 @@ function RoleCard({
         className={`flex h-14 w-14 items-center justify-center rounded-2xl ${
           active
             ? 'bg-participant-icon text-white'
-            : 'border-neutral-card bg-white text-spectator-icon border-1 shadow-sm'
+            : 'border-neutral-card bg-white text-spectator-icon border shadow-sm'
         }`}
       >
         <Icon size={24} strokeWidth={2.2} />
@@ -67,6 +67,9 @@ interface JoinModalProps {
   selectedRole: UserRole;
   onSelectRole: (role: UserRole) => void;
   onClose: () => void;
+  onJoin: () => void;
+  joining?: boolean;
+  error?: string;
   participants: { count: number; limit: number };
   spectators: { count: number; limit: number };
 }
@@ -76,6 +79,9 @@ export function JoinModal({
   selectedRole,
   onSelectRole,
   onClose,
+  onJoin,
+  joining = false,
+  error,
   participants,
   spectators,
 }: JoinModalProps) {
@@ -143,14 +149,22 @@ export function JoinModal({
           </button>
           <button
             type="button"
+            disabled={joining}
+            onClick={onJoin}
             className="w-full rounded-xl bg-cta-modal px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow"
           >
             <span className="inline-flex items-center justify-center gap-2">
               <ArrowRight size={18} strokeWidth={2.4} />
-              입장하기
+              {joining ? '입장 중...' : '입장하기'}
             </span>
           </button>
         </div>
+
+        {error && (
+          <div className="border-t border-neutral-card bg-rose-50 px-6 py-3 text-sm font-semibold text-rose-700">
+            {error}
+          </div>
+        )}
       </div>
     </div>
   );

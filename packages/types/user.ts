@@ -8,6 +8,7 @@ export interface User {
 
 // 방에 들어간 사용자
 export interface RoomUser extends User {
+  roomId: string;
   socketId: string;
   role: UserRole;
   joinedAt: Date;

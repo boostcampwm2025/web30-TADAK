@@ -38,6 +38,17 @@ docker compose -p web30-prod -f docker-compose.prod.yml up -d
 docker compose -f docker-compose.prod.yml down
 ```
 
+```bash
+# redis 데이터 초기화
+# 1. 종료
+docker compose -f docker-compose.prod.yml down redis
+# 2. redis 빌드
+docker compose -f docker-compose.prod.yml build redis
+# 3. redis 재기동
+docker compose -f docker-compose.prod.yml up -d redis
+
+```
+
 ## 주요 명령어
 
 ```bash

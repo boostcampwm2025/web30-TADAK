@@ -56,7 +56,8 @@ export interface UpdateBattleUserDTO {
 }
 
 export interface UpdateUserCodeDTO {
-  battleId: string;
+  roomId: string;
   userId: string;
   code: string;
+  language: string;
 }

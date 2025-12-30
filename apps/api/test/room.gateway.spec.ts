@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { RoomGateway } from './room.gateway';
-import { RoomService } from './room.service';
+import { RoomGateway } from '../src/room/room.gateway';
+import { RoomService } from '../src/room/room.service';
 
 describe('RoomGateway', () => {
   let gateway: RoomGateway;
