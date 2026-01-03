@@ -10,6 +10,35 @@
   --color-blue-06: #161A32;
   --color-blue-07: #0F172A;
 
+  /* --- Primitives (Green Scale - Main) --- */
+  --color-green-01: #99F3C7;
+  --color-green-02: #99F3C7;
+  --color-green-03: #66ECAC;
+  --color-green-04: #33E690;
+  --color-green-05: #00E074;
+  --color-green-06: #16A34A;
+
+  /* --- Primitives (Pink Scale - Main) --- */
+  --color-pink-01: #FFD1D9;
+  --color-pink-02: #FFD1D9;
+  --color-pink-03: #FFA3B2;
+  --color-pink-04: #FF748C;
+  --color-pink-05: #FF3B5C;
+
+  /* --- Primitives (Tier) --- */
+  --color-tier-bronze: #A16207;
+  --color-tier-silver: #6B7280;
+  --color-tier-gold: #EAB308;
+  --color-tier-platinum: #06B6D4;
+  --color-tier-diamond: #60A5FA;
+  --color-tier-ruby: #F43F5E;
+  --color-tier-master: #A855F7;
+
+  /* --- Primitives (Etc) --- */
+  --color-red-01: #FF3B5C;
+  --color-error-01: #F74F3B;
+  --color-neon-01: #00FFCC;
+
   --color-white: #FFFFFF;
   --color-black: #000000;
 
@@ -24,7 +53,7 @@
   --color-bg-layer-2: var(--bg-layer-2);
 
   /* --- App Specific Colors (Restored) --- */
-  --color-brand: #00E074;
+  --color-brand: var(--color-green-05);
   
   /* 전체 배경, 글씨, 테두리 색상 */
   --color-surface: var(--bg-layer-1);
