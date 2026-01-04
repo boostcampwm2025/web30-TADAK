@@ -1,0 +1,38 @@
+import { Moon, Sun } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+import { useTheme } from '@/hooks/useTheme';
+
+function Header() {
+  const { theme, toggleTheme } = useTheme();
+
+  return (
+    <header className="border-b border-border-soft bg-bg-layer-2 shadow-sm">
+      <div className="mx-auto flex max-w-5xl items-center justify-between px-10 py-2">
+        <div className="flex items-center gap-3">
+          <div className="grid h-12 w-12 rounded-2xl bg-brand shadow-lg"></div>
+          <div className="flex flex-col">
+            <span className="text-lg font-extrabold tracking-tight logo-gradient">CODE RENA</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <Link
+            to="/login"
+            className="rounded-24 bg-base-muted px-4 py-2 text-base font-medium text-ink shadow-sm transition hover:scale-105 active:scale-95"
+          >
+            로그인
+          </Link>
+          <button
+            onClick={toggleTheme}
+            className="rounded-full bg-base-muted p-2 text-ink shadow-sm transition hover:scale-110 active:scale-95"
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+export default Header;
