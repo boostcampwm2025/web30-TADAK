@@ -1,7 +1,10 @@
 import { ROOM_CONFIG } from '@shared/constants/socket-event';
 import type { UserRole } from '@shared/types/user';
+import { Moon, Sun } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+import { useTheme } from '@/hooks/useTheme';
 
 import { JoinModal } from '../components/JoinModal';
 import { useBattleSocketStore } from '../stores/battleSocketStore';
@@ -10,6 +13,7 @@ const DEFAULT_ROOM_ID = '1';
 
 function MainPage() {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const [isModalOpen, setModalOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<UserRole>('player');
   const [joinError, setJoinError] = useState('');
@@ -77,32 +81,46 @@ function MainPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="mb-2 flex items-center gap-3 border-b border-soft bg-white px-10 py-6 shadow-sm">
-        <div className="grid h-12 w-12 rounded-2xl bg-brand shadow-lg"></div>
-        <div className="flex flex-col">
-          <span className="text-lg font-extrabold tracking-tight logo-gradient">CODE RENA</span>
+      <header className="border-b border-border-soft bg-bg-layer-2 shadow-sm">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-10 py-2">
+          <div className="flex items-center gap-3">
+            <div className="grid h-12 w-12 rounded-2xl bg-brand shadow-lg"></div>
+            <div className="flex flex-col">
+              <span className="text-lg font-extrabold tracking-tight logo-gradient">CODE RENA</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <button className="rounded-24 bg-base-muted px-4 py-2 text-base font-medium text-ink shadow-sm transition hover:scale-105 active:scale-95">
+              로그인
+            </button>
+            <button
+              onClick={toggleTheme}
+              className="rounded-full bg-base-muted p-2 text-ink shadow-sm transition hover:scale-110 active:scale-95"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto flex max-w-5xl flex-col gap-10 pt-10 px-10 pb-16 bg-surface">
-        <div className="flex items-start gap-3">
-          <div className="h-10 w-1 rounded-full bg-brand" />
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold">대결 로비</h1>
-            <p className="text-sm text-slate-600">실시간 코딩 대결에 참여하세요</p>
-          </div>
-        </div>
-
-        <div className="relative flex-1">
-          <div className="rounded-2xl border border-soft bg-white px-12 py-16 text-center shadow-sm">
+      <main className="mx-auto flex max-w-5xl flex-col gap-10 pt-10 px-10 pb-16">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-red-01" />
+            <h1 className="text-3xl font-bold">LIVE</h1>
+            <h1 className="text-3xl font-bold text-brand">BATTLE</h1>
             <button
               type="button"
               onClick={handleStartBattle}
-              className="rounded-2xl bg-cta-main px-8 py-4 text-lg font-semibold text-white shadow-md transition hover:scale-[1.02]"
+              className="ml-auto rounded-24 bg-brand px-8 py-4 text-lg font-semibold shadow-md transition hover:scale-[1.02]"
             >
-              배틀 시작하기
+              자동 매칭
             </button>
           </div>
+          <p className="text-sm text-base-primary">
+            현재 진행 중인 배틀을 관전하고 고수들의 코딩을 배워보세요
+          </p>
         </div>
       </main>
 
