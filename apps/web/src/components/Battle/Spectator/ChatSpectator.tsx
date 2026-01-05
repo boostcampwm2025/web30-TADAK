@@ -75,7 +75,7 @@ function ChatSpectator() {
 
   return (
     <>
-      <section className="relative flex h-full min-h-130 max-h-[calc(100vh-200px)] flex-col gap-3 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-xl shadow-slate-950/40">
+      <section className="relative flex h-full min-h-90 sm:min-h-130 max-h-[calc(100vh-200px)] max-lg:max-h-none flex-col gap-3 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-xl shadow-slate-950/40">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold text-slate-200">실시간 채팅</p>
           <span className="text-[11px] font-semibold text-emerald-300">관전 모드</span>

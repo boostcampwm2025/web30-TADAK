@@ -6,7 +6,7 @@ function BattleProgress() {
   ];
   return (
     <>
-      <section className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-xl shadow-slate-950/40">
+      <section className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-xl shadow-slate-950/40 xl:h-full xl:min-h-0 xl:overflow-y-auto">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-600 text-lg font-bold text-white">
             C

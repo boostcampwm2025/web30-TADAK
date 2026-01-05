@@ -9,10 +9,12 @@ function BattlePage() {
   const isSpectator = searchParams.get('mode') === 'spectator';
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50">
-      <div className="flex min-h-screen w-full flex-col gap-4 px-4 py-4 lg:px-6">
+    <div className="min-h-svh overflow-auto bg-slate-950 text-slate-50 xl:h-screen xl:overflow-hidden">
+      <div className="flex min-h-svh flex-col gap-3 px-3 py-3 xl:h-full xl:w-full xl:gap-4 xl:px-6 xl:py-4">
         <BattleHeader />
-        {isSpectator ? <BattleSpectator /> : <BattlePlayer />}
+        <div className="flex-1 min-h-0 overflow-visible xl:overflow-hidden">
+          {isSpectator ? <BattleSpectator /> : <BattlePlayer />}
+        </div>
       </div>
     </div>
   );

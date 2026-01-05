@@ -4,7 +4,7 @@ function BattleProblem() {
   const hints = ['해시맵을 사용하면 O(n) 시간 복잡도로 해결할 수 있습니다.'];
   return (
     <>
-      <section className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-xl shadow-slate-950/40">
+      <section className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-xl shadow-slate-950/40 xl:h-full xl:min-h-0 xl:overflow-y-auto">
         <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
           <span className="rounded-full bg-amber-300 px-3 py-1 text-amber-900">Gold</span>
           <span className="rounded-full bg-emerald-300/20 px-3 py-1 text-emerald-200">구현</span>

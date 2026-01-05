@@ -63,7 +63,7 @@ function CodeEditor() {
 
   return (
     <>
-      <section className="flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/90 shadow-xl shadow-slate-950/50">
+      <section className="flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/90 shadow-xl shadow-slate-950/50 xl:h-full xl:min-h-0">
         <div className="flex items-center justify-between gap-3 border-b border-slate-800 bg-slate-900/80 px-4 py-3 text-sm font-semibold">
           <div className="flex items-center gap-2 text-slate-200">
             <span className="rounded bg-slate-800 px-3 py-1 text-xs font-bold text-emerald-200">
@@ -97,12 +97,12 @@ function CodeEditor() {
             </button>
           </div>
         </div>
-        <div className="flex-1 bg-slate-950 px-5 py-4 font-mono text-sm text-slate-100">
+        <div className="min-h-0 bg-slate-950 px-5 py-4 font-mono text-sm text-slate-100 xl:flex-1">
           <textarea
             value={code}
             onChange={(e) => handleChange(e.target.value)}
             spellCheck={false}
-            className="h-[520px] w-full resize-none rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm leading-relaxed text-slate-100 shadow-inner shadow-slate-950/50 focus:border-emerald-400 focus:outline-none"
+            className="h-full min-h-[clamp(260px,50vh,520px)] w-full resize-none rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm leading-relaxed text-slate-100 shadow-inner shadow-slate-950/50 focus:border-emerald-400 focus:outline-none"
           />
         </div>
         <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/80 px-4 py-3 text-sm font-semibold text-slate-200">
