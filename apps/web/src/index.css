@@ -110,3 +110,9 @@ body {
 .bg-overlay {
   background-color: var(--color-overlay);
 }
+
+/* Scroll Bar */
+.chat-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #475569 transparent; /* firefox */
+}
