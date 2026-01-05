@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AppController } from './app.controller';
+import { AuthModule } from './auth/auth.module';
 import { BattleModule } from './battle/battle.module';
 import { RedisModule } from './redis/redis.module';
 import { RoomModule } from './room/room.module';
@@ -44,6 +45,7 @@ import { UserModule } from './user/user.module';
     RoomModule,
     BattleModule,
     UserModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [],
