@@ -198,6 +198,21 @@ body {
   background-color: var(--color-overlay);
 }
 
+.fade-slide-in {
+  animation: fade-slide-in 200ms ease-out;
+}
+
+@keyframes fade-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Scroll Bar */
 .chat-scroll {
   scrollbar-width: thin;
