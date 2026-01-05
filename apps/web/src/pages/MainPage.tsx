@@ -3,7 +3,7 @@ import type { UserRole } from '@shared/types/user';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import Header from '@/components/Header/header';
+import Header from '@/components/Header/Header';
 
 import { JoinModal } from '../components/JoinModal';
 import { useBattleSocketStore } from '../stores/battleSocketStore';

@@ -2,7 +2,7 @@ import { Github } from 'lucide-react';
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import Header from '@/components/Header/header';
+import Header from '@/components/Header/Header';
 
 function LoginPage() {
   const [searchParams] = useSearchParams();
