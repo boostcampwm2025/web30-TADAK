@@ -43,7 +43,7 @@ function CodeSpectator() {
 
   return (
     <>
-      <section className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-xl shadow-slate-950/40">
+      <section className="flex flex-col gap-4 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-xl shadow-slate-950/40 xl:h-full xl:min-h-0">
         <div className="grid gap-3 md:grid-cols-2">
           {players.map((player) => (
             <button
@@ -83,7 +83,7 @@ function CodeSpectator() {
           ))}
         </div>
 
-        <div className="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-950/90 p-4 shadow-inner shadow-slate-950/50">
+        <div className="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-950/90 p-4 shadow-inner shadow-slate-950/50 xl:flex-1 xl:min-h-0">
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm font-semibold text-slate-200">
             <div className="flex items-center gap-2">
               <span className="text-emerald-300">🧑‍💻</span>
@@ -95,8 +95,10 @@ function CodeSpectator() {
             </div>
           </div>
 
-          <div className="min-h-[420px] rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 font-mono text-sm leading-relaxed text-slate-100">
-            <pre className="whitespace-pre-wrap">{selectedCode}</pre>
+          <div className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 font-mono text-sm leading-relaxed text-slate-100 xl:flex-1 xl:min-h-0">
+            <pre className="chat-scroll h-full min-h-[clamp(260px,50vh,520px)] whitespace-pre-wrap overflow-y-auto">
+              {selectedCode}
+            </pre>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
