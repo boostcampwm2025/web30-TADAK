@@ -5,5 +5,6 @@ export const MATCHING_CONFIG = {
   EXPANSION_INTERVAL_MS: 20000, // 등급 범위 확장 주기 (20초)
   MAX_WAIT_TIME_MS: 60000, // 최대 매칭 대기 시간 (60초)
 
-  MAX_MATCH_PER_TICK: 2, // 한 틱당 최대 매칭 시도 횟수
+  MAX_MATCH_PER_TICK: 5, // 한 틱당 최대 매칭 시도 횟수 (5쌍 = 10명)
+  CANDIDATE_LIMIT: 100, // 매칭 후보로 고려할 최대 유저 수 (대기 순서 100명)
 } as const;

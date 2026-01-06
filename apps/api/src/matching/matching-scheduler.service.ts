@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 
 import { MatchingService } from './matching.service';
 
@@ -9,13 +9,16 @@ export class MatchingSchedulerService {
 
   constructor(private readonly matchingService: MatchingService) {}
 
-  // 5초마다 매칭 Tick 실행
-  @Cron(CronExpression.EVERY_5_SECONDS)
-  handleMatchingTick() {
+  // 2초마다 매칭 Tick 실행
+  @Cron('*/2 * * * * *')
+  async handleMatchingTick() {
     try {
       // TODO: LOCK 구현 필요(TTL < TICK)
-      this.logger.log('매칭 Tick 시작');
-      this.matchingService.matchUsers();
+      const matchedUsers = await this.matchingService.matchUsers();
+
+      if (matchedUsers.length > 0) {
+        this.logger.log(`매칭 성공: ${matchedUsers.length / 2}쌍 (${matchedUsers.length}명)`);
+      }
     } catch (error: unknown) {
       if (error instanceof Error) this.logger.error(`매칭 Tick 에러: ${error.message}`);
     }
