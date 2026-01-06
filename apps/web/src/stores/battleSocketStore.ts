@@ -13,6 +13,30 @@ import { create } from 'zustand';
 import { connectBattleSocket, disconnectBattleSocket } from '../lib/battleSocket';
 import { useRoomStore } from './roomStore';
 
+const SESSION_KEY = 'battle-session';
+
+type StoredSession = {
+  roomId: string;
+  role: string;
+};
+
+const saveSession = (session: StoredSession) => {
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  } catch {
+    // ignore
+  }
+};
+
+const loadSession = (): StoredSession | null => {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    return raw ? (JSON.parse(raw) as StoredSession) : null;
+  } catch {
+    return null;
+  }
+};
+
 interface BattleSocketState {
   socket: Socket | null;
   isConnected: boolean;
@@ -29,6 +53,7 @@ interface BattleSocketState {
   leaveRoom: (roomId: string) => void;
   subscribeRoomAvailability: (roomId: string) => void;
   unsubscribeRoomAvailability: () => void;
+  resumeSession: (options?: { roomId?: string; roleHint?: string }) => Promise<void>;
 }
 
 export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
@@ -125,6 +150,10 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
             userId: response.userId ?? socket.id ?? '',
             username: response.username ?? `User-${safeSocketId.slice(-4)}`,
           });
+          saveSession({
+            roomId: response.roomId,
+            role: response.role,
+          });
         }
         cleanup();
         resolve({ roomId: response.roomId, role: response.role });
@@ -218,5 +247,20 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
     }
 
     set({ availabilityListener: null, joinedListener: null, leftListener: null });
+  },
+  // 저장된 세션(roomId/role)으로 자동 재입장 (간단 버전)
+  resumeSession: async (options?: { roomId?: string; roleHint?: string }) => {
+    const session = loadSession();
+    if (!session) return;
+    if (options?.roomId && options.roomId !== session.roomId) return;
+
+    const requestedRole =
+      (session.role as 'player' | 'spectator') ??
+      (options?.roleHint as 'player' | 'spectator') ??
+      'spectator';
+    await get().joinRoom({
+      roomId: session.roomId,
+      requestedRole,
+    });
   },
 }));

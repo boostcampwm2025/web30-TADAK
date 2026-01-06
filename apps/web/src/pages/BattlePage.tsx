@@ -1,14 +1,29 @@
-import { useSearchParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 
 import BattleHeader from '@/components/Battle/BattleHeader';
 import BattlePlayer from '@/components/Battle/Player/BattlePlayer';
 import BattleSpectator from '@/components/Battle/Spectator/BattleSpectator';
 import { useTheme } from '@/hooks/useTheme';
+import { useBattleSocketStore } from '@/stores/battleSocketStore';
+import { useRoomStore } from '@/stores/roomStore';
 
 function BattlePage() {
+  const { roomId: roomIdParam } = useParams<{ roomId?: string }>();
   const [searchParams] = useSearchParams();
   const isSpectator = searchParams.get('mode') === 'spectator';
   const { theme, toggleTheme } = useTheme();
+  const resumeSession = useBattleSocketStore((state) => state.resumeSession);
+  const me = useRoomStore((state) => state.me);
+
+  const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
+
+  useEffect(() => {
+    if (me) return;
+    resumeSession({ roomId, roleHint: isSpectator ? 'spectator' : 'player' }).catch(() => {
+      // 복구 실패 시 무시하고 사용자가 다시 입장하게 둡니다.
+    });
+  }, [me, resumeSession, roomId, isSpectator]);
 
   return (
     <div className="min-h-svh overflow-auto text-ink dark:bg-slate-950 dark:text-slate-50 xl:h-screen xl:overflow-hidden">
