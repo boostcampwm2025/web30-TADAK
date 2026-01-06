@@ -1,5 +1,7 @@
 import { Clock } from 'lucide-react';
 
+import Button from '@/components/ui/Button';
+
 interface Props {
   onContinue: () => void;
   onCancel: () => void;
@@ -24,18 +26,12 @@ export default function WaitConfirmModal({ onContinue, onCancel }: Props) {
         </p>
 
         <div className="flex gap-4">
-          <button
-            onClick={onCancel}
-            className="flex-1 rounded-lg bg-base-muted px-6 py-3 font-semibold transition hover:scale-105 active:scale-95"
-          >
+          <Button variant="muted" onClick={onCancel} className="flex-1 px-6 py-3">
             매칭 취소
-          </button>
-          <button
-            onClick={onContinue}
-            className="flex-1 rounded-lg bg-green-05 px-6 py-3 font-semibold transition hover:scale-105 active:scale-95"
-          >
+          </Button>
+          <Button onClick={onContinue} className="flex-1 px-6 py-3">
             계속 대기
-          </button>
+          </Button>
         </div>
       </div>
     </div>
