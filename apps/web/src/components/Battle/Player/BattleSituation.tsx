@@ -8,7 +8,7 @@ function BattleProgress() {
   ];
   return (
     <>
-      <section className="flex flex-col gap-5 rounded-2xl  bg-(--bg-layer-2) p-5 text-base-primary shadow-xl shadow-slate-950/20 xl:h-full xl:min-h-0 xl:overflow-y-auto">
+      <section className="flex flex-col gap-5 rounded-2xl  bg-(--bg-layer-2) p-5 text-base-primary xl:h-full xl:min-h-0 xl:overflow-y-auto">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <p className="text-sm font-semibold text-base-secondary">플레이어</p>

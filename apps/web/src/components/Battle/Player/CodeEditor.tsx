@@ -64,7 +64,7 @@ function CodeEditor() {
 
   return (
     <>
-      <section className="flex flex-col overflow-hidden rounded-2xl  bg-(--bg-layer-2) text-base-primary shadow-xl shadow-slate-950/20 xl:h-full xl:min-h-0">
+      <section className="flex flex-col overflow-hidden rounded-2xl  bg-(--bg-layer-2) text-base-primary xl:h-full xl:min-h-0">
         <div className="flex items-center justify-between gap-3 border-b border-base-muted bg-(bg-layer-2) px-4 py-2 text-sm font-semibold">
           <div className="flex items-center gap-1.5">
             <Code className="h-5 w-5 text-green-05" strokeWidth={2.5} />

@@ -47,7 +47,7 @@ function BattlePlayer() {
             {showProgress ? '상대 진행 숨기기' : '상대 진행 보기'}
           </button>
         </div>
-        <div className={`${gridCols} bg-base-muted`}>
+        <div className={`${gridCols}`}>
           {showProblem && (
             <div className="fade-slide-in xl:h-full xl:min-h-0 chat-scroll">
               <BattleProblem />

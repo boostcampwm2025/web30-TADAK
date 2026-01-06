@@ -45,7 +45,7 @@ function BattleSpectator() {
             {showChat ? '채팅 숨기기' : '채팅 보기'}
           </button>
         </div>
-        <div className={`${gridCols} bg-base-muted`}>
+        <div className={`${gridCols}`}>
           {showProblem && (
             <div className="fade-slide-in xl:h-full xl:min-h-0 chat-scroll">
               <BattleProblem />
