@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
+import cookieParser from 'cookie-parser';
 import request from 'supertest';
 
 import { AppModule } from '../../src/app.module';
@@ -19,6 +20,7 @@ describe('인증 토큰 만료 및 갱신 (E2E)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.use(cookieParser());
     jwtService = moduleFixture.get<JwtService>(JwtService);
     await app.init();
   });
@@ -75,7 +77,7 @@ describe('인증 토큰 만료 및 갱신 (E2E)', () => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const res = await request(app.getHttpServer())
       .post('/auth/refresh')
-      .send({ refreshToken: validRefreshToken })
+      .set('Cookie', [`refreshToken=${validRefreshToken}`])
       .expect(201);
 
     const body = res.body as { accessToken: string };
@@ -98,7 +100,7 @@ describe('인증 토큰 만료 및 갱신 (E2E)', () => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     await request(app.getHttpServer())
       .post('/auth/refresh')
-      .send({ refreshToken: mismatchToken })
+      .set('Cookie', [`refreshToken=${mismatchToken}`])
       .expect(500);
   });
 });

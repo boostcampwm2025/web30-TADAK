@@ -1,9 +1,18 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
+import type { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
 import { UserService } from '../../user/user.service';
+
+const cookieExtractor = (req: Request) => {
+  let token: string | null = null;
+  if (req && req.cookies) {
+    token = (req.cookies as Record<string, string>)['refreshToken'];
+  }
+  return token;
+};
 
 @Injectable()
 export class RefreshJwtStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
@@ -12,8 +21,8 @@ export class RefreshJwtStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     private userService: UserService,
   ) {
     super({
-      // refresh 토큰을 body로 가져오기
-      jwtFromRequest: ExtractJwt.fromBodyField('refreshToken'),
+      // refresh 토큰을 cookie에서 가져오기
+      jwtFromRequest: ExtractJwt.fromExtractors([cookieExtractor]),
       ignoreExpiration: false,
       // 토큰이 유효한지 체크 (Refresh Token 전용 시크릿)
       secretOrKey: configService.get<string>('JWT_REFRESH_SECRET') ?? '',
