@@ -14,6 +14,9 @@ export class User {
   @Column({ nullable: true })
   avatarUrl: string;
 
+  @Column({ type: 'text', nullable: true })
+  refreshToken: string | null;
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 }

@@ -15,6 +15,10 @@ export class UserService {
     return this.userRepository.findOne({ where: { githubId } });
   }
 
+  async updateRefreshToken(id: string, refreshToken: string | null): Promise<void> {
+    await this.userRepository.update(id, { refreshToken });
+  }
+
   async create(userData: Partial<User>): Promise<User> {
     const user = this.userRepository.create(userData);
     return this.userRepository.save(user);
