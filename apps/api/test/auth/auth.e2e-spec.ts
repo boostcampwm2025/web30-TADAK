@@ -30,8 +30,17 @@ describe('인증 토큰 만료 및 갱신 (E2E)', () => {
   });
 
   it('/users/me (GET) - 유효한 토큰으로 접근 시 성공, 만료 후 접근 시 실패', async () => {
+    const userService = app.get<UserService>(UserService);
+
+    // 0. 실제 유저 생성 (JwtStrategy가 DB에서 조회하므로 필요)
+    const uniqueId = Date.now().toString();
+    const user = await userService.create({
+      githubId: `test-user-${uniqueId}`,
+      username: `testuser-${uniqueId}`,
+    });
+
     // 1. 2초 뒤에 만료되는 토큰 생성
-    const payload = { username: 'testuser', sub: 'test-uuid' };
+    const payload = { username: user.username, sub: user.id };
     const token = jwtService.sign(payload, { expiresIn: '2s' });
 
     // 2. 즉시 요청 시 성공해야 함 (200 OK)
