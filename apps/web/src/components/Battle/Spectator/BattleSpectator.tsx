@@ -10,7 +10,7 @@ function BattleSpectator() {
   const chatRef = useRef<HTMLDivElement>(null);
 
   const gridCols = useMemo(() => {
-    return 'grid grid-cols-1 gap-4 xl:h-full xl:min-h-0 xl:grid-cols-[minmax(320px,1.1fr)_minmax(520px,1.9fr)_minmax(280px,1fr)]';
+    return 'grid grid-cols-1 gap-4 xl:flex-1 xl:min-h-0 xl:grid-cols-[minmax(320px,1.1fr)_minmax(520px,1.9fr)_minmax(280px,1fr)]';
   }, [showProblem, showChat]);
 
   const codeSpanClass = useMemo(() => {
@@ -29,23 +29,23 @@ function BattleSpectator() {
   return (
     <>
       <div className="flex flex-col gap-2 xl:h-full xl:min-h-0">
-        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-200 mb-2 md:mb-3">
+        <div className="mb-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-base-primary md:mb-3">
           <button
             type="button"
             onClick={() => setShowProblem((prev) => !prev)}
-            className="rounded-lg border border-slate-700 px-3 py-1 transition hover:border-slate-500 hover:bg-slate-800"
+            className="rounded-lg bg-base-faint px-3 py-1 transition hover:bg-base-tertiary"
           >
             {showProblem ? '문제 숨기기' : '문제 보기'}
           </button>
           <button
             type="button"
             onClick={() => setShowChat((prev) => !prev)}
-            className="rounded-lg border border-slate-700 px-3 py-1 transition hover:border-slate-500 hover:bg-slate-800"
+            className="rounded-lg bg-base-faint px-3 py-1 transition hover:bg-base-tertiary"
           >
             {showChat ? '채팅 숨기기' : '채팅 보기'}
           </button>
         </div>
-        <div className={gridCols}>
+        <div className={`${gridCols} bg-base-muted`}>
           {showProblem && (
             <div className="fade-slide-in xl:h-full xl:min-h-0 chat-scroll">
               <BattleProblem />
