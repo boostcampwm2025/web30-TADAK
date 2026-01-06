@@ -39,16 +39,13 @@ function CodeSpectator() {
     };
   }, [connect, roomId, selectedId, socket]);
 
-  const participants = useMemo(
-    () =>
-      players.length >= 2
-        ? players.slice(0, 2)
-        : [
-            { userId: 'player-a', username: 'Player A' },
-            { userId: 'player-b', username: 'Player B' },
-          ],
-    [players],
-  );
+  const participants = useMemo(() => {
+    if (players.length > 0) return players.slice(0, 2);
+    return [
+      { userId: 'player-a', username: 'Player A' },
+      { userId: 'player-b', username: 'Player B' },
+    ];
+  }, [players]);
 
   const firstParticipantId = participants[0]?.userId ?? null;
 

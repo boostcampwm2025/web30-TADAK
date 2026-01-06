@@ -93,6 +93,8 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
     new Promise((resolve, reject) => {
       const socket = get().connect();
       let settled = false;
+      const targetRoomId = payload.roomId;
+      const { setMe } = useRoomStore.getState();
       const cleanup = () => {
         settled = true;
         socket.off(SOCKET_EVENT.ROOM_STATE_ROLE, handleSync);
@@ -101,7 +103,7 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
       };
 
       const handlePlayers = (payload: RoomPlayerPayload) => {
-        if (payload.roomId !== payload.roomId) return;
+        if (payload.roomId !== targetRoomId) return;
         const { setPlayers } = useRoomStore.getState();
         setPlayers(
           payload.players.map((p) => ({
@@ -115,6 +117,14 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
 
       const handleSync = (response: RoomStateSyncPayload) => {
         if (settled) return;
+        if (response.roomId === targetRoomId) {
+          setMe({
+            roomId: response.roomId,
+            role: response.role,
+            userId: response.userId ?? socket.id,
+            username: response.username ?? `User-${socket.id.slice(-4)}`,
+          });
+        }
         cleanup();
         resolve({ roomId: response.roomId, role: response.role });
       };
