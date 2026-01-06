@@ -21,18 +21,26 @@ export class AuthService {
   }
 
   // 로그인 성공 시 토큰 생성 (Secret + Payload)
-  login(user: User) {
+  async login(user: User) {
     const payload = { username: user.username, sub: user.id };
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: process.env.JWT_REFRESH_SECRET,
+      expiresIn: '7d',
+    });
+
+    await this.userService.updateRefreshToken(user.id, refreshToken);
+
     return {
       accessToken: this.jwtService.sign(payload),
-      refreshToken: this.jwtService.sign(payload, {
-        secret: process.env.JWT_REFRESH_SECRET,
-        expiresIn: '7d',
-      }),
+      refreshToken,
     };
   }
 
-  refreshToken(user: User) {
+  refreshToken(user: User, incomingRefreshToken: string) {
+    if (!user.refreshToken || user.refreshToken !== incomingRefreshToken) {
+      throw new Error('Refresh token mismatched');
+    }
+
     const payload = { username: user.username, sub: user.id };
     return {
       accessToken: this.jwtService.sign(payload),
