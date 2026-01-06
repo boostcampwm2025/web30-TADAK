@@ -118,11 +118,12 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
       const handleSync = (response: RoomStateSyncPayload) => {
         if (settled) return;
         if (response.roomId === targetRoomId) {
+          const safeSocketId = socket.id ?? '';
           setMe({
             roomId: response.roomId,
             role: response.role,
-            userId: response.userId ?? socket.id,
-            username: response.username ?? `User-${socket.id.slice(-4)}`,
+            userId: response.userId ?? socket.id ?? '',
+            username: response.username ?? `User-${safeSocketId.slice(-4)}`,
           });
         }
         cleanup();
