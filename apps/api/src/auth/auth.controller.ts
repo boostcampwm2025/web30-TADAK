@@ -40,4 +40,12 @@ export class AuthController {
   refreshToken(@Req() req: Request & { user: User }) {
     return this.authService.refreshToken(req.user, req.cookies['refreshToken'] as string);
   }
+
+  @Post('logout')
+  @UseGuards(AuthGuard('jwt'))
+  async logout(@Req() req: { user: User }, @Res() res: Response) {
+    await this.authService.logout(req.user.id);
+    res.clearCookie('refreshToken', { path: '/' });
+    res.status(200).json({ message: 'Logged out successfully' });
+  }
 }

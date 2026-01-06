@@ -18,6 +18,17 @@ const refreshAccessToken = async () => {
   return data.accessToken as string;
 };
 
+export const logout = async () => {
+  try {
+    await fetchWithAuth(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+    });
+  } finally {
+    localStorage.removeItem('accessToken');
+    window.location.href = '/login';
+  }
+};
+
 export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
   const token = localStorage.getItem('accessToken');
   const headers = {

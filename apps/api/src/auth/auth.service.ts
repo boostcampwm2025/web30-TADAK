@@ -46,4 +46,8 @@ export class AuthService {
       accessToken: this.jwtService.sign(payload),
     };
   }
+
+  async logout(userId: string) {
+    await this.userService.removeRefreshToken(userId);
+  }
 }

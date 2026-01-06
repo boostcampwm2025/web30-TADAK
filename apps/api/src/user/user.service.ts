@@ -19,6 +19,10 @@ export class UserService {
     await this.userRepository.update(id, { refreshToken });
   }
 
+  async removeRefreshToken(id: string): Promise<void> {
+    await this.userRepository.update(id, { refreshToken: null });
+  }
+
   async create(userData: Partial<User>): Promise<User> {
     const user = this.userRepository.create(userData);
     return this.userRepository.save(user);

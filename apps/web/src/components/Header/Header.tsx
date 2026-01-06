@@ -2,9 +2,15 @@ import { Moon, Sun } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { useTheme } from '@/hooks/useTheme';
+import { logout } from '@/lib/api';
 
 function Header() {
   const { theme, toggleTheme } = useTheme();
+  const isLoggedIn = !!localStorage.getItem('accessToken');
+
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <header className="border-b border-border-soft bg-bg-layer-2 shadow-sm">
@@ -16,12 +22,21 @@ function Header() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <Link
-            to="/login"
-            className="rounded-24 bg-base-muted px-4 py-2 text-base font-medium text-ink shadow-sm transition hover:scale-105 active:scale-95"
-          >
-            로그인
-          </Link>
+          {isLoggedIn ? (
+            <button
+              onClick={handleLogout}
+              className="rounded-24 bg-base-muted px-4 py-2 text-base font-medium text-ink shadow-sm transition hover:scale-105 active:scale-95"
+            >
+              로그아웃
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              className="rounded-24 bg-base-muted px-4 py-2 text-base font-medium text-ink shadow-sm transition hover:scale-105 active:scale-95"
+            >
+              로그인
+            </Link>
+          )}
           <button
             onClick={toggleTheme}
             className="rounded-full bg-base-muted p-2 text-ink shadow-sm transition hover:scale-110 active:scale-95"
