@@ -1,3 +1,5 @@
+import { Activity, BarChart3, ListChecks } from 'lucide-react';
+
 function BattleProgress() {
   const activityLogs = [
     { label: '코드 작성 시작', time: '00:15' },
@@ -6,64 +8,71 @@ function BattleProgress() {
   ];
   return (
     <>
-      <section className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-xl shadow-slate-950/40">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-600 text-lg font-bold text-white">
+      <section className="flex flex-col gap-5 rounded-2xl  bg-(--bg-layer-2) p-5 text-base-primary xl:h-full xl:min-h-0 xl:overflow-y-auto">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-base-secondary">플레이어</p>
+            <p className="text-lg font-semibold text-base-primary">CodeNinja</p>
+          </div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-05 text-lg font-bold text-white">
             C
           </div>
-          <div>
-            <p className="text-lg font-semibold text-white">CodeNinja</p>
-            {/* <p className="text-xs font-semibold text-amber-300">🥇 Gold · 승률 72%</p> */}
-          </div>
         </div>
 
-        <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/80 p-3">
-          <div className="flex items-center gap-2 text-sm font-semibold text-emerald-200">
-            <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            실시간 상태
+        <div className="space-y-3 text-sm leading-relaxed text-base-primary">
+          <div className="flex items-center gap-2 text-lg">
+            <Activity className="h-5 w-5 text-green-05" strokeWidth={2.5} />
+            <p className="font-semibold text-green-05">실시간 상태</p>
           </div>
-          <p className="text-sm text-slate-200">코딩 중...</p>
-          <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-slate-200">
-            <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
-              <p className="text-slate-400">코드 라인</p>
-              <p className="text-lg text-white">42</p>
-            </div>
-            <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
-              <p className="text-slate-400">실행 횟수</p>
-              <p className="text-lg text-white">6</p>
+          <div className="space-y-3 rounded-md bg-base-primary/5 p-3">
+            <p className="text-sm">코딩 중...</p>
+            <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-base-primary">
+              <div className="rounded-lg  bg-base-primary/5 px-3 py-2">
+                <p className="text-base-secondary">코드 라인</p>
+                <p className="text-lg text-base-primary">42</p>
+              </div>
+              <div className="rounded-lg  bg-base-primary/5 px-3 py-2">
+                <p className="text-base-secondary">실행 횟수</p>
+                <p className="text-lg text-base-primary">6</p>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/80 p-3">
-          <div className="flex items-center gap-2 text-sm font-semibold text-emerald-200">
-            <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            활동 기록
+        <div className="space-y-3 text-sm leading-relaxed text-base-primary">
+          <div className="flex items-center gap-2 text-lg">
+            <ListChecks className="h-5 w-5 text-green-05" strokeWidth={2.5} />
+            <p className="font-semibold text-green-05">활동 기록</p>
           </div>
-          <div className="space-y-2 text-xs text-slate-200">
+          <div className="space-y-2 rounded-md bg-base-primary/5 p-3 text-xs text-base-primary">
             {activityLogs.map((log) => (
               <div
                 key={log.label}
-                className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2"
+                className="flex items-center justify-between rounded-lg  bg-(--bg-layer-2) px-3 py-2"
               >
                 <span>{log.label}</span>
-                <span className="text-slate-400">{log.time}</span>
+                <span className="text-base-secondary">{log.time}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 text-center">
-          <p className="text-xs font-semibold text-slate-400">상대 통계</p>
-          <div className="mt-2 flex items-center justify-center gap-4 text-sm font-bold">
-            <div className="text-emerald-300">
-              156 <span className="text-slate-400 font-semibold">배틀</span>
-            </div>
-            <div className="text-emerald-300">
-              112 <span className="text-slate-400 font-semibold">승리</span>
-            </div>
-            <div className="text-pink-300">
-              44 <span className="text-slate-400 font-semibold">패배</span>
+        <div className="space-y-3 text-sm leading-relaxed text-base-primary">
+          <div className="flex items-center gap-2 text-lg">
+            <BarChart3 className="h-5 w-5 text-green-05" strokeWidth={2.5} />
+            <p className="font-semibold text-green-05">상대 통계</p>
+          </div>
+          <div className="rounded-md bg-base-primary/5 p-3">
+            <div className="mt-1 flex items-center justify-center gap-4 text-sm font-bold text-base-primary">
+              <div className="text-green-05">
+                156 <span className="text-base-secondary font-semibold">배틀</span>
+              </div>
+              <div className="text-green-05">
+                112 <span className="text-base-secondary font-semibold">승리</span>
+              </div>
+              <div className="text-pink-05">
+                44 <span className="text-base-secondary font-semibold">패배</span>
+              </div>
             </div>
           </div>
         </div>

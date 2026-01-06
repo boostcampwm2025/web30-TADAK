@@ -1,43 +1,130 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-brand: #5631e7;
-  --color-surface: #f9fbfc; /* 메인페이지 배경 */
-  --color-ink: #0f172a;
-  --color-title: #2c2c2c;
+  /* --- Primitives (Blue Scale) --- */
+  --color-blue-01: #f1f7fb;
+  --color-blue-02: #e2e8f0;
+  --color-blue-03: #b8c2d3;
+  --color-blue-04: #555775;
+  --color-blue-05: #3d4759;
+  --color-blue-06: #161a32;
+  --color-blue-07: #0f172a;
+
+  /* --- Primitives (Green Scale - Main) --- */
+  --color-green-01: #99f3c7;
+  --color-green-02: #99f3c7;
+  --color-green-03: #66ecac;
+  --color-green-04: #33e690;
+  --color-green-05: #00e074;
+  --color-green-06: #16a34a;
+
+  /* --- Primitives (Pink Scale - Main) --- */
+  --color-pink-01: #ffd1d9;
+  --color-pink-02: #ffd1d9;
+  --color-pink-03: #ffa3b2;
+  --color-pink-04: #ff748c;
+  --color-pink-05: #ff3b5c;
+
+  /* --- Primitives (Tier) --- */
+  --color-tier-bronze: #a16207;
+  --color-tier-silver: #6b7280;
+  --color-tier-gold: #eab308;
+  --color-tier-platinum: #06b6d4;
+  --color-tier-diamond: #60a5fa;
+  --color-tier-ruby: #f43f5e;
+  --color-tier-master: #a855f7;
+
+  /* --- Primitives (Etc) --- */
+  --color-red-01: #ff3b5c;
+  --color-error-01: #f74f3b;
+  --color-neon-01: #00ffcc;
+
   --color-white: #ffffff;
   --color-black: #000000;
-  --color-border-soft: #0000001a; /* black/10 */
-  --color-overlay: #0000004d; /* black/30 */
 
-  /* CTA / gradients */
-  --color-cta-main-start: #6129d4;
-  --color-cta-main-end: #2d55ff;
-  --color-cta-modal-start: #5230e0;
-  --color-cta-modal-end: #2b5ee8;
+  /* --- Semantic Tokens (Themed) --- */
+  --color-base-primary: var(--base-primary);
+  --color-base-secondary: var(--base-secondary);
+  --color-base-tertiary: var(--base-tertiary);
+  --color-base-muted: var(--base-muted);
+  --color-base-faint: var(--base-faint);
 
-  /* 입장 모달 팔레트 */
-  --color-modal-border: #2f9dea;
-  --color-modal-accent-start: #5d39e4;
-  --color-modal-accent-end: #2d7bff;
-  --color-participant-gradient-start: #e9e4ff;
-  --color-participant-gradient-end: #d8e3ff;
-  --color-participant-icon: #5936e7;
-  --color-participant-check: #4a28c0;
-  --color-participant-badge: #26a65b;
-  --color-spectator-icon: #01a7c2;
-  --color-spectator-badge: #00b0b9;
-  --color-neutral-card-border: #e5e7eb;
-  --color-neutral-muted: #6b7280;
-  --color-neutral-soft: #f3f4f6;
+  --color-bg-layer-1: var(--bg-layer-1);
+  --color-bg-layer-2: var(--bg-layer-2);
 
-  --font-sans: 'Inter', 'Pretendard Variable', system-ui, -apple-system, sans-serif;
+  /* --- App Specific Colors (Restored) --- */
+  --color-brand: var(--color-green-05);
+
+  /* 전체 배경, 글씨, 테두리 색상 */
+  --color-surface: var(--bg-layer-1);
+  --color-ink: var(--black);
+  --color-border-soft: var(--base-muted);
+
+  /* --- Radius --- */
+  --radius-24: 1.5rem; /* 24px */
+
+  /* Typography System */
+  --font-sans:
+    'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto,
+    'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic',
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+  --font-mono:
+    'Fira Code', 'D2Coding', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, monospace;
+
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.25rem;
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 2.5rem;
 }
 
+/* --- Theme Variables --- */
+/* Light Mode (Default) */
 :root {
+  --base-primary: var(--color-blue-06);
+  --base-secondary: var(--color-blue-04);
+  --base-tertiary: var(--color-blue-03);
+  --base-muted: var(--color-blue-02);
+  --base-faint: var(--color-white);
+
+  --bg-layer-1: var(--color-blue-02);
+  --bg-layer-2: var(--color-white);
+
+  --white: var(--color-white);
+  --black: var(--color-black);
+
+  /* Global Defaults */
   font-family: var(--font-sans);
-  background-color: var(--color-surface);
+  background-color: var(--bg-layer-1);
   color: var(--color-ink);
+  border-color: var(--color-border-soft);
+}
+
+/* Dark Mode */
+.dark {
+  --base-primary: var(--color-white);
+  --base-secondary: var(--color-blue-02);
+  --base-tertiary: var(--color-blue-03);
+  --base-muted: var(--color-blue-04);
+  --base-faint: var(--color-blue-05);
+
+  --bg-layer-1: var(--color-blue-07);
+  --bg-layer-2: var(--color-blue-06);
+
+  --black: var(--color-white);
+  --white: var(--color-black);
 }
 
 * {
@@ -109,4 +196,25 @@ body {
 
 .bg-overlay {
   background-color: var(--color-overlay);
+}
+
+.fade-slide-in {
+  animation: fade-slide-in 200ms ease-out;
+}
+
+@keyframes fade-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scroll Bar */
+.chat-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #475569 transparent; /* firefox */
 }

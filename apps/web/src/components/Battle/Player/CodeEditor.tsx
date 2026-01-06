@@ -1,5 +1,6 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
+import { Code } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
@@ -63,15 +64,12 @@ function CodeEditor() {
 
   return (
     <>
-      <section className="flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/90 shadow-xl shadow-slate-950/50">
-        <div className="flex items-center justify-between gap-3 border-b border-slate-800 bg-slate-900/80 px-4 py-3 text-sm font-semibold">
-          <div className="flex items-center gap-2 text-slate-200">
-            <span className="rounded bg-slate-800 px-3 py-1 text-xs font-bold text-emerald-200">
-              코드 에디터
-            </span>
-            <button className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-bold text-slate-950 shadow-lg shadow-emerald-500/40">
-              JavaScript
-            </button>
+      <section className="flex flex-col overflow-hidden rounded-2xl  bg-(--bg-layer-2) text-base-primary xl:h-full xl:min-h-0">
+        <div className="flex items-center justify-between gap-3 border-b border-base-muted bg-(bg-layer-2) px-4 py-2 text-sm font-semibold">
+          <div className="flex items-center gap-1.5">
+            <Code className="h-5 w-5 text-green-05" strokeWidth={2.5} />
+            <span className="rounded pr-3 text-sm font-bold text-green-05">코드 에디터</span>
+            <button className="rounded-md bg-base-muted px-3 py-1 text-xs">JavaScript</button>
             {/* <button className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300 hover:bg-slate-700">
               Python
             </button>
@@ -82,37 +80,23 @@ function CodeEditor() {
               C++
             </button> */}
           </div>
-          <div className="flex items-center gap-2 text-xs text-slate-300">
-            <button className="rounded-lg border border-slate-700 px-2 py-1 hover:border-slate-500">
-              -
-            </button>
-            <span className="rounded-lg border border-slate-700 px-2 py-1 text-slate-100">
-              16px
-            </span>
-            <button className="rounded-lg border border-slate-700 px-2 py-1 hover:border-slate-500">
-              +
-            </button>
-            <button className="rounded-lg border border-slate-700 px-2 py-1 hover:border-slate-500">
-              ⟳
-            </button>
-          </div>
         </div>
-        <div className="flex-1 bg-slate-950 px-5 py-4 font-mono text-sm text-slate-100">
+        <div className="min-h-0 bg-(bg-layer-2) px-5 py-4 font-mono text-sm text-base-primary xl:flex-1">
           <textarea
             value={code}
             onChange={(e) => handleChange(e.target.value)}
             spellCheck={false}
-            className="h-[520px] w-full resize-none rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-sm leading-relaxed text-slate-100 shadow-inner shadow-slate-950/50 focus:border-emerald-400 focus:outline-none"
+            className="h-full min-h-[clamp(260px,50vh,520px)] w-full resize-none rounded-xl bg-(bg-layer-2) border border-base-muted px-4 py-3 text-sm leading-relaxed text-base-primary shadow-inner shadow-slate-950/10 focus:outline-none"
           />
         </div>
-        <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/80 px-4 py-3 text-sm font-semibold text-slate-200">
-          <button className="inline-flex items-center gap-2 rounded-lg bg-slate-800 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-700">
+        <div className="flex items-center justify-between rounded-xl  bg-(bg-layer-2) px-4 py-3 text-sm font-semibold">
+          <button className="inline-flex items-center gap-2 rounded-lg bg-base-muted px-3 py-2 text-xs font-semibold text-base-primary transition hover:brightness-110">
             ▶ 코드 실행
           </button>
-          <div className="text-xs text-slate-400">
-            테스트: <span className="text-emerald-300">0/10</span> 통과
+          <div className="text-xs text-base-secondary">
+            테스트: <span className="text-green-05">0/10</span> 통과
           </div>
-          <button className="rounded-lg bg-emerald-500 px-4 py-2 text-xs font-bold text-slate-950 shadow-lg shadow-emerald-500/40 transition hover:bg-emerald-400">
+          <button className="rounded-lg bg-green-05 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-emerald-500/30 transition hover:brightness-110">
             제출하기
           </button>
         </div>

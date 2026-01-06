@@ -1,8 +1,15 @@
+import { Eye, Moon, Sun, Timer } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import logo from '@/assets/logo.png';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 
-function BattleHeader() {
+interface BattleHeaderProps {
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
+}
+
+function BattleHeader({ theme, onToggleTheme }: BattleHeaderProps) {
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId: string }>();
   const leaveRoom = useBattleSocketStore((state) => state.leaveRoom);
@@ -15,32 +22,34 @@ function BattleHeader() {
   };
 
   return (
-    <header className="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 shadow-lg shadow-slate-950/40 backdrop-blur">
-      <div className="flex w-full flex-wrap items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">
-              Battle
-            </p>
-            <h1 className="text-lg font-bold text-white">CODE RENA</h1>
-          </div>
-        </div>
+    <header className="flex w-full items-center justify-between rounded-2xl px-5 text-base-primary backdrop-blur dark:shadow-slate-950/40">
+      <div className="flex items-center gap-3">
+        <img src={logo} alt="CodeRENA 로고" className="h-11 w-40 object-contain" />
+      </div>
 
-        <div className="flex flex-1 justify-center">
-          <div className="flex items-center gap-3 rounded-full bg-slate-800 px-4 py-2 text-sm font-semibold text-emerald-200 shadow-inner shadow-black/50">
-            <span className="rounded-full bg-slate-900 px-3 py-1 text-xs text-emerald-300">
-              남은 시간
-            </span>
-            <span className="text-lg text-emerald-300">27:16</span>
-          </div>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 rounded-3xl bg-green-01 px-4 py-1 text-lg font-bold text-green-06 shadow-[1px_1px_4px_rgba(0,0,0,0.05)]">
+          <Timer className="h-5 w-5" strokeWidth={2.5} />
+          <span className="font-bold leading-7">27:16</span>
         </div>
-        <span className="flex items-center gap-2 rounded-full bg-rose-500/20 px-3 py-1 text-rose-200">
-          ● LIVE
-        </span>
-        <span className="rounded-full bg-slate-800 px-3 py-1 text-slate-200">관전자 23명</span>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-base-faint px-5 py-2 text-sm font-medium text-base-primary">
+          <Eye className="h-4 w-4 text-base-secondary" strokeWidth={2.5} />
+          <span className="text-base-primary">23</span>
+        </div>
+        <button
+          type="button"
+          onClick={onToggleTheme}
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-base-faint text-base-primary transition hover:brightness-110"
+          aria-label="테마 전환"
+        >
+          {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+        </button>
         <button
           onClick={handleLeave}
-          className="ml-auto inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
+          className="inline-flex h-10 w-20 items-center justify-center rounded-full bg-base-faint text-sm font-bold text-base-primary transition hover:brightness-110"
         >
           나가기
         </button>
