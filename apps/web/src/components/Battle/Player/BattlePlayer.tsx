@@ -31,23 +31,23 @@ function BattlePlayer() {
     <>
       <div className="flex flex-col gap-2 xl:h-full xl:min-h-0">
         <ProgressBar />
-        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-200 mb-2 md:mb-3">
+        <div className="mb-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-base-primary md:mb-3">
           <button
             type="button"
             onClick={() => setShowProblem((prev) => !prev)}
-            className="rounded-lg border border-slate-700 px-3 py-1 transition hover:border-slate-500 hover:bg-slate-800"
+            className="rounded-lg  bg-base-faint px-3 py-1 transition hover:bg-base-tertiary"
           >
             {showProblem ? '문제 숨기기' : '문제 보기'}
           </button>
           <button
             type="button"
             onClick={() => setShowProgress((prev) => !prev)}
-            className="rounded-lg border border-slate-700 px-3 py-1 transition hover:border-slate-500 hover:bg-slate-800"
+            className="rounded-lg  bg-base-faint px-3 py-1 transition hover:bg-base-tertiary"
           >
             {showProgress ? '상대 진행 숨기기' : '상대 진행 보기'}
           </button>
         </div>
-        <div className={gridCols}>
+        <div className={`${gridCols} bg-base-muted`}>
           {showProblem && (
             <div className="fade-slide-in xl:h-full xl:min-h-0 chat-scroll">
               <BattleProblem />
