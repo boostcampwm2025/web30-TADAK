@@ -26,7 +26,7 @@ export interface MatchingCancelRequest {
   userId: string;
 }
 
-export interface UserStat {
+export interface UserRate {
   win: number;
   lose: number;
   draw?: number;
@@ -36,13 +36,13 @@ export interface UserStat {
 export interface MatchingSuccessResponse {
   roomId: string;
   battleId: string;
-  myStat: UserStat;
+  myRate: UserRate;
 
   opponent: {
     userId: string;
     username: string;
     rating: number;
     tier: UserTier;
-    stat?: UserStat;
+    rate?: UserRate;
   };
 }
