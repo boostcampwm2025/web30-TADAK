@@ -16,7 +16,16 @@ export class AuthService {
       throw new Error('Github ID not found');
     }
     const user = await this.userService.findByGithubId(details.githubId);
-    if (user) return user;
+
+    if (user) {
+      // avatarUrl 등이 변경되었을 수 있으므로 업데이트
+      if (details.avatarUrl !== user.avatarUrl || details.username !== user.username) {
+        Object.assign(user, details);
+        return this.userService.create(user);
+      }
+      return user;
+    }
+
     return this.userService.create(details);
   }
 

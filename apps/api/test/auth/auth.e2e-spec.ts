@@ -29,7 +29,7 @@ describe('인증 토큰 만료 및 갱신 (E2E)', () => {
     await app.close();
   });
 
-  it('/auth/profile (GET) - 유효한 토큰으로 접근 시 성공, 만료 후 접근 시 실패', async () => {
+  it('/users/me (GET) - 유효한 토큰으로 접근 시 성공, 만료 후 접근 시 실패', async () => {
     // 1. 2초 뒤에 만료되는 토큰 생성
     const payload = { username: 'testuser', sub: 'test-uuid' };
     const token = jwtService.sign(payload, { expiresIn: '2s' });
@@ -37,7 +37,7 @@ describe('인증 토큰 만료 및 갱신 (E2E)', () => {
     // 2. 즉시 요청 시 성공해야 함 (200 OK)
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     await request(app.getHttpServer())
-      .get('/auth/profile')
+      .get('/users/me')
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
 
@@ -47,7 +47,7 @@ describe('인증 토큰 만료 및 갱신 (E2E)', () => {
     // 4. 지연된 요청은 실패해야 함 (401 Unauthorized)
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     await request(app.getHttpServer())
-      .get('/auth/profile')
+      .get('/users/me')
       .set('Authorization', `Bearer ${token}`)
       .expect(401);
   }, 10000);

@@ -29,12 +29,6 @@ export class AuthController {
     res.redirect(`http://localhost:5173/login?token=${accessToken}`);
   }
 
-  @Get('profile')
-  @UseGuards(AuthGuard('jwt'))
-  getProfile(@Req() req: { user: User }) {
-    return req.user;
-  }
-
   @Post('refresh')
   @UseGuards(AuthGuard('jwt-refresh'))
   refreshToken(@Req() req: Request & { user: User }) {
