@@ -38,6 +38,7 @@ export interface RoomAvailabilityResponseDTO {
   roomId: string;
   playerCount: number;
   isAvailable: boolean;
+  spectatorCount?: number;
 }
 
 // 방 입장 요청/응답

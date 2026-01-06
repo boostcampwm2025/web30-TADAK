@@ -41,6 +41,7 @@ interface BattleSocketState {
   socket: Socket | null;
   isConnected: boolean;
   roomAvailability: RoomAvailabilityResponseDTO | null;
+  spectatorCount: number;
   availabilityListener: ((payload: RoomAvailabilityResponseDTO) => void) | null;
   joinedListener: ((payload: { playerCount: number }) => void) | null;
   leftListener: ((payload: { playerCount: number }) => void) | null;
@@ -60,6 +61,7 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
   socket: null,
   isConnected: false,
   roomAvailability: null,
+  spectatorCount: 0,
   availabilityListener: null,
   joinedListener: null,
   leftListener: null,
@@ -189,10 +191,13 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
 
     const handleAvailability = (payload: RoomAvailabilityResponseDTO) => {
       if (payload.roomId !== roomId) return;
-      set({ roomAvailability: payload });
+      set({
+        roomAvailability: payload,
+        spectatorCount: payload.spectatorCount ?? get().spectatorCount,
+      });
     };
 
-    const handleJoined = (payload: { playerCount: number }) => {
+    const handleJoined = (payload: { playerCount: number; spectatorCount?: number }) => {
       set((state) => {
         if (!state.roomAvailability) return state;
         return {
@@ -200,11 +205,12 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
             ...state.roomAvailability,
             playerCount: payload.playerCount,
           },
+          spectatorCount: payload.spectatorCount ?? state.spectatorCount,
         };
       });
     };
 
-    const handleLeft = (payload: { playerCount: number }) => {
+    const handleLeft = (payload: { playerCount: number; spectatorCount?: number }) => {
       set((state) => {
         if (!state.roomAvailability) return state;
         return {
@@ -212,6 +218,7 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
             ...state.roomAvailability,
             playerCount: payload.playerCount,
           },
+          spectatorCount: payload.spectatorCount ?? state.spectatorCount,
         };
       });
     };

@@ -117,6 +117,7 @@ export class RoomGateway implements OnModuleInit {
     // 같은 방 다른 사람들에게 새 유저 입장 알림
     client.to(roomId).emit(SOCKET_EVENT.ROOM_USER_JOINED, {
       playerCount: room.currentPlayers.length,
+      spectatorCount: room.currentSpectators.length,
     });
   }
 
@@ -153,6 +154,7 @@ export class RoomGateway implements OnModuleInit {
       // 같은 방 다른 사람들에게 유저 퇴장 알림
       client.to(roomId).emit(SOCKET_EVENT.ROOM_USER_LEFT, {
         playerCount: updatedRoom.currentPlayers.length,
+        spectatorCount: updatedRoom.currentSpectators.length,
       });
     }
 
