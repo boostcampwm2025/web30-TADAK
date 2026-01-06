@@ -126,15 +126,20 @@ export class MatchingService {
     usedIds: Set<string>,
   ): [MatchingUser, MatchingUser] | null {
     for (let i = 0; i < users.length - 1; i++) {
+      const user1 = users[i];
       // 이미 매칭된 유저는 skip
-      if (usedIds.has(users[i].userId)) continue;
+      if (usedIds.has(user1.userId)) continue;
 
       // i번째 유저와 매칭 가능한 다음 유저 찾기
       for (let j = i + 1; j < users.length; j++) {
-        if (usedIds.has(users[j].userId)) continue;
+        const user2 = users[j];
+        if (usedIds.has(user2.userId)) continue;
 
-        if (this.canMatch(users[i], users[j])) {
-          return [users[i], users[j]];
+        const ratingDiff = Math.abs(user1.rating - user2.rating);
+        if (ratingDiff > MATCHING_CONFIG.MAX_RATING_RANGE) break;
+
+        if (this.canMatch(user1, user2, ratingDiff)) {
+          return [user1, user2];
         }
       }
     }
@@ -143,7 +148,7 @@ export class MatchingService {
   }
 
   // 두 유저가 매칭 가능한지 여부 판단
-  private canMatch(user1: MatchingUser, user2: MatchingUser): boolean {
+  private canMatch(user1: MatchingUser, user2: MatchingUser, ratingDiff: number): boolean {
     // 대기 시간이 더 긴 유저 기준으로 범위 계산
     const now = Date.now();
     const longerWaitTime = Math.max(
@@ -152,7 +157,6 @@ export class MatchingService {
     );
 
     const allowedRange = this.calculateRatingRange(longerWaitTime);
-    const ratingDiff = Math.abs(user1.rating - user2.rating);
 
     return ratingDiff <= allowedRange;
   }
