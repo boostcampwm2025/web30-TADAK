@@ -9,6 +9,11 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors({
+    origin: ['http://localhost:5173'],
+    credentials: true,
+  });
+
   // ConfigService를 사용하여 환경변수 가져오기
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT') ?? 3000;
