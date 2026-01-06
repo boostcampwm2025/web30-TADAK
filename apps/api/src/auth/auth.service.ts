@@ -25,6 +25,17 @@ export class AuthService {
     const payload = { username: user.username, sub: user.id };
     return {
       accessToken: this.jwtService.sign(payload),
+      refreshToken: this.jwtService.sign(payload, {
+        secret: process.env.JWT_REFRESH_SECRET,
+        expiresIn: '7d',
+      }),
+    };
+  }
+
+  refreshToken(user: User) {
+    const payload = { username: user.username, sub: user.id };
+    return {
+      accessToken: this.jwtService.sign(payload),
     };
   }
 }

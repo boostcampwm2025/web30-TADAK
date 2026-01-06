@@ -8,6 +8,8 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { GitHubStrategy } from './strategies/github-strategy';
 import { JwtStrategy } from './strategies/jwt-strategy';
+import { RefreshJwtStrategy } from './strategies/refresh-jwt-strategy';
+
 @Module({
   imports: [
     UserModule,
@@ -16,13 +18,13 @@ import { JwtStrategy } from './strategies/jwt-strategy';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '60m' },
+        signOptions: { expiresIn: '5m' },
       }),
       inject: [ConfigService],
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, GitHubStrategy, JwtStrategy],
+  providers: [AuthService, GitHubStrategy, JwtStrategy, RefreshJwtStrategy],
   exports: [AuthService, JwtStrategy, PassportModule],
 })
 export class AuthModule {}
