@@ -16,8 +16,8 @@ export class AuthController {
   @Get('github/return')
   @UseGuards(AuthGuard('github'))
   async githubLoginCallback(@Req() req: { user: User }, @Res() res: express.Response) {
-    const { accessToken } = await this.authService.login(req.user);
-    res.redirect(`http://localhost:5173/login?token=${accessToken}`);
+    const { accessToken, refreshToken } = await this.authService.login(req.user);
+    res.redirect(`http://localhost:5173/login?token=${accessToken}&refreshToken=${refreshToken}`);
   }
 
   @Get('profile')

@@ -15,8 +15,11 @@ function LoginPage() {
 
   useEffect(() => {
     const token = searchParams.get('token');
-    if (token) {
+    const refreshToken = searchParams.get('refreshToken');
+
+    if (token && refreshToken) {
       localStorage.setItem('accessToken', token);
+      localStorage.setItem('refreshToken', refreshToken);
       navigate('/', { replace: true });
     }
   }, [searchParams, navigate]);
