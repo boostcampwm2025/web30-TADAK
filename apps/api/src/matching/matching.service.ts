@@ -171,31 +171,13 @@ export class MatchingService {
 
   // 매칭 성공 시
   private async createMatchedRoom(
-    user1: MatchingUser,
-    user2: MatchingUser,
+    _user1: MatchingUser,
+    _user2: MatchingUser,
   ): Promise<{ roomId: string; battleId: string }> {
-    // Room ID 생성 (타임스탬프 + 랜덤)
-    const roomId = `room-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // TODO: 방 생성, 배틀 생성 로직 수정
+    await Promise.resolve();
 
-    // Room 생성 (createRoom에서 Battle도 자동 생성됨)
-    const room = await this.roomService.createRoom(roomId);
-
-    // 두 유저를 플레이어로 추가
-    room.currentPlayers = [
-      { userId: user1.userId, username: user1.username, role: 'player' },
-      { userId: user2.userId, username: user2.username, role: 'player' },
-    ];
-    room.status = 'in-battle';
-    await this.roomService.saveRoom(room);
-
-    // Battle ID 조회 (Room 생성 시 자동으로 Battle이 생성됨)
-    // TODO: battleService에 getBattleIdByRoomId 메서드가 있는지 확인 필요
-    // 현재는 임시로 battleId를 생성
-    const battleId = `battle-${roomId}`;
-
-    this.logger.log(`Created room ${roomId} for users ${user1.userId} and ${user2.userId}`);
-
-    return { roomId, battleId };
+    return { roomId: 'room1', battleId: 'battle1' };
   }
 
   // 매칭 타임아웃 유저 조회
