@@ -1,10 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { BattleService } from '@/battle/battle.service';
+
 import { RoomGateway } from '../src/room/room.gateway';
 import { RoomService } from '../src/room/room.service';
 
 describe('RoomGateway', () => {
-  let _gateway: RoomGateway;
+  let gateway: RoomGateway;
   let _roomService: RoomService;
 
   beforeEach(async () => {
@@ -19,10 +21,20 @@ describe('RoomGateway', () => {
           provide: RoomService,
           useValue: mockRoomService,
         },
+        {
+          provide: BattleService,
+          useValue: { createBattle: jest.fn() },
+        },
       ],
     }).compile();
 
-    _gateway = module.get<RoomGateway>(RoomGateway);
+    gateway = module.get<RoomGateway>(RoomGateway);
     _roomService = module.get<RoomService>(RoomService);
+  });
+
+  describe('RoomGateway', () => {
+    it('should be defined', () => {
+      expect(gateway).toBeDefined();
+    });
   });
 });
