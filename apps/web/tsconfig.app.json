@@ -32,5 +32,5 @@
       "@shared/constants/*": ["../../packages/constants/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "src/apis/api.ts", "src/apis/axios.ts"]
 }

@@ -1,8 +1,8 @@
 import { Moon, Sun } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { logout } from '@/apis/auth';
 import { useTheme } from '@/hooks/useTheme';
-import { logout } from '@/lib/api';
 
 function Header() {
   const { theme, toggleTheme } = useTheme();
