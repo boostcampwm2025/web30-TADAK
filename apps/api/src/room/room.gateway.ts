@@ -10,11 +10,13 @@ import { Server, Socket } from 'socket.io';
 
 import { BattleService } from '@/battle/battle.service';
 
+import { CHAT_TYPE } from '../../../../packages/constants/chat';
 import {
   SOCKET_ERROR,
   SOCKET_EVENT,
   SOCKET_NAMESPACE,
 } from '../../../../packages/constants/socket-event';
+import { type ChatMessage } from '../../../../packages/types/chat';
 import { RoomUser, UserRole } from '../../../../packages/types/user';
 import { RoomService } from './room.service';
 
@@ -156,5 +158,29 @@ export class RoomGateway implements OnModuleInit {
 
     // 소켓 룸에서 나가기
     await client.leave(roomId);
+  }
+
+  @SubscribeMessage(SOCKET_EVENT.SEND_CHAT)
+  handleSendChat(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { roomId: string; message: string; nickname?: string },
+  ) {
+    const { roomId, message, nickname } = data ?? {};
+    const trimmedMessage = message?.trim();
+
+    if (!roomId || !trimmedMessage) {
+      return;
+    }
+
+    const chatMessage: ChatMessage = {
+      type: CHAT_TYPE.USER,
+      nickname: nickname ?? '익명',
+      message: trimmedMessage,
+      timestamp: new Date().toISOString(),
+    };
+
+    this.server.to(roomId).emit(SOCKET_EVENT.RECEIVE_CHAT, chatMessage);
+
+    return { success: true };
   }
 }
