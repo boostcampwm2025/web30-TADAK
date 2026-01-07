@@ -2,10 +2,12 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { AppController } from './app.controller';
+import { AuthModule } from './auth/auth.module';
 import { BattleModule } from './battle/battle.module';
 import { RedisModule } from './redis/redis.module';
 import { RoomModule } from './room/room.module';
+import { User } from './user/user.entity';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -28,6 +30,7 @@ import { RoomModule } from './room/room.module';
         entities: [
           // 여기에 Entity 클래스들을 나열해야 합니다.
           // 예: User
+          User,
         ],
         synchronize: true, // 개발 단계에서는 true (Entity와 DB 스키마 동기화)
         logging: ['error'], // 에러만 로그로 출력
@@ -40,8 +43,10 @@ import { RoomModule } from './room/room.module';
 
     RoomModule,
     BattleModule,
+    UserModule,
+    AuthModule,
   ],
-  controllers: [AppController],
+  controllers: [],
   providers: [],
 })
 export class AppModule {}

@@ -39,10 +39,13 @@
   --color-error-01: #f74f3b;
   --color-neon-01: #00ffcc;
 
-  --color-white: #ffffff;
-  --color-black: #000000;
+  --color-white-static: #ffffff;
+  --color-black-static: #000000;
 
   /* --- Semantic Tokens (Themed) --- */
+  --color-white: var(--white);
+  --color-black: var(--black);
+
   --color-base-primary: var(--base-primary);
   --color-base-secondary: var(--base-secondary);
   --color-base-tertiary: var(--base-tertiary);
@@ -97,13 +100,14 @@
   --base-secondary: var(--color-blue-04);
   --base-tertiary: var(--color-blue-03);
   --base-muted: var(--color-blue-02);
-  --base-faint: var(--color-white);
+
+  --base-faint: var(--color-white-static);
 
   --bg-layer-1: var(--color-blue-02);
   --bg-layer-2: var(--color-white);
 
-  --white: var(--color-white);
-  --black: var(--color-black);
+  --white: var(--color-white-static);
+  --black: var(--color-black-static);
 
   /* Global Defaults */
   font-family: var(--font-sans);
@@ -114,7 +118,7 @@
 
 /* Dark Mode */
 .dark {
-  --base-primary: var(--color-white);
+  --base-primary: var(--color-white-static);
   --base-secondary: var(--color-blue-02);
   --base-tertiary: var(--color-blue-03);
   --base-muted: var(--color-blue-04);
@@ -123,8 +127,8 @@
   --bg-layer-1: var(--color-blue-07);
   --bg-layer-2: var(--color-blue-06);
 
-  --black: var(--color-white);
-  --white: var(--color-black);
+  --white: var(--color-black-static);
+  --black: var(--color-white-static);
 }
 
 * {
