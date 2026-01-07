@@ -12,12 +12,16 @@ import { create } from 'zustand';
 
 import { connectBattleSocket, disconnectBattleSocket } from '../lib/battleSocket';
 import { useRoomStore } from './roomStore';
+import { useUserStore } from './userStore';
 
 const SESSION_KEY = 'battle-session';
 
 type StoredSession = {
   roomId: string;
   role: string;
+  userId?: string;
+  username?: string;
+  avatarUrl?: string;
 };
 
 const saveSession = (session: StoredSession) => {
@@ -119,8 +123,15 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
   joinRoom: (payload: JoinRoomRequest) =>
     new Promise((resolve, reject) => {
       const socket = get().connect();
+      const profile = useUserStore.getState().user;
+      const payloadWithUser: JoinRoomRequest = {
+        ...payload,
+        userId: payload.userId ?? profile?.id,
+        username: payload.username ?? profile?.username,
+        avatarUrl: payload.avatarUrl ?? profile?.avatarUrl,
+      };
       let settled = false;
-      const targetRoomId = payload.roomId;
+      const targetRoomId = payloadWithUser.roomId;
       const { setMe } = useRoomStore.getState();
       const cleanup = () => {
         settled = true;
@@ -138,6 +149,7 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
             role: p.role,
             userId: p.userId,
             username: p.username,
+            avatarUrl: p.avatarUrl,
           })),
         );
       };
@@ -151,10 +163,14 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
             role: response.role,
             userId: response.userId ?? socket.id ?? '',
             username: response.username ?? `User-${safeSocketId.slice(-4)}`,
+            avatarUrl: response.avatarUrl,
           });
           saveSession({
             roomId: response.roomId,
             role: response.role,
+            userId: response.userId ?? socket.id ?? '',
+            username: response.username ?? `User-${safeSocketId.slice(-4)}`,
+            avatarUrl: response.avatarUrl,
           });
         }
         cleanup();
@@ -171,13 +187,17 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
       socket.on(SOCKET_EVENT.ROOM_PLAYERS, handlePlayers);
       socket.on(SOCKET_EVENT.ERROR, handleError);
 
-      socket.emit(SOCKET_EVENT.JOIN_ROOM, payload, (response: JoinRoomResponse | undefined) => {
-        if (settled) return;
-        if (response) {
-          cleanup();
-          resolve(response);
-        }
-      });
+      socket.emit(
+        SOCKET_EVENT.JOIN_ROOM,
+        payloadWithUser,
+        (response: JoinRoomResponse | undefined) => {
+          if (settled) return;
+          if (response) {
+            cleanup();
+            resolve(response);
+          }
+        },
+      );
     }),
   // 방 나가기 요청을 보낸다.
   leaveRoom: (roomId: string) => {
@@ -268,6 +288,9 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
     await get().joinRoom({
       roomId: session.roomId,
       requestedRole,
+      userId: session.userId,
+      username: session.username,
+      avatarUrl: session.avatarUrl,
     });
   },
 }));
