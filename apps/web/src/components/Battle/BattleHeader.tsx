@@ -13,6 +13,7 @@ function BattleHeader({ theme, onToggleTheme }: BattleHeaderProps) {
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId: string }>();
   const leaveRoom = useBattleSocketStore((state) => state.leaveRoom);
+  const spectatorCount = useBattleSocketStore((state) => state.spectatorCount);
 
   const handleLeave = () => {
     if (roomId) {
@@ -37,7 +38,7 @@ function BattleHeader({ theme, onToggleTheme }: BattleHeaderProps) {
       <div className="flex items-center gap-3">
         <div className="inline-flex items-center gap-1.5 rounded-full bg-base-faint px-5 py-2 text-sm font-medium text-base-primary">
           <Eye className="h-4 w-4 text-base-secondary" strokeWidth={2.5} />
-          <span className="text-base-primary">23</span>
+          <span className="text-base-primary">{spectatorCount}</span>
         </div>
         <button
           type="button"
@@ -45,7 +46,7 @@ function BattleHeader({ theme, onToggleTheme }: BattleHeaderProps) {
           className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-base-faint text-base-primary transition hover:brightness-110"
           aria-label="테마 전환"
         >
-          {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+          {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </button>
         <button
           onClick={handleLeave}

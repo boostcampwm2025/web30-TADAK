@@ -39,16 +39,13 @@ function CodeSpectator() {
     };
   }, [connect, roomId, selectedId, socket]);
 
-  const participants = useMemo(
-    () =>
-      players.length >= 2
-        ? players.slice(0, 2)
-        : [
-            { userId: 'player-a', username: 'Player A' },
-            { userId: 'player-b', username: 'Player B' },
-          ],
-    [players],
-  );
+  const participants = useMemo(() => {
+    if (players.length > 0) return players.slice(0, 2);
+    return [
+      { userId: 'player-a', username: 'Player A' },
+      { userId: 'player-b', username: 'Player B' },
+    ];
+  }, [players]);
 
   const firstParticipantId = participants[0]?.userId ?? null;
 
@@ -119,7 +116,7 @@ function CodeSpectator() {
           ))}
         </div>
 
-        <div className="flex flex-col overflow-hidden rounded-2xl bg-(bg-layer-2) text-base-primary shadow-inner shadow-slate-950/10 xl:flex-1 xl:min-h-0">
+        <div className="flex flex-col overflow-hidden rounded-2xl border border-border-soft bg-(bg-layer-2) text-base-primary shadow-inner shadow-slate-950/10 xl:flex-1 xl:min-h-0">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft bg-(--bg-layer-2) px-4 py-3 text-sm font-semibold">
             <div className="flex items-center gap-2">
               <Code className="h-5 w-5 text-green-05" strokeWidth={2.5} />

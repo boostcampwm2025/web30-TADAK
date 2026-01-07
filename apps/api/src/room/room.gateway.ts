@@ -10,11 +10,13 @@ import { Server, Socket } from 'socket.io';
 
 import { BattleService } from '@/battle/battle.service';
 
+import { CHAT_TYPE } from '../../../../packages/constants/chat';
 import {
   SOCKET_ERROR,
   SOCKET_EVENT,
   SOCKET_NAMESPACE,
 } from '../../../../packages/constants/socket-event';
+import { type ChatMessage } from '../../../../packages/types/chat';
 import { RoomUser, UserRole } from '../../../../packages/types/user';
 import { RoomService } from './room.service';
 
@@ -112,10 +114,15 @@ export class RoomGateway implements OnModuleInit {
       username: username,
     });
 
-    // 같은 방 다른 사람들에게 새 유저 입장 알림
-    client.to(roomId).emit(SOCKET_EVENT.ROOM_USER_JOINED, {
+    // 방의 모든 사람에게 새 유저 입장 알림 (본인 포함)
+    this.server.to(roomId).emit(SOCKET_EVENT.ROOM_USER_JOINED, {
       playerCount: room.currentPlayers.length,
+      spectatorCount: room.currentSpectators.length,
     });
+
+    // 최신 인원 정보를 브로드캐스트
+    const availability = await this.roomService.getRoomAvailability(roomId);
+    this.server.to(roomId).emit(SOCKET_EVENT.ROOM_AVAILABILITY, availability);
   }
 
   @SubscribeMessage(SOCKET_EVENT.LEAVE_ROOM)
@@ -148,13 +155,42 @@ export class RoomGateway implements OnModuleInit {
     const updatedRoom = await this.roomService.removeUser(roomId, userId);
 
     if (updatedRoom) {
-      // 같은 방 다른 사람들에게 유저 퇴장 알림
+      // 방의 모든 사람에게 유저 퇴장 알림 (본인 제외)
       client.to(roomId).emit(SOCKET_EVENT.ROOM_USER_LEFT, {
         playerCount: updatedRoom.currentPlayers.length,
+        spectatorCount: updatedRoom.currentSpectators.length,
       });
+
+      // 최신 인원 정보를 브로드캐스트
+      const availability = await this.roomService.getRoomAvailability(roomId);
+      this.server.to(roomId).emit(SOCKET_EVENT.ROOM_AVAILABILITY, availability);
     }
 
     // 소켓 룸에서 나가기
     await client.leave(roomId);
+  }
+
+  @SubscribeMessage(SOCKET_EVENT.SEND_CHAT)
+  handleSendChat(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { roomId: string; message: string; nickname?: string },
+  ) {
+    const { roomId, message, nickname } = data ?? {};
+    const trimmedMessage = message?.trim();
+
+    if (!roomId || !trimmedMessage) {
+      return;
+    }
+
+    const chatMessage: ChatMessage = {
+      type: CHAT_TYPE.USER,
+      nickname: nickname ?? '익명',
+      message: trimmedMessage,
+      timestamp: new Date().toISOString(),
+    };
+
+    this.server.to(roomId).emit(SOCKET_EVENT.RECEIVE_CHAT, chatMessage);
+
+    return { success: true };
   }
 }

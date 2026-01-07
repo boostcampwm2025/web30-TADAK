@@ -14,7 +14,7 @@ const examples = [
 
 function BattleProblem() {
   return (
-    <section className="flex flex-col gap-5 rounded-2xl bg-(--bg-layer-2) p-5 text-base-primary xl:h-full xl:min-h-0 xl:overflow-y-auto">
+    <section className="flex flex-col gap-5 rounded-2xl bg-(--bg-layer-2) border border-border-soft p-5 text-base-primary xl:h-full xl:min-h-0 xl:overflow-y-auto">
       <div className="flex items-start justify-between">
         <div className="space-y-5">
           <h1 className="text-2xl font-bold text-base-primary">두 수의 합 찾기</h1>

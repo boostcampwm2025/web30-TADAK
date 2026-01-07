@@ -1,41 +1,28 @@
 import { CHAT_TYPE } from '@shared/constants/chat';
+import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { ChatMessage } from '@shared/types/chat';
 import { MessagesSquare } from 'lucide-react';
 import { type KeyboardEventHandler, useEffect, useMemo, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
 
-const initialMessages: ChatMessage[] = [
-  {
-    type: CHAT_TYPE.USER,
-    nickname: 'CodeFan123',
-    message: 'CodeMaster 화이팅!',
-    timestamp: new Date().toISOString(),
-  },
-  {
-    type: CHAT_TYPE.USER,
-    nickname: 'AlgoLover',
-    message: '이 문제 어렵네요 ㄷㄷ',
-    timestamp: new Date().toISOString(),
-  },
-  {
-    type: CHAT_TYPE.USER,
-    nickname: 'DevWatcher',
-    message: 'AlgoKing 진행도 빠르다',
-    timestamp: new Date().toISOString(),
-  },
-  {
-    type: CHAT_TYPE.SYSTEM,
-    nickname: 'System',
-    message: 'CodeMaster님이 테스트를 통과했습니다!',
-    timestamp: new Date().toISOString(),
-  },
-];
+import { useBattleSocketStore } from '@/stores/battleSocketStore';
+import { useRoomStore } from '@/stores/roomStore';
+
+const initialMessages: ChatMessage[] = [];
 
 function ChatSpectator() {
+  const { roomId = '1' } = useParams<{ roomId: string }>();
+  const me = useRoomStore((state) => state.me);
+  const socket = useBattleSocketStore((state) => state.socket);
+  const connectSocket = useBattleSocketStore((state) => state.connect);
+
+  const myNickname = useMemo(() => {
+    const fallback = socket?.id ? `User-${socket.id.slice(-4)}` : '관전자';
+    return me?.username ?? fallback;
+  }, [me, socket]);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
-
-  const nickname = useMemo(() => '나', []);
 
   useEffect(() => {
     // 새 메시지가 추가되면 리스트 하단으로 스크롤
@@ -44,10 +31,25 @@ function ChatSpectator() {
     });
   }, [messages.length]);
 
+  useEffect(() => {
+    const activeSocket = socket ?? connectSocket();
+    if (!activeSocket) return;
+
+    const handleReceiveChat = (msg: ChatMessage) => {
+      setMessages((prev) => [...prev, { ...msg, isMine: msg.nickname === myNickname }]);
+    };
+
+    activeSocket.on(SOCKET_EVENT.RECEIVE_CHAT, handleReceiveChat);
+
+    return () => {
+      activeSocket.off(SOCKET_EVENT.RECEIVE_CHAT, handleReceiveChat);
+    };
+  }, [socket, connectSocket, myNickname]);
+
   const getInitial = (name?: string) => name?.trim().charAt(0)?.toUpperCase() ?? '?';
 
   const getAvatarTone = (isMine: boolean) =>
-    isMine ? 'bg-green-04 text-white' : 'bg-blue-04 text-white';
+    isMine ? 'bg-[var(--color-green-04)] text-white' : 'bg-[var(--color-blue-04)] text-white';
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -59,15 +61,12 @@ function ChatSpectator() {
     const trimmed = input.trim();
     if (!trimmed) return;
 
-    const outgoing: ChatMessage = {
-      type: CHAT_TYPE.USER,
-      nickname,
+    const activeSocket = socket ?? connectSocket();
+    activeSocket?.emit(SOCKET_EVENT.SEND_CHAT, {
+      roomId,
       message: trimmed,
-      timestamp: new Date().toISOString(),
-      isMine: true,
-    };
-
-    setMessages((prev) => [...prev, outgoing]);
+      nickname: myNickname,
+    });
     setInput('');
   };
 
@@ -81,8 +80,8 @@ function ChatSpectator() {
 
   return (
     <>
-      <section className="relative flex h-full min-h-90 sm:min-h-130 max-h-[calc(100vh-200px)] max-lg:max-h-none flex-col overflow-hidden rounded-2xl border border-border-soft bg-(--bg-layer-2) text-base-primary shadow-sm">
-        <div className="flex items-center justify-between border-b border-border-soft bg-(--bg-layer-2) px-4 py-3">
+      <section className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border-soft bg-[var(--bg-layer-2)] text-base-primary shadow-sm">
+        <div className="flex items-center justify-between border-b border-border-soft bg-[var(--bg-layer-2)] px-4 py-3">
           <div className="flex items-center gap-3">
             <div className="flex h-5 w-5 items-center justify-center rounded-full">
               <MessagesSquare className="h-5 w-5 text-green-05 stroke-[2.5]" />
@@ -90,7 +89,7 @@ function ChatSpectator() {
             <p className="text-md font-semibold">실시간 채팅</p>
           </div>
         </div>
-        <div className="chat-scroll flex-1 min-h-0 space-y-3 overflow-y-auto bg-(--bg-layer-2) px-4 py-4">
+        <div className="chat-scroll flex-1 min-h-0 space-y-3 overflow-y-auto bg-[var(--bg-layer-2)] px-4 py-4">
           <div className="flex justify-center">
             <div className="w-full max-w-[95%] rounded-lg bg-base-muted px-4 py-2 text-center text-xs font-semibold text-base-secondary">
               관전 모드에 오신 것을 환영합니다!
@@ -99,7 +98,7 @@ function ChatSpectator() {
           {messages.map((msg, index) => {
             const key = `${msg.timestamp}-${index}`;
             const isSystem = msg.type === CHAT_TYPE.SYSTEM;
-            const isMine = msg.isMine ?? msg.nickname === nickname;
+            const isMine = msg.isMine ?? msg.nickname === myNickname;
             const displayName = isMine ? '나' : msg.nickname;
 
             if (isSystem) {
@@ -135,7 +134,7 @@ function ChatSpectator() {
                   </div>
                   <div
                     className={`inline-flex rounded-2xl px-4 py-2 text-sm leading-relaxed ${
-                      isMine ? 'bg-green-02 text-black' : 'bg-base-muted text-base-primary'
+                      isMine ? 'bg-green-03 text-black' : 'bg-base-muted'
                     }`}
                   >
                     <p className="whitespace-pre-wrap">{msg.message}</p>
@@ -153,7 +152,7 @@ function ChatSpectator() {
           })}
           <div ref={bottomRef} />
         </div>
-        <div className="flex items-end gap-2 border-t border-border-soft bg-(--bg-layer-2) px-3 py-2">
+        <div className="flex items-end gap-2 border-t border-border-soft bg-[var(--bg-layer-2)] px-3 py-2">
           <textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}

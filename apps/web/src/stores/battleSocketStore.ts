@@ -13,10 +13,35 @@ import { create } from 'zustand';
 import { connectBattleSocket, disconnectBattleSocket } from '../lib/battleSocket';
 import { useRoomStore } from './roomStore';
 
+const SESSION_KEY = 'battle-session';
+
+type StoredSession = {
+  roomId: string;
+  role: string;
+};
+
+const saveSession = (session: StoredSession) => {
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  } catch {
+    // ignore
+  }
+};
+
+const loadSession = (): StoredSession | null => {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    return raw ? (JSON.parse(raw) as StoredSession) : null;
+  } catch {
+    return null;
+  }
+};
+
 interface BattleSocketState {
   socket: Socket | null;
   isConnected: boolean;
   roomAvailability: RoomAvailabilityResponseDTO | null;
+  spectatorCount: number;
   availabilityListener: ((payload: RoomAvailabilityResponseDTO) => void) | null;
   joinedListener: ((payload: { playerCount: number }) => void) | null;
   leftListener: ((payload: { playerCount: number }) => void) | null;
@@ -29,12 +54,14 @@ interface BattleSocketState {
   leaveRoom: (roomId: string) => void;
   subscribeRoomAvailability: (roomId: string) => void;
   unsubscribeRoomAvailability: () => void;
+  resumeSession: (options?: { roomId?: string; roleHint?: string }) => Promise<void>;
 }
 
 export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
   socket: null,
   isConnected: false,
   roomAvailability: null,
+  spectatorCount: 0,
   availabilityListener: null,
   joinedListener: null,
   leftListener: null,
@@ -93,6 +120,8 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
     new Promise((resolve, reject) => {
       const socket = get().connect();
       let settled = false;
+      const targetRoomId = payload.roomId;
+      const { setMe } = useRoomStore.getState();
       const cleanup = () => {
         settled = true;
         socket.off(SOCKET_EVENT.ROOM_STATE_ROLE, handleSync);
@@ -101,7 +130,7 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
       };
 
       const handlePlayers = (payload: RoomPlayerPayload) => {
-        if (payload.roomId !== payload.roomId) return;
+        if (payload.roomId !== targetRoomId) return;
         const { setPlayers } = useRoomStore.getState();
         setPlayers(
           payload.players.map((p) => ({
@@ -115,6 +144,19 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
 
       const handleSync = (response: RoomStateSyncPayload) => {
         if (settled) return;
+        if (response.roomId === targetRoomId) {
+          const safeSocketId = socket.id ?? '';
+          setMe({
+            roomId: response.roomId,
+            role: response.role,
+            userId: response.userId ?? socket.id ?? '',
+            username: response.username ?? `User-${safeSocketId.slice(-4)}`,
+          });
+          saveSession({
+            roomId: response.roomId,
+            role: response.role,
+          });
+        }
         cleanup();
         resolve({ roomId: response.roomId, role: response.role });
       };
@@ -149,10 +191,13 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
 
     const handleAvailability = (payload: RoomAvailabilityResponseDTO) => {
       if (payload.roomId !== roomId) return;
-      set({ roomAvailability: payload });
+      set({
+        roomAvailability: payload,
+        spectatorCount: payload.spectatorCount ?? get().spectatorCount,
+      });
     };
 
-    const handleJoined = (payload: { playerCount: number }) => {
+    const handleJoined = (payload: { playerCount: number; spectatorCount?: number }) => {
       set((state) => {
         if (!state.roomAvailability) return state;
         return {
@@ -160,11 +205,12 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
             ...state.roomAvailability,
             playerCount: payload.playerCount,
           },
+          spectatorCount: payload.spectatorCount ?? state.spectatorCount,
         };
       });
     };
 
-    const handleLeft = (payload: { playerCount: number }) => {
+    const handleLeft = (payload: { playerCount: number; spectatorCount?: number }) => {
       set((state) => {
         if (!state.roomAvailability) return state;
         return {
@@ -172,6 +218,7 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
             ...state.roomAvailability,
             playerCount: payload.playerCount,
           },
+          spectatorCount: payload.spectatorCount ?? state.spectatorCount,
         };
       });
     };
@@ -207,5 +254,20 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
     }
 
     set({ availabilityListener: null, joinedListener: null, leftListener: null });
+  },
+  // 저장된 세션(roomId/role)으로 자동 재입장 (간단 버전)
+  resumeSession: async (options?: { roomId?: string; roleHint?: string }) => {
+    const session = loadSession();
+    if (!session) return;
+    if (options?.roomId && options.roomId !== session.roomId) return;
+
+    const requestedRole =
+      (session.role as 'player' | 'spectator') ??
+      (options?.roleHint as 'player' | 'spectator') ??
+      'spectator';
+    await get().joinRoom({
+      roomId: session.roomId,
+      requestedRole,
+    });
   },
 }));
