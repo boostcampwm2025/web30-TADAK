@@ -8,5 +8,6 @@ import { RoomService } from './room.service';
 @Module({
   imports: [BattleModule],
   providers: [RoomService, RoomGateway],
+  exports: [RoomService], // MatchingModule에서 사용할 수 있도록 export
 })
 export class RoomModule {}
