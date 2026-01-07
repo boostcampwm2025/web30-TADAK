@@ -39,4 +39,13 @@ export class MatchingGateway {
       },
     });
   }
+
+  // 매칭 통계를 모든 연결된 클라이언트에게 브로드캐스트
+  broadcastMatchingStats(stats: {
+    waitingPlayers: number;
+    ongoingBattles: number;
+    avgMatchTime: number;
+  }): void {
+    this.server.emit(SOCKET_EVENT.STATS_UPDATE, stats);
+  }
 }

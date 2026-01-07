@@ -29,6 +29,7 @@ export const SOCKET_EVENT = {
 
   // === Matching ===
   MATCH_SUCCESS: 'match-success', // 매칭 성공 알림
+  STATS_UPDATE: 'stats-update', // 매칭 통계 업데이트
 
   ERROR: 'error', // 에러 발생
 } as const;

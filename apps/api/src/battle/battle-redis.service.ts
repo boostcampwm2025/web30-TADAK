@@ -20,6 +20,9 @@ export class BattleRedisService {
       // roomId로 battleId 매핑 저장
       const roomKey = RedisKeys.battleByRoom(battle.roomId);
       await this.redis.set(roomKey, battle.battleId);
+
+      // 진행 중인 배틀 목록에 추가
+      await this.redis.sadd(RedisKeys.activeBattles(), battle.battleId);
     } catch (error) {
       // TODO: 에러 로깅 추가
       console.error('Failed to create battle in Redis:', error);
