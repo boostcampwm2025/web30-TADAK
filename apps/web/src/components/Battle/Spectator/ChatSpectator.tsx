@@ -80,8 +80,8 @@ function ChatSpectator() {
 
   return (
     <>
-      <section className="relative flex h-full min-h-90 sm:min-h-130 max-h-[calc(100vh-200px)] max-lg:max-h-none flex-col overflow-hidden rounded-2xl border border-border-soft bg-(--bg-layer-2) text-base-primary shadow-sm">
-        <div className="flex items-center justify-between border-b border-border-soft bg-(--bg-layer-2) px-4 py-3">
+      <section className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border-soft bg-[var(--bg-layer-2)] text-base-primary shadow-sm">
+        <div className="flex items-center justify-between border-b border-border-soft bg-[var(--bg-layer-2)] px-4 py-3">
           <div className="flex items-center gap-3">
             <div className="flex h-5 w-5 items-center justify-center rounded-full">
               <MessagesSquare className="h-5 w-5 text-green-05 stroke-[2.5]" />
@@ -89,7 +89,7 @@ function ChatSpectator() {
             <p className="text-md font-semibold">실시간 채팅</p>
           </div>
         </div>
-        <div className="chat-scroll flex-1 min-h-0 space-y-3 overflow-y-auto bg-(--bg-layer-2) px-4 py-4">
+        <div className="chat-scroll flex-1 min-h-0 space-y-3 overflow-y-auto bg-[var(--bg-layer-2)] px-4 py-4">
           <div className="flex justify-center">
             <div className="w-full max-w-[95%] rounded-lg bg-base-muted px-4 py-2 text-center text-xs font-semibold text-base-secondary">
               관전 모드에 오신 것을 환영합니다!
@@ -134,7 +134,7 @@ function ChatSpectator() {
                   </div>
                   <div
                     className={`inline-flex rounded-2xl px-4 py-2 text-sm leading-relaxed ${
-                      isMine ? 'bg-green-02 text-base-primary' : 'bg-base-muted text-base-primary'
+                      isMine ? 'bg-green-03 text-black' : 'bg-base-muted'
                     }`}
                   >
                     <p className="whitespace-pre-wrap">{msg.message}</p>
@@ -152,7 +152,7 @@ function ChatSpectator() {
           })}
           <div ref={bottomRef} />
         </div>
-        <div className="flex items-end gap-2 border-t border-border-soft bg-(--bg-layer-2) px-3 py-2">
+        <div className="flex items-end gap-2 border-t border-border-soft bg-[var(--bg-layer-2)] px-3 py-2">
           <textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}

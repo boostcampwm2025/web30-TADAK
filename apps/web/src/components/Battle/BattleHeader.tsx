@@ -46,7 +46,7 @@ function BattleHeader({ theme, onToggleTheme }: BattleHeaderProps) {
           className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-base-faint text-base-primary transition hover:brightness-110"
           aria-label="테마 전환"
         >
-          {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+          {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </button>
         <button
           onClick={handleLeave}

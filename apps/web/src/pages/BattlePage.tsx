@@ -26,8 +26,8 @@ function BattlePage() {
   }, [me, resumeSession, roomId, isSpectator]);
 
   return (
-    <div className="min-h-svh overflow-auto text-ink dark:bg-slate-950 dark:text-slate-50 xl:h-screen xl:overflow-hidden">
-      <div className="flex min-h-svh bg-base-muted flex-col gap-3 px-3 py-3 xl:h-full xl:w-full xl:gap-4 xl:px-6 xl:py-4">
+    <div className="min-h-svh overflow-auto xl:h-screen xl:overflow-hidden">
+      <div className="flex min-h-svh flex-col gap-3 px-3 py-3 xl:h-full xl:w-full xl:gap-4 xl:px-6 xl:py-4">
         <BattleHeader theme={theme} onToggleTheme={toggleTheme} />
         <div className="flex-1 min-h-0 overflow-visible xl:overflow-hidden">
           {isSpectator ? <BattleSpectator /> : <BattlePlayer />}

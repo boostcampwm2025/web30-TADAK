@@ -116,7 +116,7 @@ function CodeSpectator() {
           ))}
         </div>
 
-        <div className="flex flex-col overflow-hidden rounded-2xl bg-(bg-layer-2) text-base-primary shadow-inner shadow-slate-950/10 xl:flex-1 xl:min-h-0">
+        <div className="flex flex-col overflow-hidden rounded-2xl border border-border-soft bg-(bg-layer-2) text-base-primary shadow-inner shadow-slate-950/10 xl:flex-1 xl:min-h-0">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft bg-(--bg-layer-2) px-4 py-3 text-sm font-semibold">
             <div className="flex items-center gap-2">
               <Code className="h-5 w-5 text-green-05" strokeWidth={2.5} />
