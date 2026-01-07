@@ -1,0 +1,77 @@
+import { SOCKET_EVENT } from '@shared/constants/socket-event';
+import type { MatchingSuccessResponse } from '@shared/types/matching';
+import type { Socket } from 'socket.io-client';
+import { create } from 'zustand';
+
+import * as matchingApi from '@/apis/matching';
+
+interface MatchingStats {
+  waitingPlayers: number;
+  ongoingBattles: number;
+  avgMatchTime: number;
+}
+
+interface MatchingStore {
+  matchResult: MatchingSuccessResponse | null;
+  stats: MatchingStats | null;
+
+  registerMatchingListeners: (socket: Socket) => void;
+  startMatching: (userId: string, socketId: string) => Promise<void>;
+  cancelMatching: (userId: string) => Promise<void>;
+  cleanup: () => void;
+}
+
+export const useMatchingStore = create<MatchingStore>((set, get) => ({
+  matchResult: null,
+  stats: null,
+
+  // MATCH_SUCCESS, STATS_UPDATE 이벤트 리스너 등록
+  registerMatchingListeners: (socket: Socket) => {
+    const handleMatchSuccess = (data: MatchingSuccessResponse) => {
+      set({ matchResult: data });
+    };
+
+    const handleStatsUpdate = (data: MatchingStats) => {
+      set({ stats: data });
+    };
+
+    // 기존 리스너 제거 후 새로 등록
+    socket.off(SOCKET_EVENT.MATCH_SUCCESS);
+    socket.off(SOCKET_EVENT.STATS_UPDATE);
+    socket.on(SOCKET_EVENT.MATCH_SUCCESS, handleMatchSuccess);
+    socket.on(SOCKET_EVENT.STATS_UPDATE, handleStatsUpdate);
+  },
+
+  // 매칭 시작
+  startMatching: async (userId: string, socketId: string) => {
+    try {
+      if (!socketId) {
+        throw new Error('Socket ID가 없습니다.');
+      }
+
+      await matchingApi.startMatching({
+        userId,
+        socketId,
+      });
+    } catch (error) {
+      console.error('매칭 시작 실패:', error);
+      throw error;
+    }
+  },
+
+  // 매칭 취소
+  cancelMatching: async (userId: string) => {
+    try {
+      await matchingApi.cancelMatching({ userId });
+      get().cleanup();
+    } catch (error) {
+      console.error('매칭 취소 실패:', error);
+      throw error;
+    }
+  },
+
+  // 정리
+  cleanup: () => {
+    set({ matchResult: null, stats: null });
+  },
+}));
