@@ -156,7 +156,7 @@ export class RoomGateway implements OnModuleInit {
 
     if (updatedRoom) {
       // 방의 모든 사람에게 유저 퇴장 알림 (본인 제외)
-      this.server.to(roomId).emit(SOCKET_EVENT.ROOM_USER_LEFT, {
+      client.to(roomId).emit(SOCKET_EVENT.ROOM_USER_LEFT, {
         playerCount: updatedRoom.currentPlayers.length,
         spectatorCount: updatedRoom.currentSpectators.length,
       });
