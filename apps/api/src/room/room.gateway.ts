@@ -50,9 +50,16 @@ export class RoomGateway implements OnModuleInit {
   @SubscribeMessage(SOCKET_EVENT.JOIN_ROOM)
   async handleJoinRoom(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { roomId: string; requestedRole: UserRole },
+    @MessageBody()
+    data: {
+      roomId: string;
+      requestedRole: UserRole;
+      userId?: string;
+      username?: string;
+      avatarUrl?: string;
+    },
   ) {
-    const { roomId, requestedRole } = data;
+    const { roomId, requestedRole, userId, username, avatarUrl } = data;
 
     const room = await this.roomService.getRoom(roomId);
 
@@ -74,21 +81,40 @@ export class RoomGateway implements OnModuleInit {
       return;
     }
 
-    const username = `User-${Date.now().toString().slice(-4)}`;
+    const resolvedUserId = userId ?? client.id;
+    const resolvedUsername = username ?? `User-${resolvedUserId.slice(-4)}`;
+    const resolvedAvatar = avatarUrl;
 
-    const newUser: RoomUser = {
-      roomId: roomId,
-      userId: client.id,
-      username: username,
-      socketId: client.id,
-      role: requestedRole,
-      joinedAt: new Date(),
-    };
+    // 기존 유저 재접속 처리: 동일 userId가 있으면 socketId만 교체
+    const existingPlayer = room.currentPlayers.find((u) => u.userId === resolvedUserId);
+    const existingSpectator = room.currentSpectators.find((u) => u.userId === resolvedUserId);
 
-    if (requestedRole === 'player') {
-      room.currentPlayers.push(newUser);
+    let newUser: RoomUser | null = null;
+
+    if (existingPlayer) {
+      existingPlayer.socketId = client.id;
+      existingPlayer.username = resolvedUsername;
+      existingPlayer.avatarUrl = resolvedAvatar;
+    } else if (existingSpectator) {
+      existingSpectator.socketId = client.id;
+      existingSpectator.username = resolvedUsername;
+      existingSpectator.avatarUrl = resolvedAvatar;
     } else {
-      room.currentSpectators.push(newUser);
+      newUser = {
+        roomId: roomId,
+        userId: resolvedUserId,
+        username: resolvedUsername,
+        socketId: client.id,
+        role: requestedRole,
+        avatarUrl: resolvedAvatar,
+        joinedAt: new Date(),
+      };
+
+      if (requestedRole === 'player') {
+        room.currentPlayers.push(newUser);
+      } else {
+        room.currentSpectators.push(newUser);
+      }
     }
 
     await this.roomService.saveRoom(room);
@@ -97,7 +123,10 @@ export class RoomGateway implements OnModuleInit {
 
     // 참가자일 경우 배틀에도 참가
     if (requestedRole === 'player') {
-      await this.battleService.joinBattle(roomId, newUser);
+      const playerUser = existingPlayer ?? newUser;
+      if (playerUser) {
+        await this.battleService.joinBattle(roomId, playerUser);
+      }
     }
 
     // 방 전체에 최신 참여자 목록 브로드캐스트
@@ -110,8 +139,9 @@ export class RoomGateway implements OnModuleInit {
     client.emit(SOCKET_EVENT.ROOM_STATE_ROLE, {
       roomId: room.roomId,
       role: requestedRole,
-      userId: client.id,
-      username: username,
+      userId: resolvedUserId,
+      username: resolvedUsername,
+      avatarUrl: resolvedAvatar,
     });
 
     // 방의 모든 사람에게 새 유저 입장 알림 (본인 포함)
@@ -173,9 +203,9 @@ export class RoomGateway implements OnModuleInit {
   @SubscribeMessage(SOCKET_EVENT.SEND_CHAT)
   handleSendChat(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { roomId: string; message: string; nickname?: string },
+    @MessageBody() data: { roomId: string; message: string; nickname?: string; avatarUrl?: string },
   ) {
-    const { roomId, message, nickname } = data ?? {};
+    const { roomId, message, nickname, avatarUrl } = data ?? {};
     const trimmedMessage = message?.trim();
 
     if (!roomId || !trimmedMessage) {
@@ -187,6 +217,7 @@ export class RoomGateway implements OnModuleInit {
       nickname: nickname ?? '익명',
       message: trimmedMessage,
       timestamp: new Date().toISOString(),
+      avatarUrl,
     };
 
     this.server.to(roomId).emit(SOCKET_EVENT.RECEIVE_CHAT, chatMessage);
