@@ -3,6 +3,7 @@ import { MATCHING_CONFIG } from '@packages/constants/matching';
 import { MatchingUser } from '@packages/types/matching';
 import Redis from 'ioredis';
 
+import { BattleService } from '../battle/battle.service';
 import { REDIS_CLIENT } from '../redis/redis.module';
 import { RedisKeys } from '../redis/redis-key.constant';
 import { RoomService } from '../room/room.service';
@@ -15,17 +16,87 @@ export class MatchingService {
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     private readonly roomService: RoomService,
+    private readonly battleService: BattleService,
     private readonly matchingGateway: MatchingGateway,
   ) {}
 
   // 매칭 시작
-  async startMatching(): Promise<void> {
-    // TODO: 매칭 시작 구현
+  async startMatching(user: MatchingUser): Promise<void> {
+    const existing = await this.redis.hget(RedisKeys.matchingUser(user.userId), 'status');
+    if (existing === 'WAITING' || existing === 'MATCHED') {
+      this.logger.warn(`User ${user.userId} is already in state ${existing}`);
+      return;
+    }
+
+    const pipeline = this.redis.pipeline();
+    // ZSET: score = timestamp (대기 시간 기준 정렬용)
+    pipeline.zadd(RedisKeys.matchingQueue(), Date.now(), user.userId);
+    // HSET: 유저 상세 정보 저장
+    pipeline.hset(RedisKeys.matchingUser(user.userId), {
+      ...user,
+      tier: JSON.stringify(user.tier),
+      waitingSince: user.waitingSince.toISOString(),
+      status: 'WAITING',
+    });
+
+    await pipeline.exec();
+    this.logger.log(`User ${user.userId} started matching`);
   }
 
   // 매칭 취소
-  async cancelMatching(): Promise<void> {
-    // TODO: 매칭 취소 구현
+  async cancelMatching(userId: string): Promise<void> {
+    const userdata = await this.redis.hgetall(RedisKeys.matchingUser(userId));
+    if (!userdata) return;
+
+    const pipeline = this.redis.pipeline();
+
+    // 만약 이미 매칭된 상태에서 취소(연결 끊김)된 경우라면 상대방 처리
+    if (userdata.status === 'MATCHED' && userdata.opponentId) {
+      const opponentData = await this.redis.hgetall(RedisKeys.matchingUser(userdata.opponentId));
+
+      if (opponentData) {
+        // 상대방에게 알림 전송
+        this.matchingGateway.emitOpponentDisconnected(opponentData.socketId);
+
+        // 상대방 다시 큐로 복귀 (WAITING 상태로 변경 및 큐에 재진입)
+        const opponent: MatchingUser = {
+          userId: opponentData.userId,
+          username: opponentData.username,
+          rating: parseFloat(opponentData.rating),
+          tier: JSON.parse(opponentData.tier) as MatchingUser['tier'],
+          socketId: opponentData.socketId,
+          status: 'WAITING',
+          waitingSince: new Date(opponentData.waitingSince),
+        };
+
+        // 큐에 넣기 위해 점수를 작게(오래된 것처럼) 설정
+        pipeline.zadd(
+          RedisKeys.matchingQueue(),
+          new Date(opponentData.waitingSince).getTime(),
+          opponent.userId,
+        );
+        pipeline.hset(RedisKeys.matchingUser(opponent.userId), {
+          ...opponent,
+          tier: JSON.stringify(opponent.tier),
+          status: 'WAITING',
+          roomId: '',
+          opponentId: '',
+        });
+      }
+
+      // 생성된 방 및 배틀 삭제
+      if (userdata.roomId) {
+        await this.roomService.deleteRoom(userdata.roomId);
+        await this.battleService.deleteBattle(userdata.roomId);
+      }
+    }
+
+    await pipeline
+      .zrem(RedisKeys.matchingQueue(), userId)
+      .del(RedisKeys.matchingUser(userId))
+      .exec();
+
+    this.logger.log(`User ${userId} canceled matching (Finalized)`);
   }
 
   // 매칭 로직 (한 Tick당 최대 MAX_MATCH_PER_TICK쌍 매칭)
@@ -54,12 +125,23 @@ export class MatchingService {
         // Room & Battle 생성
         const { room, battle } = await this.createMatch(user1, user2);
 
-        // 매칭 큐에서 제거 및 상태 변경
+        // 매칭 큐에서 제거 및 상태 변경 (상대방 정보 포함하여 연결 끊김 대비)
         await this.redis
           .pipeline()
           .zrem(RedisKeys.matchingQueue(), user1.userId, user2.userId)
-          .hset(RedisKeys.matchingUser(user1.userId), 'status', 'MATCHED')
-          .hset(RedisKeys.matchingUser(user2.userId), 'status', 'MATCHED')
+          .hset(RedisKeys.matchingUser(user1.userId), {
+            status: 'MATCHED',
+            roomId: room.roomId,
+            opponentId: user2.userId,
+          })
+          .hset(RedisKeys.matchingUser(user2.userId), {
+            status: 'MATCHED',
+            roomId: room.roomId,
+            opponentId: user1.userId,
+          })
+          // 1시간 후 자동 삭제 (공간 절약)
+          .expire(RedisKeys.matchingUser(user1.userId), 3600)
+          .expire(RedisKeys.matchingUser(user2.userId), 3600)
           .exec();
 
         // 소켓 이벤트: 매칭 성공 알림
