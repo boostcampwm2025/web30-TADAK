@@ -28,7 +28,11 @@ export const SOCKET_EVENT = {
   ROOM_USER_LEFT: 'room-left', // 유저 퇴장 알림
 
   // === Matching ===
+  START_MATCHING: 'start-matching', // 매칭 시작 요청
+  CANCEL_MATCHING: 'cancel-matching', // 매칭 취소 요청
   MATCH_SUCCESS: 'match-success', // 매칭 성공 알림
+  MATCHING_TIMEOUT: 'matching-timeout', // 매칭 타임아웃 알림
+  OPPONENT_DISCONNECTED: 'opponent-disconnected', // 상대방 연결 끊김 알림
 
   ERROR: 'error', // 에러 발생
 } as const;
