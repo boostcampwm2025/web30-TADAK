@@ -2,47 +2,50 @@
 
 @theme {
   /* --- Primitives (Blue Scale) --- */
-  --color-blue-01: #F1F7FB;
-  --color-blue-02: #E2E8F0;
-  --color-blue-03: #B8C2D3;
+  --color-blue-01: #f1f7fb;
+  --color-blue-02: #e2e8f0;
+  --color-blue-03: #b8c2d3;
   --color-blue-04: #555775;
-  --color-blue-05: #3D4759;
-  --color-blue-06: #161A32;
-  --color-blue-07: #0F172A;
+  --color-blue-05: #3d4759;
+  --color-blue-06: #161a32;
+  --color-blue-07: #0f172a;
 
   /* --- Primitives (Green Scale - Main) --- */
-  --color-green-01: #99F3C7;
-  --color-green-02: #99F3C7;
-  --color-green-03: #66ECAC;
-  --color-green-04: #33E690;
-  --color-green-05: #00E074;
-  --color-green-06: #16A34A;
+  --color-green-01: #99f3c7;
+  --color-green-02: #99f3c7;
+  --color-green-03: #66ecac;
+  --color-green-04: #33e690;
+  --color-green-05: #00e074;
+  --color-green-06: #16a34a;
 
   /* --- Primitives (Pink Scale - Main) --- */
-  --color-pink-01: #FFD1D9;
-  --color-pink-02: #FFD1D9;
-  --color-pink-03: #FFA3B2;
-  --color-pink-04: #FF748C;
-  --color-pink-05: #FF3B5C;
+  --color-pink-01: #ffd1d9;
+  --color-pink-02: #ffd1d9;
+  --color-pink-03: #ffa3b2;
+  --color-pink-04: #ff748c;
+  --color-pink-05: #ff3b5c;
 
   /* --- Primitives (Tier) --- */
-  --color-tier-bronze: #A16207;
-  --color-tier-silver: #6B7280;
-  --color-tier-gold: #EAB308;
-  --color-tier-platinum: #06B6D4;
-  --color-tier-diamond: #60A5FA;
-  --color-tier-ruby: #F43F5E;
-  --color-tier-master: #A855F7;
+  --color-tier-bronze: #a16207;
+  --color-tier-silver: #6b7280;
+  --color-tier-gold: #eab308;
+  --color-tier-platinum: #06b6d4;
+  --color-tier-diamond: #60a5fa;
+  --color-tier-ruby: #f43f5e;
+  --color-tier-master: #a855f7;
 
   /* --- Primitives (Etc) --- */
-  --color-red-01: #FF3B5C;
-  --color-error-01: #F74F3B;
-  --color-neon-01: #00FFCC;
+  --color-red-01: #ff3b5c;
+  --color-error-01: #f74f3b;
+  --color-neon-01: #00ffcc;
 
-  --color-white: #FFFFFF;
-  --color-black: #000000;
+  --color-white-static: #ffffff;
+  --color-black-static: #000000;
 
   /* --- Semantic Tokens (Themed) --- */
+  --color-white: var(--white);
+  --color-black: var(--black);
+
   --color-base-primary: var(--base-primary);
   --color-base-secondary: var(--base-secondary);
   --color-base-tertiary: var(--base-tertiary);
@@ -54,7 +57,7 @@
 
   /* --- App Specific Colors (Restored) --- */
   --color-brand: var(--color-green-05);
-  
+
   /* 전체 배경, 글씨, 테두리 색상 */
   --color-surface: var(--bg-layer-1);
   --color-ink: var(--black);
@@ -64,8 +67,13 @@
   --radius-24: 1.5rem; /* 24px */
 
   /* Typography System */
-  --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
-  --font-mono: 'Fira Code', 'D2Coding', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-sans:
+    'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto,
+    'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic',
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+  --font-mono:
+    'Fira Code', 'D2Coding', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, monospace;
 
   --text-xs: 0.75rem;
   --text-xs--line-height: 1rem;
@@ -92,13 +100,13 @@
   --base-secondary: var(--color-blue-04);
   --base-tertiary: var(--color-blue-03);
   --base-muted: var(--color-blue-02);
-  --base-faint: var(--color-white);
-  
+  --base-faint: var(--color-white-static);
+
   --bg-layer-1: var(--color-blue-02);
   --bg-layer-2: var(--color-white);
-  
-  --white: var(--color-white);
-  --black: var(--color-black);
+
+  --white: var(--color-white-static);
+  --black: var(--color-black-static);
 
   /* Global Defaults */
   font-family: var(--font-sans);
@@ -109,7 +117,7 @@
 
 /* Dark Mode */
 .dark {
-  --base-primary: var(--color-white);
+  --base-primary: var(--color-white-static);
   --base-secondary: var(--color-blue-02);
   --base-tertiary: var(--color-blue-03);
   --base-muted: var(--color-blue-04);
@@ -118,8 +126,8 @@
   --bg-layer-1: var(--color-blue-07);
   --bg-layer-2: var(--color-blue-06);
 
-  --black: var(--color-white);
-  --white: var(--color-black);
+  --white: var(--color-black-static);
+  --black: var(--color-white-static);
 }
 
 * {
