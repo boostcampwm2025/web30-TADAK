@@ -6,6 +6,7 @@ import Redis from 'ioredis';
 import { REDIS_CLIENT } from '../redis/redis.module';
 import { RedisKeys } from '../redis/redis-key.constant';
 import { RoomService } from '../room/room.service';
+import { MatchingGateway } from './matching.gateway';
 
 @Injectable()
 export class MatchingService {
@@ -14,6 +15,7 @@ export class MatchingService {
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     private readonly roomService: RoomService,
+    private readonly matchingGateway: MatchingGateway,
   ) {}
 
   // 매칭 시작
@@ -59,6 +61,9 @@ export class MatchingService {
           .hset(RedisKeys.matchingUser(user1.userId), 'status', 'MATCHED')
           .hset(RedisKeys.matchingUser(user2.userId), 'status', 'MATCHED')
           .exec();
+
+        // 소켓 이벤트: 매칭 성공 알림
+        this.matchingGateway.emitMatchSuccess(user1, user2, room, battle);
 
         matchedUsers.push(user1, user2);
 

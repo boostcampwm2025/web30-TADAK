@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 
 import { RoomModule } from '../room/room.module';
+import { MatchingGateway } from './matching.gateway';
 import { MatchingService } from './matching.service';
 import { MatchingSchedulerService } from './matching-scheduler.service';
 
@@ -12,7 +13,7 @@ import { MatchingSchedulerService } from './matching-scheduler.service';
   ],
   providers: [
     MatchingService, // 매칭 로직 담당
-    // MatchingGateway, // Socket 이벤트 처리
+    MatchingGateway, // Socket 이벤트 처리
     MatchingSchedulerService, // Cron 기반 매칭 Tick 실행
   ],
   exports: [
