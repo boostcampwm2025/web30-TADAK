@@ -260,6 +260,27 @@ export class MatchingService {
 
   // 매칭 타임아웃 유저 조회
   async findTimeoutUsers(): Promise<void> {
-    // TODO: 매칭 타임아웃 유저 조회
+    const now = Date.now();
+    const timeoutThreshold = MATCHING_CONFIG.MAX_WAIT_TIME_MS;
+
+    // 대기열의 모든 유저 ID 조회
+    const userIds = await this.redis.zrange(RedisKeys.matchingQueue(), 0, -1);
+    if (userIds.length === 0) return;
+
+    for (const userId of userIds) {
+      const userdata = await this.redis.hgetall(RedisKeys.matchingUser(userId));
+      if (!userdata || !userdata.waitingSince) continue;
+
+      const waitTime = now - new Date(userdata.waitingSince).getTime();
+      if (waitTime > timeoutThreshold) {
+        this.logger.log(`User ${userId} matching timeout (${waitTime}ms)`);
+
+        // 타임아웃 알림 및 제거
+        if (userdata.socketId) {
+          this.matchingGateway.emitMatchingTimeout(userdata.socketId);
+        }
+        await this.cancelMatching(userId);
+      }
+    }
   }
 }
