@@ -4,6 +4,7 @@ export type UserRole = 'player' | 'spectator';
 export interface User {
   userId: string;
   username: string;
+  avatarUrl?: string;
 }
 
 // 방에 들어간 사용자

@@ -1,7 +1,13 @@
 import type { UserRole } from '@shared/types/user';
 import { create } from 'zustand';
 
-export type Player = { roomId: string; role: UserRole; userId: string; username: string };
+export type Player = {
+  roomId: string;
+  role: UserRole;
+  userId: string;
+  username: string;
+  avatarUrl?: string;
+};
 type CodeMap = Record<string, string>;
 
 type State = {

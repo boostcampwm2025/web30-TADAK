@@ -45,6 +45,9 @@ export interface RoomAvailabilityResponseDTO {
 export interface JoinRoomRequest {
   roomId: string;
   requestedRole: UserRole;
+  userId?: string;
+  username?: string;
+  avatarUrl?: string;
 }
 
 export interface JoinRoomResponse {
@@ -58,6 +61,7 @@ export interface RoomStateSyncPayload {
   role: UserRole;
   userId: string;
   username: string;
+  avatarUrl?: string;
   battleId?: string;
 }
 

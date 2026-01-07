@@ -20,6 +20,7 @@ function ChatSpectator() {
     const fallback = socket?.id ? `User-${socket.id.slice(-4)}` : '관전자';
     return me?.username ?? fallback;
   }, [me, socket]);
+  const myAvatar = useMemo(() => me?.avatarUrl, [me]);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -66,6 +67,7 @@ function ChatSpectator() {
       roomId,
       message: trimmed,
       nickname: myNickname,
+      avatarUrl: myAvatar,
     });
     setInput('');
   };
@@ -118,9 +120,17 @@ function ChatSpectator() {
               >
                 {!isMine && (
                   <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${getAvatarTone(false)}`}
+                    className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold overflow-hidden ${getAvatarTone(false)}`}
                   >
-                    {getInitial(displayName)}
+                    {msg.avatarUrl ? (
+                      <img
+                        src={msg.avatarUrl}
+                        alt={displayName}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      getInitial(displayName)
+                    )}
                   </div>
                 )}
                 <div className={`max-w-[82%] space-y-1 ${isMine ? 'items-end text-right' : ''}`}>
@@ -142,9 +152,17 @@ function ChatSpectator() {
                 </div>
                 {isMine && (
                   <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${getAvatarTone(true)}`}
+                    className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold overflow-hidden ${getAvatarTone(true)}`}
                   >
-                    {getInitial(displayName)}
+                    {msg.avatarUrl ? (
+                      <img
+                        src={msg.avatarUrl}
+                        alt={displayName}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      getInitial(displayName)
+                    )}
                   </div>
                 )}
               </div>
