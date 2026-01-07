@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 
-import { BattleModule } from '../battle/battle.module';
 import { RoomModule } from '../room/room.module';
 import { MatchingService } from './matching.service';
 import { MatchingSchedulerService } from './matching-scheduler.service';
@@ -9,8 +8,7 @@ import { MatchingSchedulerService } from './matching-scheduler.service';
 @Module({
   imports: [
     ScheduleModule.forRoot(), // Cron 기반 매칭 Tick을 위해 필요
-    RoomModule, // Room 생성을 위해 필요
-    BattleModule, // Battle 생성을 위해 필요
+    RoomModule, // Room & Battle 생성을 위해 필요
   ],
   providers: [
     MatchingService, // 매칭 로직 담당

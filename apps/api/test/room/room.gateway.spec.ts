@@ -2,8 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 import { BattleService } from '@/battle/battle.service';
 
-import { RoomGateway } from '../src/room/room.gateway';
-import { RoomService } from '../src/room/room.service';
+import { RoomGateway } from '../../src/room/room.gateway';
+import { RoomService } from '../../src/room/room.service';
 
 describe('RoomGateway', () => {
   let gateway: RoomGateway;

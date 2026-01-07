@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { BATTLE_CONFIG } from '@packages/constants/battle';
+import { Battle } from '@packages/types/battle';
 import { MatchingUser } from '@packages/types/matching';
 import { RoomUser } from '@packages/types/user';
 import Redis from 'ioredis';
@@ -48,7 +49,10 @@ export class RoomService {
   }
 
   // 매칭된 유저들로 방 생성 및 배틀 시작
-  async createMatchedRoom(user1: MatchingUser, user2: MatchingUser): Promise<Room> {
+  async createMatchedRoom(
+    user1: MatchingUser,
+    user2: MatchingUser,
+  ): Promise<{ room: Room; battle: Battle }> {
     try {
       // 방 생성: 유저 정보와 즉시 시작 상태 주입
       const now = new Date();
@@ -79,7 +83,7 @@ export class RoomService {
       });
 
       // 배틀 생성
-      await this.BattleService.createBattle({
+      const battle = await this.BattleService.createBattle({
         roomId: room.roomId,
         config: {
           duration: BATTLE_CONFIG.DURATION,
@@ -90,7 +94,7 @@ export class RoomService {
       this.logger.log(
         `Created matched room ${room.roomId} for users ${user1.userId} and ${user2.userId}`,
       );
-      return room;
+      return { room, battle };
     } catch (error: unknown) {
       if (error instanceof Error)
         this.logger.error(`Failed to create matched room: ${error.message}`);

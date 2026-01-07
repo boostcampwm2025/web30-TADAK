@@ -3,7 +3,6 @@ import { MATCHING_CONFIG } from '@packages/constants/matching';
 import { MatchingUser } from '@packages/types/matching';
 import Redis from 'ioredis';
 
-import { BattleService } from '../battle/battle.service';
 import { REDIS_CLIENT } from '../redis/redis.module';
 import { RedisKeys } from '../redis/redis-key.constant';
 import { RoomService } from '../room/room.service';
@@ -15,7 +14,6 @@ export class MatchingService {
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     private readonly roomService: RoomService,
-    private readonly battleService: BattleService,
   ) {}
 
   // 매칭 시작
@@ -46,14 +44,13 @@ export class MatchingService {
     for (let i = 0; i < MATCHING_CONFIG.MAX_MATCH_PER_TICK; i++) {
       const pair = this.findMatchablePairFromList(candidates, usedIds);
 
-      // 더 이상 매칭 가능한 유저가 없으면 종료
       if (!pair) break;
 
       const [user1, user2] = pair;
 
       try {
         // Room & Battle 생성
-        const { roomId, battleId } = await this.createMatchedRoom(user1, user2);
+        const { room, battle } = await this.createMatch(user1, user2);
 
         // 매칭 큐에서 제거 및 상태 변경
         await this.redis
@@ -70,7 +67,7 @@ export class MatchingService {
         usedIds.add(user2.userId);
 
         this.logger.log(
-          `Matched users ${user1.userId} (${user1.rating}) and ${user2.userId} (${user2.rating}) -> Battle ${battleId} in Room ${roomId}`,
+          `Matched: ${user1.username}(${user1.rating}) vs ${user2.username}(${user2.rating}) -> Room: ${room.roomId}, Battle: ${battle.battleId}`,
         );
       } catch (error: unknown) {
         if (error instanceof Error) this.logger.error(`Failed to create match: ${error.message}`);
@@ -169,15 +166,9 @@ export class MatchingService {
     return INITIAL_RATING_RANGE + expansions * RATING_RANGE_INCREMENT;
   }
 
-  // 매칭 성공 시
-  private async createMatchedRoom(
-    _user1: MatchingUser,
-    _user2: MatchingUser,
-  ): Promise<{ roomId: string; battleId: string }> {
-    // TODO: 방 생성, 배틀 생성 로직 수정
-    await Promise.resolve();
-
-    return { roomId: 'room1', battleId: 'battle1' };
+  // 매칭 성공 시 Room & Battle 생성
+  private async createMatch(user1: MatchingUser, user2: MatchingUser) {
+    return await this.roomService.createMatchedRoom(user1, user2);
   }
 
   // 매칭 타임아웃 유저 조회
