@@ -120,4 +120,11 @@ export class BattleService {
 
     return battle;
   }
+
+  async deleteBattle(roomId: string): Promise<void> {
+    const battleId = await this.battleRedisService.getBattleIdByRoomId(roomId);
+    if (battleId) {
+      await this.battleRedisService.deleteBattle(battleId, roomId);
+    }
+  }
 }
