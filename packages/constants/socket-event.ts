@@ -29,6 +29,8 @@ export const SOCKET_EVENT = {
 
   // === Matching ===
   MATCH_SUCCESS: 'match-success', // 매칭 성공 알림
+  MATCHING_TIMEOUT: 'matching-timeout', // 매칭 타임아웃 알림
+  OPPONENT_DISCONNECTED: 'opponent-disconnected', // 상대방 연결 끊김 알림
 
   ERROR: 'error', // 에러 발생
 } as const;

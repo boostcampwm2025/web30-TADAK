@@ -19,6 +19,9 @@ export class MatchingSchedulerService {
       if (matchedUsers.length > 0) {
         this.logger.log(`매칭 성공: ${matchedUsers.length / 2}쌍 (${matchedUsers.length}명)`);
       }
+
+      // 타임아웃 유저 처리
+      await this.matchingService.findTimeoutUsers();
     } catch (error: unknown) {
       if (error instanceof Error) this.logger.error(`매칭 Tick 에러: ${error.message}`);
     }
