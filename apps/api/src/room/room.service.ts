@@ -117,13 +117,14 @@ export class RoomService {
     const room = await this.getRoom(roomId);
 
     if (!room) {
-      return { roomId, playerCount: 0, isAvailable: false };
+      return { roomId, playerCount: 0, spectatorCount: 0, isAvailable: false };
     }
 
     const playerCount = room.currentPlayers.length;
+    const spectatorCount = room.currentSpectators.length;
     const isAvailable = playerCount < ROOM_CONFIG.MAX_PLAYERS;
 
-    return { roomId, playerCount, isAvailable };
+    return { roomId, playerCount, spectatorCount, isAvailable };
   }
 
   async saveRoom(room: Room): Promise<void> {

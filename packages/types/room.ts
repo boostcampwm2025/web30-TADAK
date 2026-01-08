@@ -38,12 +38,16 @@ export interface RoomAvailabilityResponseDTO {
   roomId: string;
   playerCount: number;
   isAvailable: boolean;
+  spectatorCount?: number;
 }
 
 // 방 입장 요청/응답
 export interface JoinRoomRequest {
   roomId: string;
   requestedRole: UserRole;
+  userId?: string;
+  username?: string;
+  avatarUrl?: string;
 }
 
 export interface JoinRoomResponse {
@@ -57,6 +61,7 @@ export interface RoomStateSyncPayload {
   role: UserRole;
   userId: string;
   username: string;
+  avatarUrl?: string;
   battleId?: string;
 }
 

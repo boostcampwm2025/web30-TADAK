@@ -19,6 +19,7 @@ export const SOCKET_EVENT = {
   CHECK_ROOM_AVAILABILITY: 'check-room-availability', // 방 인원 확인
   JOIN_ROOM: 'join-room', // 방 입장 (Player/Spectator)
   LEAVE_ROOM: 'leave-room', // 방 나가기
+  SEND_CHAT: 'send-chat', // 관전자 채팅 전송
 
   // --- Server -> Client (응답/알림) ---
   ROOM_AVAILABILITY: 'room-availability', // 방 인원 확인 결과
@@ -26,13 +27,13 @@ export const SOCKET_EVENT = {
   ROOM_PLAYERS: 'room-players', // 현재 방 참가자 전체 목록
   ROOM_USER_JOINED: 'room-joined', // 새 유저 입장 알림
   ROOM_USER_LEFT: 'room-left', // 유저 퇴장 알림
+  RECEIVE_CHAT: 'receive-chat', // 관전자 채팅 수신(일반/시스템)
 
   // === Matching ===
   MATCH_SUCCESS: 'match-success', // 매칭 성공 알림
   MATCHING_TIMEOUT: 'matching-timeout', // 매칭 타임아웃 알림
   STATS_UPDATE: 'stats-update', // 매칭 통계 업데이트
   OPPONENT_DISCONNECTED: 'opponent-disconnected', // 상대방 연결 끊김 알림
-
   ERROR: 'error', // 에러 발생
 } as const;
 
