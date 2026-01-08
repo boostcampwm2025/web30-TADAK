@@ -1,15 +1,23 @@
+import { useNavigate } from 'react-router-dom';
+
+import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useMatchingStore } from '@/stores/matchingStore';
 import { useUserStore } from '@/stores/userStore';
 
 export function MatchingCancelButton() {
-  const cancelMatching = useMatchingStore((state) => state.cancelMatching);
+  const navigate = useNavigate();
+  const { cancelMatching, unregisterMatchingListeners, cleanup } = useMatchingStore();
   const user = useUserStore((state) => state.user);
+  const socket = useBattleSocketStore((state) => state.socket);
 
   const handleCancel = async () => {
-    if (!user) return;
+    if (!user?.id || !socket) return;
 
     try {
+      unregisterMatchingListeners(socket);
       await cancelMatching(user.id);
+      cleanup();
+      navigate('/');
     } catch (error) {
       console.error('매칭 취소 실패:', error);
     }
