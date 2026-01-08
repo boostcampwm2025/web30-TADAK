@@ -17,6 +17,7 @@ interface MatchingStore {
   timeoutMessage: string | null;
 
   registerMatchingListeners: (socket: Socket) => void;
+  unregisterMatchingListeners: (socket: Socket) => void;
   startMatching: (userId: string, socketId: string) => Promise<void>;
   cancelMatching: (userId: string) => Promise<void>;
   cleanup: () => void;
@@ -48,6 +49,13 @@ export const useMatchingStore = create<MatchingStore>((set, get) => ({
     socket.on(SOCKET_EVENT.MATCH_SUCCESS, handleMatchSuccess);
     socket.on(SOCKET_EVENT.STATS_UPDATE, handleStatsUpdate);
     socket.on(SOCKET_EVENT.MATCHING_TIMEOUT, handleMatchingTimeout);
+  },
+
+  // 매칭 관련 소켓 리스너 제거
+  unregisterMatchingListeners: (socket: Socket) => {
+    socket.off(SOCKET_EVENT.MATCH_SUCCESS);
+    socket.off(SOCKET_EVENT.STATS_UPDATE);
+    socket.off(SOCKET_EVENT.MATCHING_TIMEOUT);
   },
 
   // 매칭 시작
