@@ -15,7 +15,7 @@ export class RedisKeys {
 
   // Matching 관련
 
-  // ZSET: 매칭 대기 큐 (score = rating)
+  // ZSET: 매칭 대기 큐 (score = timestamp)
   static matchingQueue(): string {
     return `matching:queue`;
   }
