@@ -61,3 +61,16 @@ export interface UpdateUserCodeDTO {
   code: string;
   language: string;
 }
+
+export interface UserTestResultPayload {
+  roomId: string;
+  userId: string;
+  username?: string;
+  passed: boolean;
+}
+
+export interface UserFinishedPayload {
+  roomId: string;
+  userId: string;
+  username?: string;
+}

@@ -8,24 +8,15 @@ import {
 import { BATTLE_EVENTS } from '@packages/constants/battle';
 import { CHAT_TYPE } from '@packages/constants/chat';
 import { SOCKET_EVENT, SOCKET_NAMESPACE } from '@packages/constants/socket-event';
-import { type UpdateUserCodeDTO } from '@packages/types/battle';
+import {
+  type UpdateUserCodeDTO,
+  type UserFinishedPayload,
+  type UserTestResultPayload,
+} from '@packages/types/battle';
 import { type ChatMessage } from '@packages/types/chat';
 import { Server, Socket } from 'socket.io';
 
 import { BattleService } from '@/battle/battle.service';
-
-interface UserTestResultPayload {
-  roomId: string;
-  userId: string;
-  username?: string;
-  passed: boolean;
-}
-
-interface UserFinishedPayload {
-  roomId: string;
-  userId: string;
-  username?: string;
-}
 
 @WebSocketGateway({
   namespace: SOCKET_NAMESPACE.GAME,
