@@ -25,5 +25,13 @@ export class RedisKeys {
     return `matching:user:${userId}`;
   }
 
-  //
+  // LIST: 최근 매칭 대기 시간 (최근 100개)
+  static recentMatchTimes(): string {
+    return `matching:recent_wait_times`;
+  }
+
+  // SET: 진행 중인 배틀 ID 목록
+  static activeBattles(): string {
+    return `matching:active_battles`;
+  }
 }

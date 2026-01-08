@@ -73,6 +73,21 @@ export class MatchingGateway implements OnGatewayDisconnect {
     });
   }
 
+  // 매칭 통계를 매칭 큐에 있는 클라이언트들에게 브로드캐스트
+  broadcastMatchingStats(
+    stats: {
+      waitingPlayers: number;
+      ongoingBattles: number;
+      avgMatchTime: number;
+    },
+    socketIds: string[],
+  ): void {
+    // 각 socketId에게 통계 전송
+    for (const socketId of socketIds) {
+      this.server.to(socketId).emit(SOCKET_EVENT.STATS_UPDATE, stats);
+    }
+  }
+  
   // 매칭 타임아웃 알림
   emitMatchingTimeout(socketId: string): void {
     this.server.to(socketId).emit(SOCKET_EVENT.MATCHING_TIMEOUT, {

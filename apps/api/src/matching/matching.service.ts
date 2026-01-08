@@ -128,6 +128,12 @@ export class MatchingService {
         // Room & Battle 생성
         const { room, battle } = await this.createMatch(user1, user2);
 
+        // 대기 시간 계산 및 저장
+        const now = Date.now();
+        const waitTime1 = now - user1.waitingSince.getTime();
+        const waitTime2 = now - user2.waitingSince.getTime();
+        const avgWaitTime = Math.round((waitTime1 + waitTime2) / 2);
+          
         // 매칭 큐에서 제거 및 상태 변경 (상대방 정보 포함하여 연결 끊김 대비)
         await this.redis
           .pipeline()
@@ -145,6 +151,8 @@ export class MatchingService {
           // 1시간 후 자동 삭제 (공간 절약)
           .expire(RedisKeys.matchingUser(user1.userId), 3600)
           .expire(RedisKeys.matchingUser(user2.userId), 3600)
+          .lpush(RedisKeys.recentMatchTimes(), avgWaitTime) // 리스트의 맨 앞에 추가
+          .ltrim(RedisKeys.recentMatchTimes(), 0, 99) // 최근 100개만 유지
           .exec();
 
         // 소켓 이벤트: 매칭 성공 알림
@@ -287,5 +295,61 @@ export class MatchingService {
         await this.redis.hset(RedisKeys.matchingUser(userId), 'isDelayedNotified', 'true');
       }
     }
+  }
+
+  // 매칭 큐에 있는 사용자들의 socketId 목록 조회
+  async getMatchingQueueSocketIds(): Promise<string[]> {
+    // 매칭 큐에 있는 모든 userId 가져오기
+    const userIds = await this.redis.zrange(RedisKeys.matchingQueue(), 0, -1);
+
+    if (userIds.length === 0) {
+      return [];
+    }
+
+    // Pipeline으로 각 userId의 socketId 가져오기
+    const pipeline = this.redis.pipeline();
+    userIds.forEach((userId) => {
+      pipeline.hget(RedisKeys.matchingUser(userId), 'socketId');
+    });
+    const results = (await pipeline.exec()) as [Error | null, string | null][];
+
+    if (!results) return [];
+
+    const socketIds: string[] = [];
+    results.forEach(([err, socketId]) => {
+      if (!err && socketId) {
+        socketIds.push(socketId);
+      }
+    });
+
+    return socketIds;
+  }
+
+  // 매칭 통계 조회
+  async getMatchingStats(): Promise<{
+    waitingPlayers: number;
+    ongoingBattles: number;
+    avgMatchTime: number;
+  }> {
+    // 1. 대기 중인 플레이어 수
+    const waitingPlayers = await this.redis.zcard(RedisKeys.matchingQueue());
+
+    // 2. 진행 중인 배틀 수
+    const ongoingBattles = await this.redis.scard(RedisKeys.activeBattles());
+
+    // 3. 평균 매칭 시간 (최근 100개 매칭의 평균 대기 시간)
+    let avgMatchTime = 0;
+    const recentWaitTimes = await this.redis.lrange(RedisKeys.recentMatchTimes(), 0, -1);
+
+    if (recentWaitTimes.length > 0) {
+      const totalWaitTime = recentWaitTimes.reduce((sum, time) => sum + Number(time), 0);
+      avgMatchTime = Math.round(totalWaitTime / recentWaitTimes.length / 1000); // 초 단위
+    }
+
+    return {
+      waitingPlayers,
+      ongoingBattles,
+      avgMatchTime,
+    };
   }
 }
