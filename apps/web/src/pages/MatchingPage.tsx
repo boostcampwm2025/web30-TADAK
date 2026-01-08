@@ -1,33 +1,19 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import Header from '@/components/Header/Header';
 import { MatchingCancelButton } from '@/components/Matching/MatchingCancelButton';
 import MatchingSuccess from '@/components/Matching/MatchingSuccess';
 import MatchingWait from '@/components/Matching/MatchingWait';
-import WaitConfirmModal from '@/components/Matching/MatchingWaitModal';
-import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useMatchingStore } from '@/stores/matchingStore';
-import { useUserStore } from '@/stores/userStore';
 
 function MatchingPage() {
-  const navigate = useNavigate();
   const [waitTime, setWaitTime] = useState(0);
-  const [showModal, setShowModal] = useState(false);
-
-  const user = useUserStore((state) => state.user);
-  const socket = useBattleSocketStore((state) => state.socket);
   const matchResult = useMatchingStore((state) => state.matchResult);
-  const cancelMatching = useMatchingStore((state) => state.cancelMatching);
-  const cleanup = useMatchingStore((state) => state.cleanup);
 
   // 타이머
   useEffect(() => {
     const timer = setInterval(() => {
-      setWaitTime((prev) => {
-        if ((prev + 1) % 60 === 0) setShowModal(true);
-        return prev + 1;
-      });
+      setWaitTime((prev) => prev + 1);
     }, 1000);
 
     return () => clearInterval(timer);
@@ -43,25 +29,6 @@ function MatchingPage() {
     };
   }, []);
 
-  const handleContinue = () => {
-    setShowModal(false);
-  };
-
-  const handleCancel = async () => {
-    if (user?.id && socket) {
-      try {
-        socket.off('match-success');
-
-        await cancelMatching(user.id);
-      } catch (error) {
-        console.error('매칭 취소 중 오류:', error);
-      }
-    }
-
-    cleanup();
-    navigate('/');
-  };
-
   if (matchResult) {
     return (
       <>
@@ -76,7 +43,6 @@ function MatchingPage() {
       <Header rightContent={<MatchingCancelButton />} />
       <div className="flex min-h-screen items-center justify-center">
         <MatchingWait waitTime={waitTime} />
-        {showModal && <WaitConfirmModal onContinue={handleContinue} onCancel={handleCancel} />}
       </div>
     </>
   );
