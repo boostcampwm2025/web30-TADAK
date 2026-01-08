@@ -6,7 +6,10 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import App from '@/App.tsx';
 import BattlePage from '@/pages/BattlePage.tsx';
+import LoginErrorPage from '@/pages/Error/LoginErrorPage';
+import LoginPage from '@/pages/LoginPage.tsx';
 import MainPage from '@/pages/MainPage.tsx';
+import MatchingPage from '@/pages/MatchingPage.tsx';
 
 const router = createBrowserRouter([
   {
@@ -18,8 +21,24 @@ const router = createBrowserRouter([
         element: <MainPage />,
       },
       {
+        path: '/matching',
+        element: <MatchingPage />,
+      },
+      {
+        path: '/login',
+        element: <LoginPage />,
+      },
+      {
+        path: '/matching',
+        element: <MatchingPage />,
+      },
+      {
         path: '/room/:roomId',
         element: <BattlePage />,
+      },
+      {
+        path: '/error',
+        element: <LoginErrorPage />,
       },
     ],
   },

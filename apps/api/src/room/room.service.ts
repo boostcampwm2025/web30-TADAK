@@ -145,4 +145,10 @@ export class RoomService {
 
     return room;
   }
+
+  async deleteRoom(roomId: string): Promise<void> {
+    const key = RedisKeys.room(roomId);
+    await this.redis.del(key);
+    this.logger.log(`Deleted room ${roomId}`);
+  }
 }

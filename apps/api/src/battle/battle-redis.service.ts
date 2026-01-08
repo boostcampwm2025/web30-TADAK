@@ -51,4 +51,10 @@ export class BattleRedisService {
     const key = RedisKeys.battle(battle.battleId);
     await this.redis.set(key, JSON.stringify(battle));
   }
+
+  async deleteBattle(battleId: string, roomId: string): Promise<void> {
+    const key = RedisKeys.battle(battleId);
+    const roomKey = RedisKeys.battleByRoom(roomId);
+    await this.redis.del(key, roomKey);
+  }
 }

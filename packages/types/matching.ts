@@ -41,8 +41,9 @@ export interface MatchingSuccessResponse {
   opponent: {
     userId: string;
     username: string;
+    avatarUrl: string;
     rating: number;
     tier: UserTier;
-    rate?: UserRate;
+    rate: UserRate;
   };
 }
