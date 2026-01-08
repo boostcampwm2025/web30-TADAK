@@ -5,7 +5,7 @@ import { axiosInstance } from './axios';
 // 매칭 시작 API
 // @param payload - userId와 socketId
 export const startMatching = async (payload: MatchingStartRequest) => {
-  const response = await axiosInstance.post('/api/matching/join', payload);
+  const response = await axiosInstance.post('/api/matching/start', payload);
   return response.data;
 };
 
