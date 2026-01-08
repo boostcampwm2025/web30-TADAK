@@ -2,15 +2,22 @@ import { Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { useMatchingStore } from '@/stores/matchingStore';
+import { useUserStore } from '@/stores/userStore';
+
 export default function MatchingSuccess() {
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(5);
 
+  const matchResult = useMatchingStore((state) => state.matchResult);
+  const user = useUserStore((state) => state.user);
+
   // 카운트다운 로직
   useEffect(() => {
     if (countdown === 0) {
-      // TODO: 실제 roomId로 변경 필요
-      navigate('/room/test-room');
+      if (matchResult?.roomId) {
+        navigate(`/room/${matchResult.roomId}`);
+      }
       return;
     }
 
@@ -19,7 +26,13 @@ export default function MatchingSuccess() {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [countdown, navigate]);
+  }, [countdown, matchResult, navigate]);
+
+  if (!matchResult || !user) {
+    return null;
+  }
+
+  const { opponent, myRate } = matchResult;
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center gap-10 select-none">
@@ -34,35 +47,43 @@ export default function MatchingSuccess() {
         <p className="mt-2 text-lg text-base-primary">2명의 플레이어가 모였습니다</p>
       </div>
 
-      {/* VS 카드 */}
       <div className="flex items-center justify-center gap-24 w-2/3 max-w-6xl mx-auto bg-base-faint rounded-3xl py-12">
+        {/* 내 정보 */}
         <div className="flex flex-col items-center gap-4">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-blue-500 text-4xl font-bold text-white">
-            Y
+          <div className="flex h-24 w-24 items-center justify-center rounded-full">
+            <img src={user.avatarUrl} alt={user.username} className="h-full w-full object-cover" />
           </div>
           <div className="flex flex-col items-center">
-            <p className="text-2xl font-bold">You</p>
+            <p className="text-2xl font-bold">{user.username}</p>
             <div className="mt-2 flex items-center justify-center gap-1 text-sm">
               <span>🏆</span>
-              <span className="font-semibold text-base-secondary">Gold</span>
+              <span className="font-semibold text-base-secondary capitalize">GOLD</span>
             </div>
-            <p className="mt-1 text-base text-base-secondary">승률: 72%</p>
+            <p className="mt-1 text-base text-base-secondary">승률: {myRate.winRate.toFixed(0)}%</p>
           </div>
         </div>
 
         <div className="text-4xl font-black text-green-05 drop-shadow-lg">VS</div>
 
+        {/* 상대방 정보 */}
         <div className="flex flex-col items-center gap-4">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-blue-500 text-4xl font-bold text-white">
-            C
+          <div className="flex h-24 w-24 items-center justify-center rounded-full">
+            <img
+              src={opponent.avatarUrl}
+              alt={opponent.username}
+              className="h-full w-full object-cover"
+            />
           </div>
           <div className="flex flex-col items-center">
-            <p className="text-2xl font-bold">You</p>
+            <p className="text-2xl font-bold">{opponent.username}</p>
             <div className="mt-2 flex items-center justify-center gap-1 text-sm">
               <span>🏆</span>
-              <span className="font-semibold text-base-secondary">Gold</span>
+              <span className="font-semibold text-base-secondary capitalize">
+                {opponent.tier.tier}
+                {opponent.tier.division ? ` ${opponent.tier.division}` : ''}
+              </span>
             </div>
-            <p className="mt-1 text-base text-base-secondary">승률: 72%</p>
+            <p className="mt-1 text-base text-base-secondary">승률: {opponent.rate.winRate}%</p>
           </div>
         </div>
       </div>
