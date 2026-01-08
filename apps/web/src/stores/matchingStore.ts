@@ -14,6 +14,7 @@ interface MatchingStats {
 interface MatchingStore {
   matchResult: MatchingSuccessResponse | null;
   stats: MatchingStats | null;
+  timeoutMessage: string | null;
 
   registerMatchingListeners: (socket: Socket) => void;
   startMatching: (userId: string, socketId: string) => Promise<void>;
@@ -24,8 +25,9 @@ interface MatchingStore {
 export const useMatchingStore = create<MatchingStore>((set, get) => ({
   matchResult: null,
   stats: null,
+  timeoutMessage: null,
 
-  // MATCH_SUCCESS, STATS_UPDATE 이벤트 리스너 등록
+  // MATCH_SUCCESS, STATS_UPDATE, MATCHING_TIMEOUT 이벤트 리스너 등록
   registerMatchingListeners: (socket: Socket) => {
     const handleMatchSuccess = (data: MatchingSuccessResponse) => {
       set({ matchResult: data });
@@ -35,11 +37,17 @@ export const useMatchingStore = create<MatchingStore>((set, get) => ({
       set({ stats: data });
     };
 
+    const handleMatchingTimeout = (data: { message: string }) => {
+      set({ timeoutMessage: data.message });
+    };
+
     // 기존 리스너 제거 후 새로 등록
     socket.off(SOCKET_EVENT.MATCH_SUCCESS);
     socket.off(SOCKET_EVENT.STATS_UPDATE);
+    socket.off(SOCKET_EVENT.MATCHING_TIMEOUT);
     socket.on(SOCKET_EVENT.MATCH_SUCCESS, handleMatchSuccess);
     socket.on(SOCKET_EVENT.STATS_UPDATE, handleStatsUpdate);
+    socket.on(SOCKET_EVENT.MATCHING_TIMEOUT, handleMatchingTimeout);
   },
 
   // 매칭 시작
@@ -72,6 +80,6 @@ export const useMatchingStore = create<MatchingStore>((set, get) => ({
 
   // 정리
   cleanup: () => {
-    set({ matchResult: null, stats: null });
+    set({ matchResult: null, stats: null, timeoutMessage: null });
   },
 }));
