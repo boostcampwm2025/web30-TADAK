@@ -14,7 +14,7 @@ export class MatchingController {
   ) {}
 
   @Post('start')
-  @UseGuards(AuthGuard('jwt') as any)
+  @UseGuards(AuthGuard('jwt'))
   async startMatching(@Req() req: { user: User }, @Body() data: MatchingStartRequest) {
     const { userId, socketId } = data;
 
@@ -44,7 +44,7 @@ export class MatchingController {
   }
 
   @Post('cancel')
-  @UseGuards(AuthGuard('jwt') as any)
+  @UseGuards(AuthGuard('jwt'))
   async cancelMatching(@Req() req: { user: User }, @Body() data: { userId: string }) {
     const { userId } = data;
 

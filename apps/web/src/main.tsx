@@ -29,10 +29,6 @@ const router = createBrowserRouter([
         element: <LoginPage />,
       },
       {
-        path: '/matching',
-        element: <MatchingPage />,
-      },
-      {
         path: '/room/:roomId',
         element: <BattlePage />,
       },

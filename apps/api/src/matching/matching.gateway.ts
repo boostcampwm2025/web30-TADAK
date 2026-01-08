@@ -39,7 +39,9 @@ export class MatchingGateway implements OnGatewayDisconnect {
 
   // 특정 소켓 ID로 소켓 객체 찾기
   private findSocketById(socketId: string): Socket | undefined {
-    return this.server.of(SOCKET_NAMESPACE.GAME).sockets.get(socketId);
+    // Namespace.sockets는 Map<string, Socket> 이지만, 타입 호환성을 위해 unknown을 거쳐 캐스팅합니다.
+    const sockets = this.server.sockets as unknown as Map<string, Socket>;
+    return sockets.get(socketId);
   }
 
   // 매칭 성공 이벤트를 두 유저에게 전송
@@ -87,7 +89,7 @@ export class MatchingGateway implements OnGatewayDisconnect {
       this.server.to(socketId).emit(SOCKET_EVENT.STATS_UPDATE, stats);
     }
   }
-  
+
   // 매칭 타임아웃 알림
   emitMatchingTimeout(socketId: string): void {
     this.server.to(socketId).emit(SOCKET_EVENT.MATCHING_TIMEOUT, {
