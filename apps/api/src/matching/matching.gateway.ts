@@ -1,12 +1,5 @@
 import { forwardRef, Inject, Logger } from '@nestjs/common';
-import {
-  ConnectedSocket,
-  MessageBody,
-  OnGatewayDisconnect,
-  SubscribeMessage,
-  WebSocketGateway,
-  WebSocketServer,
-} from '@nestjs/websockets';
+import { OnGatewayDisconnect, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { SOCKET_EVENT, SOCKET_NAMESPACE } from '@packages/constants/socket-event';
 import { Battle } from '@packages/types/battle';
 import { MatchingUser } from '@packages/types/matching';
@@ -33,38 +26,20 @@ export class MatchingGateway implements OnGatewayDisconnect {
     }
   }
 
-  // 매칭 시작 요청 - 사용자가 "매칭 시작" 버튼을 눌렀을 때 실행
-  @SubscribeMessage(SOCKET_EVENT.START_MATCHING)
-  async handleStartMatching(
-    @ConnectedSocket() client: Socket,
-    @MessageBody()
-    data: { userId: string; rating: number; username: string; tier: MatchingUser['tier'] },
-  ) {
-    const { userId, rating, username, tier } = data;
-    // 소켓 객체에 유저 ID 저장 (disconnect 시 사용)
-    (client.data as { userId: string }).userId = userId;
-
-    const matchingUser: MatchingUser = {
-      userId,
-      username,
-      rating,
-      tier,
-      socketId: client.id, // 매칭 성공 시 알림을 보낼 주소(소켓ID)
-      status: 'WAITING',
-      waitingSince: new Date(),
-    };
-
-    await this.matchingService.startMatching(matchingUser);
+  // 매칭 시작 시 호출: 특정 소켓에 유저 ID를 심어 disconnect 시 처리 가능하게 함
+  registerUserSocket(socketId: string, userId: string): void {
+    const socket = this.findSocketById(socketId);
+    if (socket) {
+      (socket.data as { userId: string }).userId = userId;
+      this.logger.log(`Socket ${socketId} registered for user ${userId}`);
+    } else {
+      this.logger.warn(`Failed to register: Socket ${socketId} not found`);
+    }
   }
 
-  // 매칭 취소 요청 - 사용자가 대기 중 "취소" 버튼을 눌렀을 때 실행
-  @SubscribeMessage(SOCKET_EVENT.CANCEL_MATCHING)
-  async handleCancelMatching(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: { userId: string },
-  ) {
-    const { userId } = data;
-    await this.matchingService.cancelMatching(userId);
+  // 특정 소켓 ID로 소켓 객체 찾기
+  private findSocketById(socketId: string): Socket | undefined {
+    return this.server.of(SOCKET_NAMESPACE.GAME).sockets.get(socketId);
   }
 
   // 매칭 성공 이벤트를 두 유저에게 전송
@@ -101,7 +76,7 @@ export class MatchingGateway implements OnGatewayDisconnect {
   // 매칭 타임아웃 알림
   emitMatchingTimeout(socketId: string): void {
     this.server.to(socketId).emit(SOCKET_EVENT.MATCHING_TIMEOUT, {
-      message: '매칭 시간이 초과되었습니다. 다시 시도해주세요.',
+      message: '매칭이 지연되고 있습니다.',
     });
   }
 

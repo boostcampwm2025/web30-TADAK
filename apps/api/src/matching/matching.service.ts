@@ -28,6 +28,9 @@ export class MatchingService {
       return;
     }
 
+    // 소켓-유저 매핑 등록 (disconnect 시 자동 취소를 위함)
+    this.matchingGateway.registerUserSocket(user.socketId, user.userId);
+
     const pipeline = this.redis.pipeline();
     // ZSET: score = timestamp (대기 시간 기준 정렬용)
     pipeline.zadd(RedisKeys.matchingQueue(), Date.now(), user.userId);
@@ -258,7 +261,7 @@ export class MatchingService {
     return await this.roomService.createMatchedRoom(user1, user2);
   }
 
-  // 매칭 타임아웃 유저 조회
+  // 매칭 지연 유저 알림
   async findTimeoutUsers(): Promise<void> {
     const now = Date.now();
     const timeoutThreshold = MATCHING_CONFIG.MAX_WAIT_TIME_MS;
@@ -272,14 +275,16 @@ export class MatchingService {
       if (!userdata || !userdata.waitingSince) continue;
 
       const waitTime = now - new Date(userdata.waitingSince).getTime();
-      if (waitTime > timeoutThreshold) {
-        this.logger.log(`User ${userId} matching timeout (${waitTime}ms)`);
+      // 60초가 지났고 아직 지연 알림을 보내지 않은 경우
+      if (waitTime > timeoutThreshold && userdata.isDelayedNotified !== 'true') {
+        this.logger.log(`User ${userId} matching delay detected (${waitTime}ms)`);
 
-        // 타임아웃 알림 및 제거
         if (userdata.socketId) {
           this.matchingGateway.emitMatchingTimeout(userdata.socketId);
         }
-        await this.cancelMatching(userId);
+
+        // 중복 알림 방지를 위해 플래그 설정
+        await this.redis.hset(RedisKeys.matchingUser(userId), 'isDelayedNotified', 'true');
       }
     }
   }
