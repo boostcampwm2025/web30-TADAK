@@ -5,12 +5,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MatchingUser } from '@packages/types/matching';
 
+import { MatchingGateway } from '../../src/matching/matching.gateway';
 import { MatchingService } from '../../src/matching/matching.service';
 import { MatchingSchedulerService } from '../../src/matching/matching-scheduler.service';
 
 describe('MatchingSchedulerService', () => {
   let service: MatchingSchedulerService;
   let mockMatchingService: any;
+  let mockMatchingGateway: any;
 
   const createMockUser = (userId: string): MatchingUser => ({
     userId,
@@ -25,6 +27,12 @@ describe('MatchingSchedulerService', () => {
   beforeEach(async () => {
     mockMatchingService = {
       matchUsers: jest.fn(),
+      getMatchingStats: jest.fn(),
+      getMatchingQueueSocketIds: jest.fn(),
+    };
+
+    mockMatchingGateway = {
+      broadcastMatchingStats: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -33,6 +41,10 @@ describe('MatchingSchedulerService', () => {
         {
           provide: MatchingService,
           useValue: mockMatchingService,
+        },
+        {
+          provide: MatchingGateway,
+          useValue: mockMatchingGateway,
         },
       ],
     }).compile();
@@ -53,7 +65,7 @@ describe('MatchingSchedulerService', () => {
       const matchedUsers = [createMockUser('user1'), createMockUser('user2')];
       mockMatchingService.matchUsers.mockResolvedValue(matchedUsers);
 
-      const loggerSpy = jest.spyOn(service['logger'], 'log');
+      const loggerSpy = jest.spyOn(service['logger'], 'log').mockImplementation();
 
       await service.handleMatchingTick();
 
@@ -63,7 +75,7 @@ describe('MatchingSchedulerService', () => {
     it('매칭된 유저가 없으면 로그를 출력하지 않아야 한다', async () => {
       mockMatchingService.matchUsers.mockResolvedValue([]);
 
-      const loggerSpy = jest.spyOn(service['logger'], 'log');
+      const loggerSpy = jest.spyOn(service['logger'], 'log').mockImplementation();
 
       await service.handleMatchingTick();
 
@@ -74,7 +86,7 @@ describe('MatchingSchedulerService', () => {
       const error = new Error('Redis connection failed');
       mockMatchingService.matchUsers.mockRejectedValue(error);
 
-      const loggerSpy = jest.spyOn(service['logger'], 'error');
+      const loggerSpy = jest.spyOn(service['logger'], 'error').mockImplementation();
 
       await service.handleMatchingTick();
 
@@ -94,7 +106,7 @@ describe('MatchingSchedulerService', () => {
       ];
       mockMatchingService.matchUsers.mockResolvedValue(matchedUsers);
 
-      const loggerSpy = jest.spyOn(service['logger'], 'log');
+      const loggerSpy = jest.spyOn(service['logger'], 'log').mockImplementation();
 
       await service.handleMatchingTick();
 
