@@ -23,6 +23,8 @@ import { RoomService } from './room.service';
 @WebSocketGateway({ namespace: SOCKET_NAMESPACE.GAME })
 export class RoomGateway implements OnModuleInit {
   @WebSocketServer() server: Server;
+  private rateLimitMap: Map<string, { count: number; windowStart: number; blockedUntil: number }> =
+    new Map();
 
   constructor(
     private readonly roomService: RoomService,
@@ -212,10 +214,46 @@ export class RoomGateway implements OnModuleInit {
       return;
     }
 
+    // Rate limit: 2초 내 5회 초과 시 2초간 차단
+    const now = Date.now();
+    const limiter = this.rateLimitMap.get(client.id) ?? {
+      count: 0,
+      windowStart: now,
+      blockedUntil: 0,
+    };
+
+    if (now < limiter.blockedUntil) {
+      client.emit(SOCKET_EVENT.ERROR, {
+        code: SOCKET_ERROR.UNKNOWN,
+        message: '채팅 전송이 잠시 제한되었습니다. 잠시 후 다시 시도해주세요.',
+      });
+      return;
+    }
+
+    if (now - limiter.windowStart > 2000) {
+      limiter.windowStart = now;
+      limiter.count = 0;
+    }
+
+    limiter.count += 1;
+    if (limiter.count > 5) {
+      limiter.blockedUntil = now + 2000;
+      this.rateLimitMap.set(client.id, limiter);
+      client.emit(SOCKET_EVENT.ERROR, {
+        code: SOCKET_ERROR.UNKNOWN,
+        message: '너무 빠르게 입력하고 있습니다. 2초 후 다시 시도해주세요.',
+      });
+      return;
+    }
+
+    this.rateLimitMap.set(client.id, limiter);
+
+    const safeMessage = this.sanitizeMessage(trimmedMessage);
+
     const chatMessage: ChatMessage = {
       type: CHAT_TYPE.USER,
       nickname: nickname ?? '익명',
-      message: trimmedMessage,
+      message: safeMessage,
       timestamp: new Date().toISOString(),
       avatarUrl,
     };
@@ -223,5 +261,17 @@ export class RoomGateway implements OnModuleInit {
     this.server.to(roomId).emit(SOCKET_EVENT.RECEIVE_CHAT, chatMessage);
 
     return { success: true };
+  }
+
+  private sanitizeMessage(message: string): string {
+    // 간단한 escape 처리로 스크립트 실행 방지
+    const escaped = message
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+    return escaped.replace(/javascript:/gi, '').replace(/on\w+="[^"]*"/gi, '');
   }
 }
