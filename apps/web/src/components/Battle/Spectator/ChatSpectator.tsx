@@ -153,7 +153,7 @@ function ChatSpectator() {
                   </div>
                   <div
                     className={`inline-flex rounded-2xl px-4 py-2 text-sm leading-relaxed ${
-                      isMine ? 'bg-green-03 text-black' : 'bg-base-muted'
+                      isMine ? 'bg-green-04 text-black-static' : 'bg-base-muted'
                     }`}
                   >
                     <p className="whitespace-pre-wrap">{msg.message}</p>

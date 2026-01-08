@@ -6,11 +6,26 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { BATTLE_EVENTS } from '@packages/constants/battle';
-import { SOCKET_NAMESPACE } from '@packages/constants/socket-event';
+import { CHAT_TYPE } from '@packages/constants/chat';
+import { SOCKET_EVENT, SOCKET_NAMESPACE } from '@packages/constants/socket-event';
 import { type UpdateUserCodeDTO } from '@packages/types/battle';
+import { type ChatMessage } from '@packages/types/chat';
 import { Server, Socket } from 'socket.io';
 
 import { BattleService } from '@/battle/battle.service';
+
+interface UserTestResultPayload {
+  roomId: string;
+  userId: string;
+  username?: string;
+  passed: boolean;
+}
+
+interface UserFinishedPayload {
+  roomId: string;
+  userId: string;
+  username?: string;
+}
 
 @WebSocketGateway({
   namespace: SOCKET_NAMESPACE.GAME,
@@ -43,5 +58,39 @@ export class BattleGateway {
       console.error('Error handling code change:', error);
       return { success: false, message: 'Internal server error' };
     }
+  }
+
+  @SubscribeMessage(BATTLE_EVENTS.USER_TEST_RESULT)
+  handleUserTestResult(@MessageBody() payload: UserTestResultPayload) {
+    const { roomId, username, passed } = payload;
+    if (!roomId) return;
+
+    const message = passed
+      ? `${username ?? '플레이어'}님이 테스트를 통과했습니다!`
+      : `${username ?? '플레이어'}님이 테스트를 통과하지 못했습니다.`;
+
+    const systemMessage: ChatMessage = {
+      type: CHAT_TYPE.SYSTEM,
+      nickname: 'System',
+      message,
+      timestamp: new Date().toISOString(),
+    };
+
+    this.server.to(roomId).emit(SOCKET_EVENT.RECEIVE_CHAT, systemMessage);
+  }
+
+  @SubscribeMessage(BATTLE_EVENTS.USER_FINISHED)
+  handleUserFinished(@MessageBody() payload: UserFinishedPayload) {
+    const { roomId, username } = payload;
+    if (!roomId) return;
+
+    const systemMessage: ChatMessage = {
+      type: CHAT_TYPE.SYSTEM,
+      nickname: 'System',
+      message: `${username ?? '플레이어'}님이 코드를 제출했습니다!`,
+      timestamp: new Date().toISOString(),
+    };
+
+    this.server.to(roomId).emit(SOCKET_EVENT.RECEIVE_CHAT, systemMessage);
   }
 }

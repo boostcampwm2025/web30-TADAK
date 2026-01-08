@@ -96,9 +96,35 @@ function CodeEditor() {
           <div className="text-xs text-base-secondary">
             테스트: <span className="text-green-05">0/10</span> 통과
           </div>
-          <button className="rounded-lg bg-green-05 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-emerald-500/30 transition hover:brightness-110">
-            제출하기
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (!socket) return;
+                socket.emit(BATTLE_EVENTS.USER_TEST_RESULT, {
+                  roomId,
+                  username: me?.username ?? '플레이어',
+                  passed: true,
+                });
+              }}
+              className="rounded-lg bg-base-muted px-3 py-2 text-xs font-semibold text-base-primary transition hover:brightness-110"
+            >
+              테스트 메시지
+            </button>
+            <button
+              className="rounded-lg bg-green-05 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-emerald-500/30 transition hover:brightness-110"
+              type="button"
+              onClick={() => {
+                if (!socket) return;
+                socket.emit(BATTLE_EVENTS.USER_FINISHED, {
+                  roomId,
+                  username: me?.username ?? '플레이어',
+                });
+              }}
+            >
+              제출하기
+            </button>
+          </div>
         </div>
       </section>
     </>
