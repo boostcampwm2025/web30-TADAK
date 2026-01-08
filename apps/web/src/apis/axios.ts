@@ -4,7 +4,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000
 
 // Axios Instance 생성
 export const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: `${API_BASE_URL}/api`,
   withCredentials: true, // HttpOnly Cookie 전송을 위해 필수 (백엔드 credentials: true 필요)
   headers: {
     'Content-Type': 'application/json',
@@ -79,7 +79,7 @@ axiosInstance.interceptors.response.use(
         순환 참조 방지를 위해 axiosInstance 대신 별도 호출 혹은 fetch 사용
         여기선 credential 포함을 위해 fetch 사용
         */
-        const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        const refreshResponse = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
           method: 'POST',
           credentials: 'include',
         });
@@ -108,7 +108,7 @@ axiosInstance.interceptors.response.use(
         processQueue(refreshError as Error, null);
 
         // 로그아웃 처리
-        await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST' });
+        await fetch(`${API_BASE_URL}/api/auth/logout`, { method: 'POST' });
         localStorage.removeItem('accessToken');
         window.location.href = '/login';
 
