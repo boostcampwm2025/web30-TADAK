@@ -3,6 +3,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 
 import { BattleModule } from '../battle/battle.module';
 import { RoomModule } from '../room/room.module';
+import { UserModule } from '../user/user.module';
 import { MatchingController } from './matching.controller';
 import { MatchingGateway } from './matching.gateway';
 import { MatchingService } from './matching.service';
@@ -13,6 +14,7 @@ import { MatchingSchedulerService } from './matching-scheduler.service';
     ScheduleModule.forRoot(), // Cron 기반 매칭 Tick을 위해 필요
     RoomModule, // Room & Battle 생성을 위해 필요
     BattleModule,
+    UserModule,
   ],
   controllers: [MatchingController],
   providers: [
