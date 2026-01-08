@@ -33,6 +33,7 @@ export default function MatchingSuccess() {
   }
 
   const { opponent, myRate } = matchResult;
+  const myTier = user.tier ?? { tier: 'BRONZE', division: 4 };
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center gap-10 select-none">
@@ -57,7 +58,10 @@ export default function MatchingSuccess() {
             <p className="text-2xl font-bold">{user.username}</p>
             <div className="mt-2 flex items-center justify-center gap-1 text-sm">
               <span>🏆</span>
-              <span className="font-semibold text-base-secondary capitalize">GOLD</span>
+              <span className="font-semibold text-base-secondary capitalize">
+                {myTier.tier}
+                {myTier.division ? ` ${myTier.division}` : ''}
+              </span>
             </div>
             <p className="mt-1 text-base text-base-secondary">승률: {myRate.winRate.toFixed(0)}%</p>
           </div>
