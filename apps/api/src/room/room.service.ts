@@ -60,6 +60,7 @@ export class RoomService {
       const player1: RoomUser = {
         userId: user1.userId,
         username: user1.username,
+        avatarUrl: user1.avatarUrl,
         socketId: user1.socketId, // MatchingUser에 보관된 socketId 활용
         roomId: roomId,
         role: 'player',
@@ -69,6 +70,7 @@ export class RoomService {
       const player2: RoomUser = {
         userId: user2.userId,
         username: user2.username,
+        avatarUrl: user2.avatarUrl,
         socketId: user2.socketId,
         roomId: roomId,
         role: 'player',
@@ -88,7 +90,11 @@ export class RoomService {
         config: {
           duration: BATTLE_CONFIG.DURATION,
         },
-        users: room.currentPlayers.map((player) => player.userId),
+        users: room.currentPlayers.map((player) => ({
+          userId: player.userId,
+          username: player.username,
+          avatarUrl: player.avatarUrl,
+        })),
       });
 
       this.logger.log(

@@ -13,8 +13,10 @@ export class BattleService {
     // TODO: 배틀 ID 생성 로직 추가
     const battleId = `battle-${Date.now()}`;
 
-    const users: BattleUser[] = dto.users.map((userId) => ({
-      userId,
+    const users: BattleUser[] = dto.users.map((user) => ({
+      userId: user.userId,
+      username: user.username,
+      avatarUrl: user.avatarUrl,
       battleId,
       code: '',
       language: BATTLE_CONFIG.DEFAULT_LANGUAGE,
@@ -56,9 +58,13 @@ export class BattleService {
     if (existingUser) {
       existingUser.isConnected = true;
       existingUser.disconnectedAt = undefined;
+      existingUser.username = user.username;
+      existingUser.avatarUrl = user.avatarUrl;
     } else {
       const newBattleUser: BattleUser = {
         userId: user.userId,
+        username: user.username,
+        avatarUrl: user.avatarUrl,
         battleId: battle.battleId,
         code: '',
         language: BATTLE_CONFIG.DEFAULT_LANGUAGE,
@@ -126,5 +132,9 @@ export class BattleService {
     if (battleId) {
       await this.battleRedisService.deleteBattle(battleId, roomId);
     }
+  }
+
+  async getActiveBattles(): Promise<Battle[]> {
+    return this.battleRedisService.getActiveBattles();
   }
 }

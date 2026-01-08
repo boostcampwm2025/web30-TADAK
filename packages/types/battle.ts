@@ -19,6 +19,8 @@ export interface Battle {
 export interface BattleUser {
   userId: string;
   battleId: string;
+  username: string;
+  avatarUrl?: string;
   code: string;
   language: string;
 
@@ -40,7 +42,11 @@ export interface CreateBattleDTO {
   config: {
     duration?: number;
   };
-  users: string[];
+  users: Array<{
+    userId: string;
+    username: string;
+    avatarUrl?: string;
+  }>;
 }
 
 export interface UpdateBattleUserDTO {

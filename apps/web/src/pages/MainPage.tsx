@@ -1,5 +1,9 @@
+import type { Battle } from '@shared/types/battle';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import * as battleApi from '@/apis/battle';
+import ActiveBattleList from '@/components/ActiveBattle/ActiveBattleList';
 import Header from '@/components/Header/Header';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useMatchingStore } from '@/stores/matchingStore';
@@ -11,6 +15,28 @@ function MainPage() {
   const connect = useBattleSocketStore((state) => state.connect);
   const startMatching = useMatchingStore((state) => state.startMatching);
   const registerMatchingListeners = useMatchingStore((state) => state.registerMatchingListeners);
+
+  const [battles, setBattles] = useState<Battle[]>([]);
+
+  // 활성 배틀 목록 가져오기
+  useEffect(() => {
+    const fetchBattles = async () => {
+      try {
+        const activeBattles = await battleApi.getActiveBattles();
+        setBattles(activeBattles);
+      } catch (error) {
+        console.error('배틀 목록 조회 실패:', error);
+      }
+    };
+
+    fetchBattles();
+
+    // TODO: 웹소켓으로 실시간 업데이트 처리
+    // 5초마다 갱신
+    const interval = setInterval(fetchBattles, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleStartBattle = async () => {
     if (!user?.id) {
@@ -42,6 +68,11 @@ function MainPage() {
     }
   };
 
+  // 관전자로 입장
+  const handleJoinAsSpectator = (roomId: string) => {
+    navigate(`/room/${roomId}?mode=spectator`);
+  };
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -63,6 +94,9 @@ function MainPage() {
             현재 진행 중인 배틀을 관전하고 고수들의 코딩을 배워보세요
           </p>
         </div>
+
+        {/* 배틀 목록 */}
+        <ActiveBattleList battles={battles} onJoinBattle={handleJoinAsSpectator} />
       </main>
     </div>
   );

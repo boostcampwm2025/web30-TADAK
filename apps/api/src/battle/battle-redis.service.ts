@@ -56,5 +56,40 @@ export class BattleRedisService {
     const key = RedisKeys.battle(battleId);
     const roomKey = RedisKeys.battleByRoom(roomId);
     await this.redis.del(key, roomKey);
+
+    // 활성 배틀 목록에서 제거
+    await this.redis.srem(RedisKeys.activeBattles(), battleId);
+  }
+
+  async getActiveBattles(): Promise<Battle[]> {
+    // 활성 배틀 ID 목록 가져오기
+    const battleIds = await this.redis.smembers(RedisKeys.activeBattles());
+
+    if (battleIds.length === 0) {
+      return [];
+    }
+
+    // Pipeline으로 모든 배틀 정보 한 번에 조회
+    const pipeline = this.redis.pipeline();
+    battleIds.forEach((battleId) => {
+      pipeline.get(RedisKeys.battle(battleId));
+    });
+    const results = (await pipeline.exec()) as [Error | null, string | null][];
+
+    if (!results) return [];
+
+    // 배틀 정보 파싱
+    const battles: Battle[] = [];
+    results.forEach(([err, data]) => {
+      if (!err && data) {
+        try {
+          battles.push(JSON.parse(data) as Battle);
+        } catch (error) {
+          console.error('Failed to parse battle data:', error);
+        }
+      }
+    });
+
+    return battles;
   }
 }
