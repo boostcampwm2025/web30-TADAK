@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AuthModule } from './auth/auth.module';
 import { BattleModule } from './battle/battle.module';
+import { MatchingModule } from './matching/matching.module';
 import { RedisModule } from './redis/redis.module';
 import { RoomModule } from './room/room.module';
 import { User } from './user/user.entity';
@@ -40,7 +41,7 @@ import { UserModule } from './user/user.module';
 
     // 3. Redis 연결 설정
     RedisModule,
-
+    MatchingModule,
     RoomModule,
     BattleModule,
     UserModule,

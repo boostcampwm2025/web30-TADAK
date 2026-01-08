@@ -1,4 +1,3 @@
-import { OnModuleInit } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -21,7 +20,7 @@ import { RoomUser, UserRole } from '../../../../packages/types/user';
 import { RoomService } from './room.service';
 
 @WebSocketGateway({ namespace: SOCKET_NAMESPACE.GAME })
-export class RoomGateway implements OnModuleInit {
+export class RoomGateway {
   @WebSocketServer() server: Server;
   private rateLimitMap: Map<string, { count: number; windowStart: number; blockedUntil: number }> =
     new Map();
@@ -30,10 +29,6 @@ export class RoomGateway implements OnModuleInit {
     private readonly roomService: RoomService,
     private readonly battleService: BattleService,
   ) {}
-
-  async onModuleInit() {
-    await this.roomService.createRoom('1');
-  }
 
   @SubscribeMessage(SOCKET_EVENT.CHECK_ROOM_AVAILABILITY)
   async handleCheckRoomAvailability(
