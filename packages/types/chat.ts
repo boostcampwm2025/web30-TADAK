@@ -3,5 +3,6 @@ export interface ChatMessage {
   nickname: string;
   message: string;
   timestamp: string; // ISO string
+  avatarUrl?: string;
   isMine?: boolean;
 }

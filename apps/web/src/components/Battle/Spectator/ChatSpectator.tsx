@@ -15,11 +15,13 @@ function ChatSpectator() {
   const me = useRoomStore((state) => state.me);
   const socket = useBattleSocketStore((state) => state.socket);
   const connectSocket = useBattleSocketStore((state) => state.connect);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const myNickname = useMemo(() => {
     const fallback = socket?.id ? `User-${socket.id.slice(-4)}` : '관전자';
     return me?.username ?? fallback;
   }, [me, socket]);
+  const myAvatar = useMemo(() => me?.avatarUrl, [me]);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -27,7 +29,12 @@ function ChatSpectator() {
   useEffect(() => {
     // 새 메시지가 추가되면 리스트 하단으로 스크롤
     requestAnimationFrame(() => {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      const list = listRef.current;
+      if (list) {
+        list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
+      } else {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     });
   }, [messages.length]);
 
@@ -66,6 +73,7 @@ function ChatSpectator() {
       roomId,
       message: trimmed,
       nickname: myNickname,
+      avatarUrl: myAvatar,
     });
     setInput('');
   };
@@ -80,7 +88,7 @@ function ChatSpectator() {
 
   return (
     <>
-      <section className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border-soft bg-[var(--bg-layer-2)] text-base-primary shadow-sm">
+      <section className="relative flex h-full min-h-0 max-h-[70vh] sm:max-h-[80vh] xl:max-h-none flex-col overflow-hidden rounded-2xl border border-border-soft bg-[var(--bg-layer-2)] text-base-primary shadow-sm">
         <div className="flex items-center justify-between border-b border-border-soft bg-[var(--bg-layer-2)] px-4 py-3">
           <div className="flex items-center gap-3">
             <div className="flex h-5 w-5 items-center justify-center rounded-full">
@@ -89,7 +97,10 @@ function ChatSpectator() {
             <p className="text-md font-semibold">실시간 채팅</p>
           </div>
         </div>
-        <div className="chat-scroll flex-1 min-h-0 space-y-3 overflow-y-auto bg-[var(--bg-layer-2)] px-4 py-4">
+        <div
+          ref={listRef}
+          className="chat-scroll flex-1 min-h-0 space-y-3 overflow-y-auto bg-[var(--bg-layer-2)] px-4 py-4 pb-16"
+        >
           <div className="flex justify-center">
             <div className="w-full max-w-[95%] rounded-lg bg-base-muted px-4 py-2 text-center text-xs font-semibold text-base-secondary">
               관전 모드에 오신 것을 환영합니다!
@@ -118,9 +129,17 @@ function ChatSpectator() {
               >
                 {!isMine && (
                   <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${getAvatarTone(false)}`}
+                    className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold overflow-hidden ${getAvatarTone(false)}`}
                   >
-                    {getInitial(displayName)}
+                    {msg.avatarUrl ? (
+                      <img
+                        src={msg.avatarUrl}
+                        alt={displayName}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      getInitial(displayName)
+                    )}
                   </div>
                 )}
                 <div className={`max-w-[82%] space-y-1 ${isMine ? 'items-end text-right' : ''}`}>
@@ -134,7 +153,7 @@ function ChatSpectator() {
                   </div>
                   <div
                     className={`inline-flex rounded-2xl px-4 py-2 text-sm leading-relaxed ${
-                      isMine ? 'bg-green-03 text-black' : 'bg-base-muted'
+                      isMine ? 'bg-green-04 text-black-static' : 'bg-base-muted'
                     }`}
                   >
                     <p className="whitespace-pre-wrap">{msg.message}</p>
@@ -142,9 +161,17 @@ function ChatSpectator() {
                 </div>
                 {isMine && (
                   <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${getAvatarTone(true)}`}
+                    className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold overflow-hidden ${getAvatarTone(true)}`}
                   >
-                    {getInitial(displayName)}
+                    {msg.avatarUrl ? (
+                      <img
+                        src={msg.avatarUrl}
+                        alt={displayName}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      getInitial(displayName)
+                    )}
                   </div>
                 )}
               </div>

@@ -42,10 +42,22 @@ function CodeSpectator() {
   const participants = useMemo(() => {
     if (players.length > 0) return players.slice(0, 2);
     return [
-      { userId: 'player-a', username: 'Player A' },
-      { userId: 'player-b', username: 'Player B' },
+      {
+        roomId: roomId,
+        role: 'spectator',
+        userId: 'player-a',
+        username: 'Player A',
+        avatarUrl: undefined,
+      },
+      {
+        roomId: roomId,
+        role: 'spectator',
+        userId: 'player-b',
+        username: 'Player B',
+        avatarUrl: undefined,
+      },
     ];
-  }, [players]);
+  }, [players, roomId]);
 
   const firstParticipantId = participants[0]?.userId ?? null;
 
@@ -92,9 +104,17 @@ function CodeSpectator() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span
-                    className={`flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-white ${player.bg}`}
+                    className={`flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-white ${player.bg} overflow-hidden`}
                   >
-                    {player.userId[0]}
+                    {player.avatarUrl ? (
+                      <img
+                        src={player.avatarUrl}
+                        alt={player.username}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      player.userId[0]
+                    )}
                   </span>
                   <div className="space-y-1">
                     <p className="text-base font-semibold text-base-primary">{player.username}</p>

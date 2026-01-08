@@ -23,6 +23,8 @@ import { RoomService } from './room.service';
 @WebSocketGateway({ namespace: SOCKET_NAMESPACE.GAME })
 export class RoomGateway implements OnModuleInit {
   @WebSocketServer() server: Server;
+  private rateLimitMap: Map<string, { count: number; windowStart: number; blockedUntil: number }> =
+    new Map();
 
   constructor(
     private readonly roomService: RoomService,
@@ -50,9 +52,16 @@ export class RoomGateway implements OnModuleInit {
   @SubscribeMessage(SOCKET_EVENT.JOIN_ROOM)
   async handleJoinRoom(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { roomId: string; requestedRole: UserRole },
+    @MessageBody()
+    data: {
+      roomId: string;
+      requestedRole: UserRole;
+      userId?: string;
+      username?: string;
+      avatarUrl?: string;
+    },
   ) {
-    const { roomId, requestedRole } = data;
+    const { roomId, requestedRole, userId, username, avatarUrl } = data;
 
     const room = await this.roomService.getRoom(roomId);
 
@@ -74,21 +83,40 @@ export class RoomGateway implements OnModuleInit {
       return;
     }
 
-    const username = `User-${Date.now().toString().slice(-4)}`;
+    const resolvedUserId = userId ?? client.id;
+    const resolvedUsername = username ?? `User-${resolvedUserId.slice(-4)}`;
+    const resolvedAvatar = avatarUrl;
 
-    const newUser: RoomUser = {
-      roomId: roomId,
-      userId: client.id,
-      username: username,
-      socketId: client.id,
-      role: requestedRole,
-      joinedAt: new Date(),
-    };
+    // 기존 유저 재접속 처리: 동일 userId가 있으면 socketId만 교체
+    const existingPlayer = room.currentPlayers.find((u) => u.userId === resolvedUserId);
+    const existingSpectator = room.currentSpectators.find((u) => u.userId === resolvedUserId);
 
-    if (requestedRole === 'player') {
-      room.currentPlayers.push(newUser);
+    let newUser: RoomUser | null = null;
+
+    if (existingPlayer) {
+      existingPlayer.socketId = client.id;
+      existingPlayer.username = resolvedUsername;
+      existingPlayer.avatarUrl = resolvedAvatar;
+    } else if (existingSpectator) {
+      existingSpectator.socketId = client.id;
+      existingSpectator.username = resolvedUsername;
+      existingSpectator.avatarUrl = resolvedAvatar;
     } else {
-      room.currentSpectators.push(newUser);
+      newUser = {
+        roomId: roomId,
+        userId: resolvedUserId,
+        username: resolvedUsername,
+        socketId: client.id,
+        role: requestedRole,
+        avatarUrl: resolvedAvatar,
+        joinedAt: new Date(),
+      };
+
+      if (requestedRole === 'player') {
+        room.currentPlayers.push(newUser);
+      } else {
+        room.currentSpectators.push(newUser);
+      }
     }
 
     await this.roomService.saveRoom(room);
@@ -97,7 +125,10 @@ export class RoomGateway implements OnModuleInit {
 
     // 참가자일 경우 배틀에도 참가
     if (requestedRole === 'player') {
-      await this.battleService.joinBattle(roomId, newUser);
+      const playerUser = existingPlayer ?? newUser;
+      if (playerUser) {
+        await this.battleService.joinBattle(roomId, playerUser);
+      }
     }
 
     // 방 전체에 최신 참여자 목록 브로드캐스트
@@ -110,8 +141,9 @@ export class RoomGateway implements OnModuleInit {
     client.emit(SOCKET_EVENT.ROOM_STATE_ROLE, {
       roomId: room.roomId,
       role: requestedRole,
-      userId: client.id,
-      username: username,
+      userId: resolvedUserId,
+      username: resolvedUsername,
+      avatarUrl: resolvedAvatar,
     });
 
     // 방의 모든 사람에게 새 유저 입장 알림 (본인 포함)
@@ -173,24 +205,73 @@ export class RoomGateway implements OnModuleInit {
   @SubscribeMessage(SOCKET_EVENT.SEND_CHAT)
   handleSendChat(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { roomId: string; message: string; nickname?: string },
+    @MessageBody() data: { roomId: string; message: string; nickname?: string; avatarUrl?: string },
   ) {
-    const { roomId, message, nickname } = data ?? {};
+    const { roomId, message, nickname, avatarUrl } = data ?? {};
     const trimmedMessage = message?.trim();
 
     if (!roomId || !trimmedMessage) {
       return;
     }
 
+    // Rate limit: 2초 내 5회 초과 시 2초간 차단
+    const now = Date.now();
+    const limiter = this.rateLimitMap.get(client.id) ?? {
+      count: 0,
+      windowStart: now,
+      blockedUntil: 0,
+    };
+
+    if (now < limiter.blockedUntil) {
+      client.emit(SOCKET_EVENT.ERROR, {
+        code: SOCKET_ERROR.UNKNOWN,
+        message: '채팅 전송이 잠시 제한되었습니다. 잠시 후 다시 시도해주세요.',
+      });
+      return;
+    }
+
+    if (now - limiter.windowStart > 2000) {
+      limiter.windowStart = now;
+      limiter.count = 0;
+    }
+
+    limiter.count += 1;
+    if (limiter.count > 5) {
+      limiter.blockedUntil = now + 2000;
+      this.rateLimitMap.set(client.id, limiter);
+      client.emit(SOCKET_EVENT.ERROR, {
+        code: SOCKET_ERROR.UNKNOWN,
+        message: '너무 빠르게 입력하고 있습니다. 2초 후 다시 시도해주세요.',
+      });
+      return;
+    }
+
+    this.rateLimitMap.set(client.id, limiter);
+
+    const safeMessage = this.sanitizeMessage(trimmedMessage);
+
     const chatMessage: ChatMessage = {
       type: CHAT_TYPE.USER,
       nickname: nickname ?? '익명',
-      message: trimmedMessage,
+      message: safeMessage,
       timestamp: new Date().toISOString(),
+      avatarUrl,
     };
 
     this.server.to(roomId).emit(SOCKET_EVENT.RECEIVE_CHAT, chatMessage);
 
     return { success: true };
+  }
+
+  private sanitizeMessage(message: string): string {
+    // 간단한 escape 처리로 스크립트 실행 방지
+    const escaped = message
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+    return escaped.replace(/javascript:/gi, '').replace(/on\w+="[^"]*"/gi, '');
   }
 }
