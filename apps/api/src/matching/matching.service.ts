@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { MATCHING_CONFIG } from '@packages/constants/matching';
-import { MatchingUser } from '@packages/types/matching';
+import { MatchingUser, UserRate } from '@packages/types/matching';
 import Redis from 'ioredis';
 
 import { BattleService } from '../battle/battle.service';
@@ -36,10 +36,15 @@ export class MatchingService {
     pipeline.zadd(RedisKeys.matchingQueue(), Date.now(), user.userId);
     // HSET: 유저 상세 정보 저장
     pipeline.hset(RedisKeys.matchingUser(user.userId), {
-      ...user,
+      userId: user.userId,
+      username: user.username,
+      rating: user.rating.toString(),
       tier: JSON.stringify(user.tier),
+      socketId: user.socketId,
       waitingSince: user.waitingSince.toISOString(),
       status: 'WAITING',
+      myRate: JSON.stringify(user.myRate),
+      avatarUrl: user.avatarUrl || '',
     });
 
     await pipeline.exec();
@@ -62,6 +67,10 @@ export class MatchingService {
         this.matchingGateway.emitOpponentDisconnected(opponentData.socketId);
 
         // 상대방 다시 큐로 복귀 (WAITING 상태로 변경 및 큐에 재진입)
+        const opponentMyRate = opponentData.myRate
+          ? (JSON.parse(opponentData.myRate) as UserRate)
+          : ({ win: 0, lose: 0, draw: 0, winRate: 0 } as UserRate);
+
         const opponent: MatchingUser = {
           userId: opponentData.userId,
           username: opponentData.username,
@@ -70,6 +79,8 @@ export class MatchingService {
           socketId: opponentData.socketId,
           status: 'WAITING',
           waitingSince: new Date(opponentData.waitingSince),
+          myRate: opponentMyRate,
+          avatarUrl: opponentData.avatarUrl || '',
         };
 
         // 큐에 넣기 위해 점수를 작게(오래된 것처럼) 설정
@@ -79,9 +90,15 @@ export class MatchingService {
           opponent.userId,
         );
         pipeline.hset(RedisKeys.matchingUser(opponent.userId), {
-          ...opponent,
+          userId: opponent.userId,
+          username: opponent.username,
+          rating: opponent.rating.toString(),
           tier: JSON.stringify(opponent.tier),
+          socketId: opponent.socketId,
+          waitingSince: opponent.waitingSince.toISOString(),
           status: 'WAITING',
+          myRate: JSON.stringify(opponent.myRate),
+          avatarUrl: opponent.avatarUrl || '',
           roomId: '',
           opponentId: '',
         });
@@ -133,7 +150,7 @@ export class MatchingService {
         const waitTime1 = now - user1.waitingSince.getTime();
         const waitTime2 = now - user2.waitingSince.getTime();
         const avgWaitTime = Math.round((waitTime1 + waitTime2) / 2);
-          
+
         // 매칭 큐에서 제거 및 상태 변경 (상대방 정보 포함하여 연결 끊김 대비)
         await this.redis
           .pipeline()
@@ -206,7 +223,11 @@ export class MatchingService {
         status: userdata.status as MatchingUser['status'],
         waitingSince: new Date(userdata.waitingSince),
         socketId: userdata.socketId,
-      } as MatchingUser);
+        myRate: userdata.myRate
+          ? (JSON.parse(userdata.myRate) as UserRate)
+          : ({ win: 0, lose: 0, draw: 0, winRate: 0 } as UserRate),
+        avatarUrl: userdata.avatarUrl || '',
+      });
     });
 
     // 4. 메모리에서 rating 순으로 정렬

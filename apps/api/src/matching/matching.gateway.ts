@@ -50,13 +50,14 @@ export class MatchingGateway implements OnGatewayDisconnect {
     this.server.to(user1.socketId).emit(SOCKET_EVENT.MATCH_SUCCESS, {
       roomId: room.roomId,
       battleId: battle.battleId,
-      room,
-      battle,
+      myRate: user1.myRate,
       opponent: {
         userId: user2.userId,
         username: user2.username,
+        avatarUrl: user2.avatarUrl,
         rating: user2.rating,
         tier: user2.tier,
+        rate: user2.myRate,
       },
     });
 
@@ -64,13 +65,14 @@ export class MatchingGateway implements OnGatewayDisconnect {
     this.server.to(user2.socketId).emit(SOCKET_EVENT.MATCH_SUCCESS, {
       roomId: room.roomId,
       battleId: battle.battleId,
-      room,
-      battle,
+      myRate: user2.myRate,
       opponent: {
         userId: user1.userId,
         username: user1.username,
+        avatarUrl: user1.avatarUrl,
         rating: user1.rating,
         tier: user1.tier,
+        rate: user1.myRate,
       },
     });
   }

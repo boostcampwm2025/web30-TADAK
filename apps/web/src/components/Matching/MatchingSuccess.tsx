@@ -83,7 +83,9 @@ export default function MatchingSuccess() {
                 {opponent.tier.division ? ` ${opponent.tier.division}` : ''}
               </span>
             </div>
-            <p className="mt-1 text-base text-base-secondary">승률: {opponent.rate.winRate}%</p>
+            <p className="mt-1 text-base text-base-secondary">
+              승률: {opponent.rate.winRate.toFixed(0)}%
+            </p>
           </div>
         </div>
       </div>

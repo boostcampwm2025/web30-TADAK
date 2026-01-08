@@ -1,6 +1,6 @@
 import { Body, Controller, HttpException, HttpStatus, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import type { MatchingStartRequest, MatchingUser } from '@packages/types/matching';
+import type { MatchingStartRequest, MatchingUser, UserRate } from '@packages/types/matching';
 
 import { User } from '../user/user.entity';
 import { UserService } from '../user/user.service';
@@ -29,6 +29,9 @@ export class MatchingController {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
+    const winRate =
+      user.wins + user.losses === 0 ? 0 : Math.round((user.wins / (user.wins + user.losses)) * 100);
+
     const matchingUser: MatchingUser = {
       userId: user.id,
       username: user.username,
@@ -37,6 +40,13 @@ export class MatchingController {
       socketId: socketId,
       status: 'WAITING',
       waitingSince: new Date(),
+      avatarUrl: user.avatarUrl,
+      myRate: {
+        win: user.wins,
+        lose: user.losses,
+        draw: 0,
+        winRate,
+      } as UserRate,
     };
 
     await this.matchingService.startMatching(matchingUser);

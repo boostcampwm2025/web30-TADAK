@@ -6,6 +6,13 @@ export interface UserTier {
   division?: TierDivision;
 }
 
+export interface UserRate {
+  win: number;
+  lose: number;
+  draw?: number;
+  winRate: number;
+}
+
 export interface MatchingUser {
   userId: string;
   username: string;
@@ -14,6 +21,9 @@ export interface MatchingUser {
   status: MatchingStatus;
   waitingSince: Date;
   socketId: string;
+
+  myRate: UserRate;
+  avatarUrl?: string;
 }
 
 export interface MatchingStartRequest {
@@ -24,13 +34,6 @@ export interface MatchingStartRequest {
 
 export interface MatchingCancelRequest {
   userId: string;
-}
-
-export interface UserRate {
-  win: number;
-  lose: number;
-  draw?: number;
-  winRate: number;
 }
 
 export interface MatchingSuccessResponse {
