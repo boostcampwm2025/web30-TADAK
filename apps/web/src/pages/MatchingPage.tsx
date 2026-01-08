@@ -1,39 +1,50 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
+import Header from '@/components/Header/Header';
+import { MatchingCancelButton } from '@/components/Matching/MatchingCancelButton';
+import MatchingSuccess from '@/components/Matching/MatchingSuccess';
 import MatchingWait from '@/components/Matching/MatchingWait';
-import WaitConfirmModal from '@/components/Matching/MatchingWaitModal';
+import { useMatchingStore } from '@/stores/matchingStore';
 
 function MatchingPage() {
-  const navigate = useNavigate();
   const [waitTime, setWaitTime] = useState(0);
-  const [showModal, setShowModal] = useState(false);
+  const matchResult = useMatchingStore((state) => state.matchResult);
 
   // 타이머
   useEffect(() => {
     const timer = setInterval(() => {
-      setWaitTime((prev) => {
-        if ((prev + 1) % 60 === 0) setShowModal(true);
-        return prev + 1;
-      });
+      setWaitTime((prev) => prev + 1);
     }, 1000);
 
     return () => clearInterval(timer);
   }, []);
 
-  const handleContinue = () => {
-    setShowModal(false);
-  };
+  // 페이지 이탈(뒤로가기 등) 시 cleanup
+  useEffect(() => {
+    return () => {
+      const currentMatchResult = useMatchingStore.getState().matchResult;
+      if (!currentMatchResult) {
+        useMatchingStore.getState().cleanup();
+      }
+    };
+  }, []);
 
-  const handleCancel = () => {
-    navigate('/');
-  };
+  if (matchResult) {
+    return (
+      <>
+        <Header hideUserMenu />
+        <MatchingSuccess />
+      </>
+    );
+  }
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <MatchingWait waitTime={waitTime} />
-      {showModal && <WaitConfirmModal onContinue={handleContinue} onCancel={handleCancel} />}
-    </div>
+    <>
+      <Header rightContent={<MatchingCancelButton />} />
+      <div className="flex min-h-screen items-center justify-center">
+        <MatchingWait waitTime={waitTime} />
+      </div>
+    </>
   );
 }
 

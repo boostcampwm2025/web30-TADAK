@@ -1,12 +1,45 @@
 import { useNavigate } from 'react-router-dom';
 
 import Header from '@/components/Header/Header';
+import { useBattleSocketStore } from '@/stores/battleSocketStore';
+import { useMatchingStore } from '@/stores/matchingStore';
+import { useUserStore } from '@/stores/userStore';
 
 function MainPage() {
   const navigate = useNavigate();
+  const user = useUserStore((state) => state.user);
+  const connect = useBattleSocketStore((state) => state.connect);
+  const startMatching = useMatchingStore((state) => state.startMatching);
+  const registerMatchingListeners = useMatchingStore((state) => state.registerMatchingListeners);
 
-  const handleStartBattle = () => {
-    navigate('/matching');
+  const handleStartBattle = async () => {
+    if (!user?.id) {
+      console.error('로그인이 필요합니다.');
+      return;
+    }
+
+    try {
+      const socket = connect();
+
+      // Socket이 연결될 때까지 대기
+      if (!socket.connected) {
+        await new Promise<void>((resolve) => {
+          socket.once('connect', () => resolve());
+        });
+      }
+
+      if (!socket.id) {
+        throw new Error('Socket ID를 받지 못했습니다.');
+      }
+
+      registerMatchingListeners(socket);
+
+      await startMatching(user.id, socket.id);
+
+      navigate('/matching');
+    } catch (error) {
+      console.error('매칭 시작 중 오류:', error);
+    }
   };
 
   return (

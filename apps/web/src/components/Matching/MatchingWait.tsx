@@ -1,3 +1,5 @@
+import { useMatchingStore } from '@/stores/matchingStore';
+
 import LoadingSpinner from './LoadingSpinner';
 import MatchingStats from './MatchingStats';
 import MatchingTimer from './MatchingTimer';
@@ -7,6 +9,7 @@ interface Props {
 }
 
 export default function MatchingWait({ waitTime }: Props) {
+  const timeoutMessage = useMatchingStore((state) => state.timeoutMessage);
   return (
     <div className="max-w-4xl mx-auto select-none">
       <div className="flex flex-col bg-base-faint rounded-3xl shadow-lg p-16 gap-8">
@@ -22,12 +25,17 @@ export default function MatchingWait({ waitTime }: Props) {
         </div>
 
         {/* 대기 시간 */}
-        <div className="flex justify-center">
-          <MatchingTimer time={waitTime} />
-        </div>
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col items-center gap-2">
+            <MatchingTimer time={waitTime} />
+            <div className="min-h-6">
+              {timeoutMessage && <p className="text-sm text-base-muted">{timeoutMessage}</p>}
+            </div>
+          </div>
 
-        {/* 통계 카드 */}
-        <MatchingStats />
+          {/* 통계 카드 */}
+          <MatchingStats />
+        </div>
       </div>
     </div>
   );
