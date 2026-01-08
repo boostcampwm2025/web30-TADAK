@@ -33,7 +33,7 @@ export default function MatchingSuccess() {
   }
 
   const { opponent, myRate } = matchResult;
-  const myTier = user.tier ?? { tier: 'BRONZE', division: 4 };
+  const myTier = { tier: 'BRONZE', division: 4 };
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center gap-10 select-none">
