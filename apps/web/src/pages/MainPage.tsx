@@ -1,11 +1,9 @@
-import { Moon, Sun } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import Header from '@/components/Header/Header';
 
 function MainPage() {
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
 
   const handleStartBattle = () => {
     navigate('/matching');
