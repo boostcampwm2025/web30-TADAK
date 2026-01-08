@@ -10,7 +10,7 @@ function LoginPage() {
 
   const handleGithubLogin = () => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-    window.location.href = `${API_BASE_URL}/auth/github`;
+    window.location.href = `${API_BASE_URL}/api/auth/github`;
   };
 
   useEffect(() => {

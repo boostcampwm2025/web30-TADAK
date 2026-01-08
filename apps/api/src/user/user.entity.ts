@@ -17,6 +17,18 @@ export class User {
   @Column({ type: 'text', nullable: true })
   refreshToken: string | null;
 
+  @Column({ type: 'int', default: 1000 })
+  rating: number = 1000;
+
+  @Column({ type: 'json' })
+  tier: { tier: string; division: number } = { tier: 'BRONZE', division: 4 };
+
+  @Column({ type: 'int', default: 0 })
+  wins: number;
+
+  @Column({ type: 'int', default: 0 })
+  losses: number;
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 }
