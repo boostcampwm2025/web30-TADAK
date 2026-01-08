@@ -189,6 +189,34 @@ export class MatchingService {
     // TODO: 매칭 타임아웃 유저 조회
   }
 
+  // 매칭 큐에 있는 사용자들의 socketId 목록 조회
+  async getMatchingQueueSocketIds(): Promise<string[]> {
+    // 매칭 큐에 있는 모든 userId 가져오기
+    const userIds = await this.redis.zrange(RedisKeys.matchingQueue(), 0, -1);
+
+    if (userIds.length === 0) {
+      return [];
+    }
+
+    // Pipeline으로 각 userId의 socketId 가져오기
+    const pipeline = this.redis.pipeline();
+    userIds.forEach((userId) => {
+      pipeline.hget(RedisKeys.matchingUser(userId), 'socketId');
+    });
+    const results = (await pipeline.exec()) as [Error | null, string | null][];
+
+    if (!results) return [];
+
+    const socketIds: string[] = [];
+    results.forEach(([err, socketId]) => {
+      if (!err && socketId) {
+        socketIds.push(socketId);
+      }
+    });
+
+    return socketIds;
+  }
+
   // 매칭 통계 조회
   async getMatchingStats(): Promise<{
     waitingPlayers: number;

@@ -40,12 +40,18 @@ export class MatchingGateway {
     });
   }
 
-  // 매칭 통계를 모든 연결된 클라이언트에게 브로드캐스트
-  broadcastMatchingStats(stats: {
-    waitingPlayers: number;
-    ongoingBattles: number;
-    avgMatchTime: number;
-  }): void {
-    this.server.emit(SOCKET_EVENT.STATS_UPDATE, stats);
+  // 매칭 통계를 매칭 큐에 있는 클라이언트들에게 브로드캐스트
+  broadcastMatchingStats(
+    stats: {
+      waitingPlayers: number;
+      ongoingBattles: number;
+      avgMatchTime: number;
+    },
+    socketIds: string[],
+  ): void {
+    // 각 socketId에게 통계 전송
+    for (const socketId of socketIds) {
+      this.server.to(socketId).emit(SOCKET_EVENT.STATS_UPDATE, stats);
+    }
   }
 }

@@ -33,7 +33,8 @@ export class MatchingSchedulerService {
   async handleStatsUpdate() {
     try {
       const stats = await this.matchingService.getMatchingStats();
-      this.matchingGateway.broadcastMatchingStats(stats);
+      const socketIds = await this.matchingService.getMatchingQueueSocketIds();
+      this.matchingGateway.broadcastMatchingStats(stats, socketIds);
       this.logger.debug(
         `매칭 통계 전송: ${stats.waitingPlayers}명 대기, ${stats.ongoingBattles}개 진행 중, 평균 ${stats.avgMatchTime}초`,
       );
