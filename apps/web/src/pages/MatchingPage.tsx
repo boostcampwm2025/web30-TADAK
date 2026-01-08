@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import Header from '@/components/Header/Header';
+import { MatchingCancelButton } from '@/components/Matching/MatchingCancelButton';
 import MatchingSuccess from '@/components/Matching/MatchingSuccess';
 import MatchingWait from '@/components/Matching/MatchingWait';
 import WaitConfirmModal from '@/components/Matching/MatchingWaitModal';
@@ -61,14 +63,22 @@ function MatchingPage() {
   };
 
   if (matchResult) {
-    return <MatchingSuccess />;
+    return (
+      <>
+        <Header hideUserMenu />
+        <MatchingSuccess />
+      </>
+    );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <MatchingWait waitTime={waitTime} />
-      {showModal && <WaitConfirmModal onContinue={handleContinue} onCancel={handleCancel} />}
-    </div>
+    <>
+      <Header rightContent={<MatchingCancelButton />} />
+      <div className="flex min-h-screen items-center justify-center">
+        <MatchingWait waitTime={waitTime} />
+        {showModal && <WaitConfirmModal onContinue={handleContinue} onCancel={handleCancel} />}
+      </div>
+    </>
   );
 }
 
