@@ -143,7 +143,7 @@ function MainPage() {
               key={tier.label}
               type="button"
               className={`rounded-full px-4 py-2 text-xs font-semibold text-base-primary shadow-sm ${
-                idx === 0 ? 'bg-green-01 text-green-06' : 'bg-white text-base-secondary'
+                idx === 0 ? 'bg-green-01 text-green-06' : 'bg-base-faint text-base-secondary'
               }`}
             >
               <span className={`mr-2 inline-block h-2 w-2 rounded-full ${tier.color}`} />

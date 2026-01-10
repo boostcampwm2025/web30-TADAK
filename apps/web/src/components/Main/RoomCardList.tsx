@@ -16,7 +16,7 @@ function RoomCardList({ rooms, onSpectate }: Props) {
         return (
           <div
             key={room.roomId}
-            className="rounded-2xl bg-white px-5 py-4 shadow-sm transition hover:shadow-md"
+            className="rounded-2xl bg-bg-layer-2 border border-border-soft px-5 py-4 shadow-sm transition hover:shadow-md"
           >
             <div className="mb-4 flex items-center justify-between text-xs text-base-secondary">
               <div className="flex items-center gap-2">
@@ -60,7 +60,7 @@ function RoomCardList({ rooms, onSpectate }: Props) {
                       className="h-full rounded-full"
                       style={{
                         width: `${idx === 0 ? 75 : 60}%`,
-                        backgroundColor: idx === 0 ? 'bg-green-05' : 'bg-red-01',
+                        backgroundColor: idx === 0 ? '#00e074' : '#ff6584',
                       }}
                     />
                   </div>
@@ -71,7 +71,7 @@ function RoomCardList({ rooms, onSpectate }: Props) {
             <button
               type="button"
               onClick={onSpectate ? () => onSpectate(room.roomId) : undefined}
-              className="mt-6 flex w-full items-center justify-center rounded-lg bg-base-muted px-4 py-3 text-sm font-semibold text-base-primary transition hover:brightness-105 disabled:opacity-50"
+              className="mt-6 flex w-full items-center justify-center rounded-lg bg-base-muted px-4 py-3 text-sm font-semibold transition hover:bg-base-primary/50 disabled:opacity-50"
               disabled={!onSpectate}
             >
               관전하기
