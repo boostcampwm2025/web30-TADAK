@@ -28,7 +28,7 @@ export const useMatchingStore = create<MatchingStore>((set, get) => ({
   stats: null,
   timeoutMessage: null,
 
-  // MATCH_SUCCESS, STATS_UPDATE, MATCHING_TIMEOUT 이벤트 리스너 등록
+  // MATCH_SUCCESS, STATS_UPDATE, MATCHING_TIMEOUT, OPPONENT_DISCONNECTED 이벤트 리스너 등록
   registerMatchingListeners: (socket: Socket) => {
     const handleMatchSuccess = (data: MatchingSuccessResponse) => {
       set({ matchResult: data });
@@ -42,13 +42,23 @@ export const useMatchingStore = create<MatchingStore>((set, get) => ({
       set({ timeoutMessage: data.message });
     };
 
+    const handleOpponentDisconnected = (data: { message: string }) => {
+      // TODO: 토스트 메시지 표시
+      alert(data.message);
+
+      // 상태 초기화
+      get().cleanup();
+    };
+
     // 기존 리스너 제거 후 새로 등록
     socket.off(SOCKET_EVENT.MATCH_SUCCESS);
     socket.off(SOCKET_EVENT.STATS_UPDATE);
     socket.off(SOCKET_EVENT.MATCHING_TIMEOUT);
+    socket.off(SOCKET_EVENT.OPPONENT_DISCONNECTED);
     socket.on(SOCKET_EVENT.MATCH_SUCCESS, handleMatchSuccess);
     socket.on(SOCKET_EVENT.STATS_UPDATE, handleStatsUpdate);
     socket.on(SOCKET_EVENT.MATCHING_TIMEOUT, handleMatchingTimeout);
+    socket.on(SOCKET_EVENT.OPPONENT_DISCONNECTED, handleOpponentDisconnected);
   },
 
   // 매칭 관련 소켓 리스너 제거
@@ -56,6 +66,7 @@ export const useMatchingStore = create<MatchingStore>((set, get) => ({
     socket.off(SOCKET_EVENT.MATCH_SUCCESS);
     socket.off(SOCKET_EVENT.STATS_UPDATE);
     socket.off(SOCKET_EVENT.MATCHING_TIMEOUT);
+    socket.off(SOCKET_EVENT.OPPONENT_DISCONNECTED);
   },
 
   // 매칭 시작
