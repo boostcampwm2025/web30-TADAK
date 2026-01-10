@@ -33,7 +33,8 @@ export class RoomGateway {
   @SubscribeMessage(SOCKET_EVENT.ROOM_LIST_REQUEST)
   async handleRoomListRequest(@ConnectedSocket() client: Socket) {
     const rooms = await this.roomService.listRooms();
-    client.emit(SOCKET_EVENT.ROOM_LIST, rooms);
+    const publicRooms = this.roomService.toPublicRooms(rooms);
+    client.emit(SOCKET_EVENT.ROOM_LIST, publicRooms);
   }
 
   @SubscribeMessage(SOCKET_EVENT.CHECK_ROOM_AVAILABILITY)
