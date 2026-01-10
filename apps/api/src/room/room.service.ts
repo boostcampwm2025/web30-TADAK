@@ -11,6 +11,11 @@ import { BattleService } from '../battle/battle.service';
 import { REDIS_CLIENT } from '../redis/redis.module';
 import { RedisKeys } from '../redis/redis-key.constant';
 
+type PublicRoom = Omit<Room, 'currentPlayers' | 'currentSpectators'> & {
+  currentPlayers: Array<Omit<RoomUser, 'socketId'>>;
+  currentSpectators: Array<Omit<RoomUser, 'socketId'>>;
+};
+
 @Injectable()
 export class RoomService {
   private readonly logger = new Logger(RoomService.name);
@@ -178,7 +183,8 @@ export class RoomService {
   }
 
   // 클라이언트에 노출할 때 socketId 등 민감 정보를 제거한 방 데이터
-  toPublicRooms(rooms: Room[]): Room[] {
+
+  toPublicRooms(rooms: Room[]): PublicRoom[] {
     return rooms.map((room) => ({
       ...room,
       currentPlayers: room.currentPlayers.map(({ socketId: _socketId, ...rest }) => rest),
