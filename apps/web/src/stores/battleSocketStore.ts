@@ -7,6 +7,7 @@ import type {
   RoomPlayerPayload,
   RoomStateSyncPayload,
 } from '@shared/types/room';
+import type { Room } from '@shared/types/room';
 import type { Socket } from 'socket.io-client';
 import { create } from 'zustand';
 
@@ -46,7 +47,9 @@ interface BattleSocketState {
   isConnected: boolean;
   roomAvailability: RoomAvailabilityResponseDTO | null;
   spectatorCount: number;
+  rooms: Room[];
   availabilityListener: ((payload: RoomAvailabilityResponseDTO) => void) | null;
+  roomListListener: ((rooms: Room[]) => void) | null;
   joinedListener: ((payload: { playerCount: number }) => void) | null;
   leftListener: ((payload: { playerCount: number }) => void) | null;
   connect: () => Socket;
@@ -59,6 +62,9 @@ interface BattleSocketState {
   subscribeRoomAvailability: (roomId: string) => void;
   unsubscribeRoomAvailability: () => void;
   resumeSession: (options?: { roomId?: string; roleHint?: string }) => Promise<void>;
+  subscribeRoomList: () => void;
+  unsubscribeRoomList: () => void;
+  requestRoomList: () => void;
 }
 
 export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
@@ -66,7 +72,9 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
   isConnected: false,
   roomAvailability: null,
   spectatorCount: 0,
+  rooms: [],
   availabilityListener: null,
+  roomListListener: null,
   joinedListener: null,
   leftListener: null,
   // 단일 소켓 인스턴스를 유지하고 기본 연결 상태를 관리합니다.
@@ -292,5 +300,28 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
       username: session.username,
       avatarUrl: session.avatarUrl,
     });
+  },
+  subscribeRoomList: () => {
+    const socket = get().connect();
+    const handleRoomList = (rooms: Room[]) => set({ rooms });
+
+    // 기존 리스너 제거 후 등록
+    const { roomListListener } = get();
+    if (roomListListener) {
+      socket.off(SOCKET_EVENT.ROOM_LIST, roomListListener);
+    }
+    socket.on(SOCKET_EVENT.ROOM_LIST, handleRoomList);
+    set({ roomListListener: handleRoomList });
+  },
+  unsubscribeRoomList: () => {
+    const socket = get().socket;
+    const { roomListListener } = get();
+    if (!socket || !roomListListener) return;
+    socket.off(SOCKET_EVENT.ROOM_LIST, roomListListener);
+    set({ roomListListener: null });
+  },
+  requestRoomList: () => {
+    const socket = get().connect();
+    socket.emit(SOCKET_EVENT.ROOM_LIST_REQUEST);
   },
 }));
