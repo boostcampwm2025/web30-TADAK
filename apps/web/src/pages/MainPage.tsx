@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import Header from '@/components/Header/Header';
@@ -9,8 +10,23 @@ function MainPage() {
   const navigate = useNavigate();
   const user = useUserStore((state) => state.user);
   const connect = useBattleSocketStore((state) => state.connect);
+  const subscribeRoomList = useBattleSocketStore((state) => state.subscribeRoomList);
+  const unsubscribeRoomList = useBattleSocketStore((state) => state.unsubscribeRoomList);
+  const requestRoomList = useBattleSocketStore((state) => state.requestRoomList);
   const startMatching = useMatchingStore((state) => state.startMatching);
   const registerMatchingListeners = useMatchingStore((state) => state.registerMatchingListeners);
+
+  useEffect(() => {
+    // 소켓 연결 후 방 목록 수신 구독 + 초기 요청
+    const socket = connect();
+    if (!socket.connected) socket.connect();
+    subscribeRoomList();
+    requestRoomList();
+
+    return () => {
+      unsubscribeRoomList();
+    };
+  }, [connect, subscribeRoomList, unsubscribeRoomList, requestRoomList]);
 
   const handleStartBattle = async () => {
     if (!user?.id) {
