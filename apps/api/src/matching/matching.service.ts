@@ -287,7 +287,9 @@ export class MatchingService {
 
   // 매칭 성공 시 Room & Battle 생성
   private async createMatch(user1: MatchingUser, user2: MatchingUser) {
-    return await this.roomService.createMatchedRoom(user1, user2);
+    const result = await this.roomService.createMatchedRoom(user1, user2);
+    await this.matchingGateway.broadcastRoomList();
+    return result;
   }
 
   // 매칭 지연 유저 알림

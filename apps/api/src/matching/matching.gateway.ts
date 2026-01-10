@@ -6,6 +6,8 @@ import { MatchingUser } from '@packages/types/matching';
 import { Room } from '@packages/types/room';
 import { Server, Socket } from 'socket.io';
 
+import { RoomService } from '@/room/room.service';
+
 import { MatchingService } from './matching.service';
 
 @WebSocketGateway({ namespace: SOCKET_NAMESPACE.GAME })
@@ -16,6 +18,7 @@ export class MatchingGateway implements OnGatewayDisconnect {
   constructor(
     @Inject(forwardRef(() => MatchingService))
     private readonly matchingService: MatchingService,
+    private readonly roomService: RoomService,
   ) {}
 
   async handleDisconnect(client: Socket) {
@@ -104,5 +107,11 @@ export class MatchingGateway implements OnGatewayDisconnect {
     this.server.to(socketId).emit(SOCKET_EVENT.OPPONENT_DISCONNECTED, {
       message: '상대방의 연결이 끊겨 매칭이 취소되었습니다.',
     });
+  }
+
+  // Redis I/O 후 방 목록을 모든 클라이언트에게 브로드캐스트
+  async broadcastRoomList(): Promise<void> {
+    const rooms = await this.roomService.listRooms();
+    this.server.emit(SOCKET_EVENT.ROOM_LIST, rooms);
   }
 }
