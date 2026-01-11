@@ -1,4 +1,3 @@
-import type { Room } from '@shared/types/room';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -56,40 +55,6 @@ function MainPage() {
     const totalPlayers = rooms.reduce((sum, room) => sum + (room.currentPlayers?.length ?? 0), 0);
     return { totalBattles, totalSpectators, totalPlayers };
   }, [rooms]);
-
-  const sampleFallback: Room[] = [
-    {
-      roomId: 'sample-1',
-      title: '두 수의 합',
-      hostId: 'system',
-      status: 'in-battle',
-      createdAt: new Date(),
-      settings: { maxPlayers: 2 },
-      currentPlayers: [
-        {
-          roomId: 'sample-1',
-          role: 'player',
-          userId: 'p1',
-          username: 'CodeMaster',
-          avatarUrl: undefined,
-          socketId: '',
-          joinedAt: new Date(),
-        },
-        {
-          roomId: 'sample-1',
-          role: 'player',
-          userId: 'p2',
-          username: 'AlgoKing',
-          avatarUrl: undefined,
-          socketId: '',
-          joinedAt: new Date(),
-        },
-      ],
-      currentSpectators: [],
-    },
-  ];
-
-  const roomCards = rooms.length > 0 ? rooms : sampleFallback;
 
   const handleStartBattle = async () => {
     if (!user?.id) {
@@ -191,11 +156,17 @@ function MainPage() {
         </div>
 
         {/* 방 카드 리스트 */}
-        <RoomCardList
-          rooms={roomCards}
-          onSpectate={handleJoinSpectator}
-          joiningRoomId={joiningRoomId}
-        />
+        {rooms.length === 0 ? (
+          <div className="rounded-2xl bg-bg-layer-2 border border-border-soft px-6 py-8 text-center text-base-secondary shadow-sm">
+            현재 진행 중인 배틀이 없습니다.
+          </div>
+        ) : (
+          <RoomCardList
+            rooms={rooms}
+            onSpectate={handleJoinSpectator}
+            joiningRoomId={joiningRoomId}
+          />
+        )}
       </main>
     </div>
   );
