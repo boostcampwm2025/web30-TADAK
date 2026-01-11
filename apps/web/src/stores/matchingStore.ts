@@ -15,18 +15,21 @@ interface MatchingStore {
   matchResult: MatchingSuccessResponse | null;
   stats: MatchingStats | null;
   timeoutMessage: string | null;
+  toastMessage: string | null;
 
   registerMatchingListeners: (socket: Socket) => void;
   unregisterMatchingListeners: (socket: Socket) => void;
   startMatching: (userId: string, socketId: string) => Promise<void>;
   cancelMatching: (userId: string) => Promise<void>;
   cleanup: () => void;
+  clearToast: () => void;
 }
 
 export const useMatchingStore = create<MatchingStore>((set, get) => ({
   matchResult: null,
   stats: null,
   timeoutMessage: null,
+  toastMessage: null,
 
   // MATCH_SUCCESS, STATS_UPDATE, MATCHING_TIMEOUT, OPPONENT_DISCONNECTED 이벤트 리스너 등록
   registerMatchingListeners: (socket: Socket) => {
@@ -43,8 +46,7 @@ export const useMatchingStore = create<MatchingStore>((set, get) => ({
     };
 
     const handleOpponentDisconnected = (data: { message: string }) => {
-      // TODO: 토스트 메시지 표시
-      alert(data.message);
+      set({ toastMessage: data.message });
 
       // 상태 초기화
       get().cleanup();
@@ -100,5 +102,10 @@ export const useMatchingStore = create<MatchingStore>((set, get) => ({
   // 정리
   cleanup: () => {
     set({ matchResult: null, stats: null, timeoutMessage: null });
+  },
+
+  // 토스트 메시지 제거
+  clearToast: () => {
+    set({ toastMessage: null });
   },
 }));
