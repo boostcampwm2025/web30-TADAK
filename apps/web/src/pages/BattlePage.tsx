@@ -14,6 +14,7 @@ function BattlePage() {
   const isSpectator = searchParams.get('mode') === 'spectator';
   const { theme, toggleTheme } = useTheme();
   const resumeSession = useBattleSocketStore((state) => state.resumeSession);
+  const connect = useBattleSocketStore((state) => state.connect);
   const me = useRoomStore((state) => state.me);
 
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
@@ -24,6 +25,18 @@ function BattlePage() {
       // 복구 실패 시 무시하고 사용자가 다시 입장하게 둡니다.
     });
   }, [me, resumeSession, roomId, isSpectator]);
+
+  useEffect(() => {
+    const socket = connect();
+    const handleReconnect = () => {
+      // 소켓이 재연결될 때 저장된 세션 기준으로 다시 JOIN_ROOM 시도
+      resumeSession({ roleHint: isSpectator ? 'spectator' : 'player' }).catch(() => {});
+    };
+    socket.on('connect', handleReconnect);
+    return () => {
+      socket.off('connect', handleReconnect);
+    };
+  }, [connect, resumeSession, isSpectator]);
 
   return (
     <div className="min-h-svh overflow-auto xl:h-screen xl:overflow-hidden">
