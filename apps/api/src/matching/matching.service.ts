@@ -104,11 +104,8 @@ export class MatchingService {
         });
       }
 
-      // 생성된 방 및 배틀 삭제
-      if (userdata.roomId) {
-        await this.roomService.deleteRoom(userdata.roomId);
-        await this.battleService.deleteBattle(userdata.roomId);
-      }
+      // 이미 배틀이 시작된 상태라면 방/배틀은 유지하고 상대 재입장(혹은 재매칭)만 처리합니다.
+      // 추후 명확한 종료 정책이 생기면 여기서 방/배틀 정리 로직을 추가!
     }
 
     await pipeline
