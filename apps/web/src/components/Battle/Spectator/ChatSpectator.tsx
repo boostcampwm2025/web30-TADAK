@@ -88,7 +88,7 @@ function ChatSpectator() {
 
   return (
     <>
-      <section className="relative flex h-full min-h-0 max-h-[70vh] sm:max-h-[80vh] xl:max-h-none flex-col overflow-hidden rounded-2xl border border-border-soft bg-[var(--bg-layer-2)] text-base-primary shadow-sm">
+      <section className="relative flex h-full min-h-[60vh] max-h-[70vh] sm:max-h-[60vh] xl:max-h-none flex-col overflow-hidden rounded-2xl border border-border-soft bg-[var(--bg-layer-2)] text-base-primary shadow-sm">
         <div className="flex items-center justify-between border-b border-border-soft bg-[var(--bg-layer-2)] px-4 py-3">
           <div className="flex items-center gap-3">
             <div className="flex h-5 w-5 items-center justify-center rounded-full">
