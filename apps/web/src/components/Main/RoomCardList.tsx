@@ -4,11 +4,12 @@ import { Eye } from 'lucide-react';
 type Props = {
   rooms: Room[];
   onSpectate?: (roomId: string) => void;
+  joiningRoomId?: string | null;
 };
 
 const getInitial = (name?: string) => name?.trim().charAt(0)?.toUpperCase() ?? '?';
 
-function RoomCardList({ rooms, onSpectate }: Props) {
+function RoomCardList({ rooms, onSpectate, joiningRoomId }: Props) {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {rooms.map((room) => {
@@ -72,9 +73,9 @@ function RoomCardList({ rooms, onSpectate }: Props) {
               type="button"
               onClick={onSpectate ? () => onSpectate(room.roomId) : undefined}
               className="mt-6 flex w-full items-center justify-center rounded-lg bg-base-muted px-4 py-3 text-sm font-semibold transition hover:bg-base-primary/50 disabled:opacity-50"
-              disabled={!onSpectate}
+              disabled={!onSpectate || joiningRoomId === room.roomId}
             >
-              관전하기
+              {joiningRoomId === room.roomId ? '입장 중...' : '관전하기'}
             </button>
           </div>
         );

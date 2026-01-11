@@ -1,5 +1,5 @@
 import type { Room } from '@shared/types/room';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import Header from '@/components/Header/Header';
@@ -29,11 +29,12 @@ function MainPage() {
   const unsubscribeRoomList = useBattleSocketStore((state) => state.unsubscribeRoomList);
   const requestRoomList = useBattleSocketStore((state) => state.requestRoomList);
   const rooms = useBattleSocketStore((state) => state.rooms);
+  const joinRoom = useBattleSocketStore((state) => state.joinRoom);
 
   const startMatching = useMatchingStore((state) => state.startMatching);
   const registerMatchingListeners = useMatchingStore((state) => state.registerMatchingListeners);
 
-  //const [joiningRoomId] = useState<string | null>(null);
+  const [joiningRoomId, setJoiningRoomId] = useState<string | null>(null);
 
   useEffect(() => {
     const socket = connect();
@@ -111,7 +112,27 @@ function MainPage() {
     }
   };
 
-  // 관전하기 입장 로직은 추후 백엔드 연동 시 추가 예정
+  const handleJoinSpectator = async (roomId: string) => {
+    setJoiningRoomId(roomId);
+    try {
+      const socket = connect();
+      if (!socket.connected) {
+        await new Promise<void>((resolve) => socket.once('connect', () => resolve()));
+      }
+      await joinRoom({
+        roomId,
+        requestedRole: 'spectator',
+        userId: user?.id,
+        username: user?.username,
+        avatarUrl: user?.avatarUrl,
+      });
+      navigate(`/room/${roomId}?mode=spectator`);
+    } catch (error) {
+      console.error('관전 입장 실패:', error);
+    } finally {
+      setJoiningRoomId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-bg-layer-1">
@@ -170,7 +191,11 @@ function MainPage() {
         </div>
 
         {/* 방 카드 리스트 */}
-        <RoomCardList rooms={roomCards} onSpectate={undefined} />
+        <RoomCardList
+          rooms={roomCards}
+          onSpectate={handleJoinSpectator}
+          joiningRoomId={joiningRoomId}
+        />
       </main>
     </div>
   );
