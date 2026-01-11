@@ -4,11 +4,14 @@ import Header from '@/components/Header/Header';
 import { MatchingCancelButton } from '@/components/Matching/MatchingCancelButton';
 import MatchingSuccess from '@/components/Matching/MatchingSuccess';
 import MatchingWait from '@/components/Matching/MatchingWait';
+import Toast from '@/components/ui/Toast';
 import { useMatchingStore } from '@/stores/matchingStore';
 
 function MatchingPage() {
   const [waitTime, setWaitTime] = useState(0);
   const matchResult = useMatchingStore((state) => state.matchResult);
+  const toastMessage = useMatchingStore((state) => state.toastMessage);
+  const clearToast = useMatchingStore((state) => state.clearToast);
 
   // 타이머
   useEffect(() => {
@@ -44,6 +47,14 @@ function MatchingPage() {
       <div className="flex min-h-screen items-center justify-center">
         <MatchingWait waitTime={waitTime} />
       </div>
+      {toastMessage && (
+        <Toast
+          message={toastMessage}
+          onClose={() => {
+            clearToast();
+          }}
+        />
+      )}
     </>
   );
 }
