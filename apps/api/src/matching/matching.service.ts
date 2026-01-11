@@ -56,6 +56,12 @@ export class MatchingService {
     const userdata = await this.redis.hgetall(RedisKeys.matchingUser(userId));
     if (!userdata) return;
 
+    // 이미 매칭 완료/배틀 진행 중인 상태라면 방/배틀 유지 및 알림 스킵 (재접속용)
+    if (userdata.status === 'MATCHED') {
+      this.logger.log(`User ${userId} disconnected after match start - keeping room/battle.`);
+      return;
+    }
+
     const pipeline = this.redis.pipeline();
 
     // 만약 이미 매칭된 상태에서 취소(연결 끊김)된 경우라면 상대방 처리
