@@ -34,10 +34,12 @@ function MatchingPage() {
 
   if (matchResult) {
     return (
-      <>
+      <div className="flex min-h-screen flex-col">
         <Header hideUserMenu />
-        <MatchingSuccess />
-      </>
+        <div className="flex flex-1 items-center justify-center">
+          <MatchingSuccess />
+        </div>
+      </div>
     );
   }
 
