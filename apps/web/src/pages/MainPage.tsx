@@ -11,16 +11,15 @@ import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useMatchingStore } from '@/stores/matchingStore';
 import { useUserStore } from '@/stores/userStore';
 
-// 색상 값은 임시 값 입니다 (추후에 index.css에 정의 후 사용 예정)
 const tierFilters = [
   { label: '전체', color: 'bg-green-05' },
-  { label: '브론즈', color: 'bg-[#d78b4c]' },
-  { label: '실버', color: 'bg-[#a7b3c2]' },
-  { label: '골드', color: 'bg-[#f2c94c]' },
-  { label: '플래티넘', color: 'bg-[#27ae60]' },
-  { label: '다이아몬드', color: 'bg-[#56ccf2]' },
-  { label: '루비', color: 'bg-[#ff6584]' },
-  { label: '마스터', color: 'bg-[#9b51e0]' },
+  { label: '브론즈', color: 'bg-tier-bronze' },
+  { label: '실버', color: 'bg-tier-silver' },
+  { label: '골드', color: 'bg-tier-gold' },
+  { label: '플래티넘', color: 'bg-tier-platinum' },
+  { label: '다이아몬드', color: 'bg-tier-diamond' },
+  { label: '루비', color: 'bg-tier-ruby' },
+  { label: '마스터', color: 'bg-tier-master' },
 ];
 
 function MainPage() {
