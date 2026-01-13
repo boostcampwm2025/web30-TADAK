@@ -8,4 +8,4 @@
 pnpm run start:dev
 ```
 
-서버는 `http://localhost:3001`에서 실행됩니다.
+서버는 `http://localhost:4000`에서 실행됩니다.
