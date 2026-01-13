@@ -32,11 +32,13 @@ export class MatchingController {
     const winRate =
       user.wins + user.losses === 0 ? 0 : Math.round((user.wins / (user.wins + user.losses)) * 100);
 
+    const safeTier = (user.tier as MatchingUser['tier']) ?? { tier: 'BRONZE', division: 4 };
+
     const matchingUser: MatchingUser = {
       userId: user.id,
       username: user.username,
       rating: user.rating,
-      tier: user.tier as MatchingUser['tier'],
+      tier: safeTier,
       socketId: socketId,
       status: 'WAITING',
       waitingSince: new Date(),

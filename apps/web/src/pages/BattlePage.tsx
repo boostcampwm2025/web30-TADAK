@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { SOCKET_EVENT } from '@shared/constants/socket-event';
+import { useEffect, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 import BattleHeader from '@/components/Battle/BattleHeader';
@@ -21,6 +22,7 @@ function BattlePage() {
   const me = useRoomStore((state) => state.me);
 
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
+  const desiredRole = useMemo(() => (isSpectator ? 'spectator' : 'player'), [isSpectator]);
 
   useEffect(() => {
     if (me) return;

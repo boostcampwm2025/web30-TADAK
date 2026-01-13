@@ -1,4 +1,4 @@
-import { SOCKET_EVENT } from '@shared/constants/socket-event';
+import { SOCKET_ERROR, SOCKET_EVENT } from '@shared/constants/socket-event';
 import type {
   JoinRoomRequest,
   JoinRoomResponse,
@@ -39,6 +39,14 @@ const loadSession = (): StoredSession | null => {
     return raw ? (JSON.parse(raw) as StoredSession) : null;
   } catch {
     return null;
+  }
+};
+
+const clearSession = () => {
+  try {
+    sessionStorage.removeItem(SESSION_KEY);
+  } catch {
+    // ignore
   }
 };
 
@@ -185,9 +193,12 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
         resolve({ roomId: response.roomId, role: response.role });
       };
 
-      const handleError = (error: { message?: string }) => {
+      const handleError = (error: { code?: string; message?: string }) => {
         if (settled) return;
         cleanup();
+        if (error?.code === SOCKET_ERROR.ROOM_NOT_FOUND) {
+          clearSession();
+        }
         reject(new Error(error?.message ?? 'JOIN_ROOM_FAILED'));
       };
 

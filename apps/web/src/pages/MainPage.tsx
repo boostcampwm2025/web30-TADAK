@@ -1,3 +1,5 @@
+import { SOCKET_EVENT } from '@shared/constants/socket-event';
+import { useEffect, useState } from 'react';
 import { LogIn } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -35,6 +37,29 @@ function MainPage() {
 
   const startMatching = useMatchingStore((state) => state.startMatching);
   const registerMatchingListeners = useMatchingStore((state) => state.registerMatchingListeners);
+  const [activeRooms, setActiveRooms] = useState<RoomSummary[]>([]);
+  const [isLoadingRooms, setLoadingRooms] = useState(false);
+  const [joiningRoomId, setJoiningRoomId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const activeSocket = socket ?? connect();
+    if (!activeSocket.connected) {
+      activeSocket.connect();
+    }
+    setLoadingRooms(true);
+
+    const handleRoomList = (rooms: RoomSummary[]) => {
+      setActiveRooms(rooms);
+      setLoadingRooms(false);
+    };
+
+    activeSocket.on(SOCKET_EVENT.ROOM_LIST, handleRoomList);
+    activeSocket.emit(SOCKET_EVENT.ROOM_LIST_REQUEST);
+
+    return () => {
+      activeSocket.off(SOCKET_EVENT.ROOM_LIST, handleRoomList);
+    };
+  }, [socket, connect]);
 
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [joiningRoomId, setJoiningRoomId] = useState<string | null>(null);

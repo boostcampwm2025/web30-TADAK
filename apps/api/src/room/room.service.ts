@@ -68,6 +68,7 @@ export class RoomService {
         socketId: user1.socketId, // MatchingUser에 보관된 socketId 활용
         roomId: roomId,
         role: 'player',
+        avatarUrl: user1.avatarUrl,
         joinedAt: now,
       };
 
@@ -77,6 +78,7 @@ export class RoomService {
         socketId: user2.socketId,
         roomId: roomId,
         role: 'player',
+        avatarUrl: user2.avatarUrl,
         joinedAt: now,
       };
 
@@ -135,6 +137,30 @@ export class RoomService {
   async saveRoom(room: Room): Promise<void> {
     const key = RedisKeys.room(room.roomId);
     await this.redis.set(key, JSON.stringify(room));
+  }
+
+  async listRooms(): Promise<Room[]> {
+    // 방 정보를 담고 있는 모든 키 조회
+    const keys = await this.redis.keys(RedisKeys.room('*'));
+    if (!keys.length) return [];
+
+    // 파이프라인으로 한 번에 조회 후 파싱
+    const pipeline = this.redis.pipeline();
+    keys.forEach((key) => pipeline.get(key));
+    const results = (await pipeline.exec()) as [Error | null, string | null][];
+
+    const rooms: Room[] = [];
+    results.forEach(([err, value]) => {
+      if (err || !value) return;
+      try {
+        const parsed = JSON.parse(value) as Room;
+        rooms.push(parsed);
+      } catch (e) {
+        this.logger.warn(`Failed to parse room data: ${e}`);
+      }
+    });
+
+    return rooms;
   }
 
   async removeUser(roomId: string, userId: string): Promise<Room | null> {
