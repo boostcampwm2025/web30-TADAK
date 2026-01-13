@@ -5,8 +5,8 @@ export interface ProblemData {
   tags: string | string[];
   url: string;
   title: string;
-  time_limit: number;
-  memory_limit: number;
+  timeLimit: number;
+  memoryLimit: number;
   statement: string;
   input: string;
   output: string;
@@ -14,3 +14,5 @@ export interface ProblemData {
   examples: { input: string; output: string }[];
   testcases: { input: string; output: string }[];
 }
+
+export interface ProblemDataPayload extends Omit<ProblemData, 'testcases'> {}

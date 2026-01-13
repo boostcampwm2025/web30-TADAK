@@ -158,7 +158,7 @@ export class MatchingService {
 
       try {
         // Room & Battle 생성
-        const { room, battle } = await this.createMatch(user1, user2);
+        const { room, battle, problem } = await this.createMatch(user1, user2);
 
         // 대기 시간 계산 및 저장
         const now = Date.now();
@@ -190,7 +190,11 @@ export class MatchingService {
           .exec();
 
         // 소켓 이벤트: 매칭 성공 알림
-        this.matchingGateway.emitMatchSuccess(user1, user2, room, battle);
+        const problemInfo = {
+          id: problem.id,
+          title: problem.title,
+        };
+        this.matchingGateway.emitMatchSuccess(user1, user2, room, battle, problemInfo);
 
         matchedUsers.push(user1, user2);
 
