@@ -56,6 +56,12 @@ export class MatchingService {
     const userdata = await this.redis.hgetall(RedisKeys.matchingUser(userId));
     if (!userdata) return;
 
+    // 이미 매칭 완료/배틀 진행 중인 상태라면 방/배틀 유지 및 알림 스킵 (재접속용)
+    if (userdata.status === 'MATCHED') {
+      this.logger.log(`User ${userId} disconnected after match start - keeping room/battle.`);
+      return;
+    }
+
     const pipeline = this.redis.pipeline();
 
     // 만약 이미 매칭된 상태에서 취소(연결 끊김)된 경우라면 상대방 처리
@@ -104,11 +110,8 @@ export class MatchingService {
         });
       }
 
-      // 생성된 방 및 배틀 삭제
-      if (userdata.roomId) {
-        await this.roomService.deleteRoom(userdata.roomId);
-        await this.battleService.deleteBattle(userdata.roomId);
-      }
+      // 이미 배틀이 시작된 상태라면 방/배틀은 유지하고 상대 재입장(혹은 재매칭)만 처리합니다.
+      // 추후 명확한 종료 정책이 생기면 여기서 방/배틀 정리 로직을 추가!
     }
 
     await pipeline

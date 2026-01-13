@@ -75,16 +75,6 @@ export class RoomGateway {
       return;
     }
 
-    const currentPlayerCount = room.currentPlayers.length;
-
-    if (requestedRole === 'player' && currentPlayerCount >= 2) {
-      client.emit(SOCKET_EVENT.ERROR, {
-        code: SOCKET_ERROR.ROOM_FULL,
-        message: '방이 가득 찼습니다.',
-      });
-      return;
-    }
-
     const resolvedUserId = userId ?? client.id;
     const resolvedUsername = username ?? `User-${resolvedUserId.slice(-4)}`;
     const resolvedAvatar = avatarUrl;
@@ -92,6 +82,16 @@ export class RoomGateway {
     // 기존 유저 재접속 처리: 동일 userId가 있으면 socketId만 교체
     const existingPlayer = room.currentPlayers.find((u) => u.userId === resolvedUserId);
     const existingSpectator = room.currentSpectators.find((u) => u.userId === resolvedUserId);
+    const currentPlayerCount = room.currentPlayers.length;
+
+    // 새 플레이어가 추가되는 경우에만 정원 체크
+    if (requestedRole === 'player' && !existingPlayer && currentPlayerCount >= 2) {
+      client.emit(SOCKET_EVENT.ERROR, {
+        code: SOCKET_ERROR.ROOM_FULL,
+        message: '방이 가득 찼습니다.',
+      });
+      return;
+    }
 
     let newUser: RoomUser | null = null;
 
