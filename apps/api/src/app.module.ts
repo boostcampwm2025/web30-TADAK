@@ -11,6 +11,7 @@ import { ProblemModule } from './problem/problem.module';
 import { RedisModule } from './redis/redis.module';
 import { RoomModule } from './room/room.module';
 import { Submission } from './submission/submission.entity';
+import { SubmissionModule } from './submission/submission.module';
 import { User } from './user/user.entity';
 import { UserModule } from './user/user.module';
 
@@ -65,6 +66,7 @@ import { UserModule } from './user/user.module';
     BattleModule,
     UserModule,
     ProblemModule,
+    SubmissionModule,
     AuthModule,
   ],
   controllers: [],
