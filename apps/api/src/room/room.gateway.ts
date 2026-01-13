@@ -30,6 +30,13 @@ export class RoomGateway {
     private readonly battleService: BattleService,
   ) {}
 
+  @SubscribeMessage(SOCKET_EVENT.ROOM_LIST_REQUEST)
+  async handleRoomListRequest(@ConnectedSocket() client: Socket) {
+    const rooms = await this.roomService.listRooms();
+    const publicRooms = this.roomService.toPublicRooms(rooms);
+    client.emit(SOCKET_EVENT.ROOM_LIST, publicRooms);
+  }
+
   @SubscribeMessage(SOCKET_EVENT.CHECK_ROOM_AVAILABILITY)
   async handleCheckRoomAvailability(
     @ConnectedSocket() client: Socket,

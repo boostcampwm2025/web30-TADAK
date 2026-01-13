@@ -11,6 +11,11 @@ import { BattleService } from '../battle/battle.service';
 import { REDIS_CLIENT } from '../redis/redis.module';
 import { RedisKeys } from '../redis/redis-key.constant';
 
+type PublicRoom = Omit<Room, 'currentPlayers' | 'currentSpectators'> & {
+  currentPlayers: Array<Omit<RoomUser, 'socketId'>>;
+  currentSpectators: Array<Omit<RoomUser, 'socketId'>>;
+};
+
 @Injectable()
 export class RoomService {
   private readonly logger = new Logger(RoomService.name);
@@ -151,5 +156,39 @@ export class RoomService {
     const key = RedisKeys.room(roomId);
     await this.redis.del(key);
     this.logger.log(`Deleted room ${roomId}`);
+  }
+
+  async listRooms(): Promise<Room[]> {
+    // 방 정보를 담고 있는 모든 키 조회
+    const keys = await this.redis.keys(RedisKeys.room('*'));
+    if (!keys.length) return [];
+
+    // 파이프라인으로 한 번에 조회 후 파싱
+    const pipeline = this.redis.pipeline();
+    keys.forEach((key) => pipeline.get(key));
+    const results = (await pipeline.exec()) as [Error | null, string | null][];
+
+    const rooms: Room[] = [];
+    results.forEach(([err, value]) => {
+      if (err || !value) return;
+      try {
+        const parsed = JSON.parse(value) as Room;
+        rooms.push(parsed);
+      } catch (e) {
+        this.logger.warn(`Failed to parse room data: ${e}`);
+      }
+    });
+
+    return rooms;
+  }
+
+  // 클라이언트에 노출할 때 socketId 등 민감 정보를 제거한 방 데이터
+
+  toPublicRooms(rooms: Room[]): PublicRoom[] {
+    return rooms.map((room) => ({
+      ...room,
+      currentPlayers: room.currentPlayers.map(({ socketId: _socketId, ...rest }) => rest),
+      currentSpectators: room.currentSpectators.map(({ socketId: _socketId, ...rest }) => rest),
+    }));
   }
 }

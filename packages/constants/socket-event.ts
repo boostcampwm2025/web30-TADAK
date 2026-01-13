@@ -20,6 +20,7 @@ export const SOCKET_EVENT = {
   JOIN_ROOM: 'join-room', // 방 입장 (Player/Spectator)
   LEAVE_ROOM: 'leave-room', // 방 나가기
   SEND_CHAT: 'send-chat', // 관전자 채팅 전송
+  ROOM_LIST_REQUEST: 'room-list-request', // 방 목록 요청
 
   // --- Server -> Client (응답/알림) ---
   ROOM_AVAILABILITY: 'room-availability', // 방 인원 확인 결과
@@ -28,6 +29,7 @@ export const SOCKET_EVENT = {
   ROOM_USER_JOINED: 'room-joined', // 새 유저 입장 알림
   ROOM_USER_LEFT: 'room-left', // 유저 퇴장 알림
   RECEIVE_CHAT: 'receive-chat', // 관전자 채팅 수신(일반/시스템)
+  ROOM_LIST: 'room-list', // 방 목록 응답/브로드캐스트
 
   // === Matching ===
   MATCH_SUCCESS: 'match-success', // 매칭 성공 알림
