@@ -1,3 +1,4 @@
+import { Inject } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -5,6 +6,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
+import Redis from 'ioredis';
 import { Server, Socket } from 'socket.io';
 
 import { BattleService } from '@/battle/battle.service';
@@ -17,6 +19,8 @@ import {
 } from '../../../../packages/constants/socket-event';
 import { type ChatMessage } from '../../../../packages/types/chat';
 import { RoomUser, UserRole } from '../../../../packages/types/user';
+import { REDIS_CLIENT } from '../redis/redis.module';
+import { RedisKeys } from '../redis/redis-key.constant';
 import { RoomService } from './room.service';
 
 @WebSocketGateway({ namespace: SOCKET_NAMESPACE.GAME })
@@ -26,6 +30,7 @@ export class RoomGateway {
     new Map();
 
   constructor(
+    @Inject(REDIS_CLIENT) private readonly redis: Redis,
     private readonly roomService: RoomService,
     private readonly battleService: BattleService,
   ) {}
@@ -130,6 +135,16 @@ export class RoomGateway {
       const playerUser = existingPlayer ?? newUser;
       if (playerUser) {
         await this.battleService.joinBattle(roomId, playerUser);
+      }
+
+      try {
+        await this.redis.hset(RedisKeys.matchingUser(resolvedUserId), {
+          status: 'IN_ROOM',
+          joinedAt: new Date().toISOString(),
+          roomId: roomId,
+        });
+      } catch {
+        // ignore
       }
     }
 
