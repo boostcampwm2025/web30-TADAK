@@ -1,9 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { PUBSUB_CHANNELS } from '@packages/constants/pubsub';
-import type { FinalResultMessage, TestcaseUpdateMessage } from '@packages/types/pubsub';
 import type Redis from 'ioredis';
 
-import { REDIS_CLIENT } from '@/redis/redis.module';
+import { PUBSUB_CHANNELS } from '../../../../packages/constants/pubsub';
+import type { FinalResultMessage, TestcaseUpdateMessage } from '../../../../packages/types/pubsub';
+import { REDIS_CLIENT } from '../redis/redis.module';
 
 @Injectable()
 export class PubsubService {
