@@ -1,8 +1,10 @@
+import { LogIn } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import Header from '@/components/Header/Header';
 import RoomCardList from '@/components/Main/RoomCardList';
+import Modal from '@/components/ui/Modal';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useMatchingStore } from '@/stores/matchingStore';
 import { useUserStore } from '@/stores/userStore';
@@ -33,6 +35,7 @@ function MainPage() {
   const startMatching = useMatchingStore((state) => state.startMatching);
   const registerMatchingListeners = useMatchingStore((state) => state.registerMatchingListeners);
 
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [joiningRoomId, setJoiningRoomId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,7 +61,7 @@ function MainPage() {
 
   const handleStartBattle = async () => {
     if (!user?.id) {
-      console.error('로그인이 필요합니다.');
+      setShowLoginModal(true);
       return;
     }
 
@@ -168,6 +171,26 @@ function MainPage() {
           />
         )}
       </main>
+
+      <Modal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        icon={LogIn}
+        title="로그인이 필요합니다"
+        description="배틀을 시작하려면 로그인이 필요합니다"
+        buttons={[
+          {
+            label: '취소',
+            onClick: () => setShowLoginModal(false),
+            variant: 'muted',
+          },
+          {
+            label: '로그인하기',
+            onClick: () => navigate('/login'),
+            variant: 'green',
+          },
+        ]}
+      />
     </div>
   );
 }
