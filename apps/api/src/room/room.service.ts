@@ -184,30 +184,6 @@ export class RoomService {
     this.logger.log(`Deleted room ${roomId}`);
   }
 
-  async listRooms(): Promise<Room[]> {
-    // 방 정보를 담고 있는 모든 키 조회
-    const keys = await this.redis.keys(RedisKeys.room('*'));
-    if (!keys.length) return [];
-
-    // 파이프라인으로 한 번에 조회 후 파싱
-    const pipeline = this.redis.pipeline();
-    keys.forEach((key) => pipeline.get(key));
-    const results = (await pipeline.exec()) as [Error | null, string | null][];
-
-    const rooms: Room[] = [];
-    results.forEach(([err, value]) => {
-      if (err || !value) return;
-      try {
-        const parsed = JSON.parse(value) as Room;
-        rooms.push(parsed);
-      } catch (e) {
-        this.logger.warn(`Failed to parse room data: ${e}`);
-      }
-    });
-
-    return rooms;
-  }
-
   // 클라이언트에 노출할 때 socketId 등 민감 정보를 제거한 방 데이터
 
   toPublicRooms(rooms: Room[]): PublicRoom[] {
