@@ -23,7 +23,7 @@ export class MatchingService {
   // 매칭 시작
   async startMatching(user: MatchingUser): Promise<void> {
     const existing = await this.redis.hget(RedisKeys.matchingUser(user.userId), 'status');
-    if (existing === 'WAITING' || existing === 'MATCHED') {
+    if (existing === 'WAITING' || existing === 'MATCHED' || existing === 'IN_ROOM') {
       this.logger.warn(`User ${user.userId} is already in state ${existing}`);
       return;
     }
@@ -56,10 +56,25 @@ export class MatchingService {
     const userdata = await this.redis.hgetall(RedisKeys.matchingUser(userId));
     if (!userdata) return;
 
+    const matchedAt = userdata.matchedAt ? Date.parse(userdata.matchedAt) : 0;
+    const withinGrace = matchedAt > 0 && Date.now() - matchedAt <= 5000;
+    const hasJoinedRoom = userdata.status === 'IN_ROOM' || !!userdata.joinedAt;
+
+    // 매칭 완료 후 방 입장 상태라면 방/배틀 유지 (재접속용)
+    if (userdata.status === 'IN_ROOM') {
+      this.logger.log(`User ${userId} disconnected after room join - keeping room/battle.`);
+      return;
+    }
+
     const pipeline = this.redis.pipeline();
 
     // 만약 이미 매칭된 상태에서 취소(연결 끊김)된 경우라면 상대방 처리
     if (userdata.status === 'MATCHED' && userdata.opponentId) {
+      // 매칭 직후(5초 내) 방 입장 전 이탈이면 방/배틀 정리 대상
+      if (!withinGrace || hasJoinedRoom) {
+        this.logger.log(`User ${userId} disconnected but room/battle kept.`);
+        return;
+      }
       const opponentData = await this.redis.hgetall(RedisKeys.matchingUser(userdata.opponentId));
 
       if (opponentData) {
@@ -104,7 +119,7 @@ export class MatchingService {
         });
       }
 
-      // 생성된 방 및 배틀 삭제
+      // 매칭 직후 이탈이므로 방/배틀 정리
       if (userdata.roomId) {
         await this.roomService.deleteRoom(userdata.roomId);
         await this.battleService.deleteBattle(userdata.roomId);
@@ -159,11 +174,13 @@ export class MatchingService {
             status: 'MATCHED',
             roomId: room.roomId,
             opponentId: user2.userId,
+            matchedAt: new Date().toISOString(),
           })
           .hset(RedisKeys.matchingUser(user2.userId), {
             status: 'MATCHED',
             roomId: room.roomId,
             opponentId: user1.userId,
+            matchedAt: new Date().toISOString(),
           })
           // 1시간 후 자동 삭제 (공간 절약)
           .expire(RedisKeys.matchingUser(user1.userId), 3600)

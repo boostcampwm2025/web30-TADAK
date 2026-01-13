@@ -3,6 +3,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { logout } from '@/apis/auth';
+import LogoImage from '@/assets/logo.png';
 import { UserProfile } from '@/components/Profile/UserProfile';
 import { useTheme } from '@/hooks/useTheme';
 import { useUserStore } from '@/stores/userStore';
@@ -43,12 +44,9 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
 
   return (
     <header className="border-b border-border-soft bg-bg-layer-2 shadow-sm">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-10 py-2">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-8 py-2">
         <div className="flex items-center gap-3">
-          <div className="grid h-12 w-12 rounded-2xl bg-brand shadow-lg"></div>
-          <div className="flex flex-col">
-            <span className="text-lg font-extrabold tracking-tight logo-gradient">CODE RENA</span>
-          </div>
+          <img src={LogoImage} alt="TADAK 로고" className="h-12 w-auto" />
         </div>
         <div className="flex items-center gap-4">
           {rightContent ? (

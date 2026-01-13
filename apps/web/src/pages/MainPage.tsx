@@ -1,54 +1,76 @@
-import { SOCKET_EVENT } from '@shared/constants/socket-event';
-import { useEffect, useState } from 'react';
 import { LogIn } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import Header from '@/components/Header/Header';
+import RoomCardList from '@/components/Main/RoomCardList';
 import Modal from '@/components/ui/Modal';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useMatchingStore } from '@/stores/matchingStore';
 import { useUserStore } from '@/stores/userStore';
 
-type RoomSummary = {
-  roomId: string;
-  title: string;
-  status: 'waiting' | 'in-battle';
-};
+const tierFilters = [
+  { label: '전체', color: 'bg-green-05' },
+  { label: '브론즈', color: 'bg-tier-bronze' },
+  { label: '실버', color: 'bg-tier-silver' },
+  { label: '골드', color: 'bg-tier-gold' },
+  { label: '플래티넘', color: 'bg-tier-platinum' },
+  { label: '다이아몬드', color: 'bg-tier-diamond' },
+  { label: '루비', color: 'bg-tier-ruby' },
+  { label: '마스터', color: 'bg-tier-master' },
+];
 
 function MainPage() {
   const navigate = useNavigate();
   const user = useUserStore((state) => state.user);
+
   const connect = useBattleSocketStore((state) => state.connect);
-  const socket = useBattleSocketStore((state) => state.socket);
+  const subscribeRoomList = useBattleSocketStore((state) => state.subscribeRoomList);
+  const unsubscribeRoomList = useBattleSocketStore((state) => state.unsubscribeRoomList);
+  const requestRoomList = useBattleSocketStore((state) => state.requestRoomList);
+  const rooms = useBattleSocketStore((state) => state.rooms);
   const joinRoom = useBattleSocketStore((state) => state.joinRoom);
+  const socket = useBattleSocketStore((state) => state.socket);
+
   const startMatching = useMatchingStore((state) => state.startMatching);
   const registerMatchingListeners = useMatchingStore((state) => state.registerMatchingListeners);
-  const [activeRooms, setActiveRooms] = useState<RoomSummary[]>([]);
-  const [isLoadingRooms, setLoadingRooms] = useState(false);
   const [joiningRoomId, setJoiningRoomId] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  const ensureSocketReady = async () => {
     const activeSocket = socket ?? connect();
     if (!activeSocket.connected) {
-      activeSocket.connect();
+      await new Promise<void>((resolve) => activeSocket.once('connect', () => resolve()));
     }
-    setLoadingRooms(true);
+    return activeSocket;
+  };
 
-    const handleRoomList = (rooms: RoomSummary[]) => {
-      setActiveRooms(rooms);
-      setLoadingRooms(false);
-    };
-
-    activeSocket.on(SOCKET_EVENT.ROOM_LIST, handleRoomList);
-    activeSocket.emit(SOCKET_EVENT.ROOM_LIST_REQUEST);
+  useEffect(() => {
+    let mounted = true;
+    ensureSocketReady()
+      .then(() => {
+        if (!mounted) return;
+        subscribeRoomList();
+        requestRoomList();
+      })
+      .catch(() => {});
 
     return () => {
-      activeSocket.off(SOCKET_EVENT.ROOM_LIST, handleRoomList);
+      mounted = false;
+      unsubscribeRoomList();
     };
-  }, [socket, connect]);
+  }, [connect, requestRoomList, subscribeRoomList, unsubscribeRoomList, socket]);
 
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  const stats = useMemo(() => {
+    const totalBattles = rooms.length;
+    const totalSpectators = rooms.reduce(
+      (sum, room) => sum + (room.currentSpectators?.length ?? 0),
+      0,
+    );
+    const totalPlayers = rooms.reduce((sum, room) => sum + (room.currentPlayers?.length ?? 0), 0);
+    return { totalBattles, totalSpectators, totalPlayers };
+  }, [rooms]);
 
   const handleStartBattle = async () => {
     if (!user?.id) {
@@ -57,23 +79,11 @@ function MainPage() {
     }
 
     try {
-      const socket = connect();
+      const activeSocket = await ensureSocketReady();
+      if (!activeSocket.id) throw new Error('Socket ID를 받지 못했습니다.');
 
-      // Socket이 연결될 때까지 대기
-      if (!socket.connected) {
-        await new Promise<void>((resolve) => {
-          socket.once('connect', () => resolve());
-        });
-      }
-
-      if (!socket.id) {
-        throw new Error('Socket ID를 받지 못했습니다.');
-      }
-
-      registerMatchingListeners(socket);
-
-      await startMatching(user.id, socket.id);
-
+      registerMatchingListeners(activeSocket);
+      await startMatching(user.id, activeSocket.id);
       navigate('/matching');
     } catch (error) {
       console.error('매칭 시작 중 오류:', error);
@@ -83,10 +93,7 @@ function MainPage() {
   const handleJoinSpectator = async (roomId: string) => {
     setJoiningRoomId(roomId);
     try {
-      const socket = connect();
-      if (!socket.connected) {
-        await new Promise<void>((resolve) => socket.once('connect', () => resolve()));
-      }
+      await ensureSocketReady();
       await joinRoom({
         roomId,
         requestedRole: 'spectator',
@@ -103,20 +110,21 @@ function MainPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-bg-layer-1">
       <Header />
-      <main className="mx-auto flex max-w-5xl flex-col gap-10 pt-10 px-10 pb-16">
+      <main className="mx-auto flex max-w-6xl flex-col gap-8 px-4 pb-16 pt-10 lg:px-8">
+        {/* 상단 헤더 */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-red-01" />
             <h1 className="text-3xl font-bold">LIVE</h1>
-            <h1 className="text-3xl font-bold text-brand">BATTLE</h1>
+            <h1 className="text-3xl font-bold text-brand">BATTLES</h1>
             <button
               type="button"
               onClick={handleStartBattle}
-              className="ml-auto rounded-24 bg-brand px-8 py-4 text-lg font-semibold shadow-md transition hover:scale-[1.02]"
+              className="ml-auto rounded-3xl bg-brand px-6 py-3 text-lg font-semibold shadow-md transition hover:scale-[1.02]"
             >
-              자동 매칭
+              게임 시작하기
             </button>
           </div>
           <p className="text-sm text-base-primary">
@@ -124,42 +132,51 @@ function MainPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-base-secondary bg-base-secondary/40 p-6 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-green-05" />
-              <h2 className="text-xl font-semibold">관전 가능한 방</h2>
-            </div>
-            {isLoadingRooms && <span className="text-sm text-base-faint">불러오는 중...</span>}
-          </div>
-          {activeRooms.length === 0 ? (
-            <p className="text-sm text-base-faint">진행 중인 배틀이 없습니다.</p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {activeRooms.map((room) => (
-                <div
-                  key={room.roomId}
-                  className="flex items-center justify-between rounded-xl border border-base-secondary bg-white px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-ink">{room.title}</p>
-                    <p className="text-xs text-base-faint">
-                      {room.status === 'in-battle' ? '진행 중' : '대기 중'}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleJoinSpectator(room.roomId)}
-                    className="rounded-full bg-brand px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:scale-[1.02] disabled:opacity-60"
-                    disabled={joiningRoomId === room.roomId}
-                  >
-                    {joiningRoomId === room.roomId ? '입장 중...' : '관전하기'}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+        {/* 티어 필터 (동작 없음, UI만) */}
+        <div className="flex flex-wrap gap-2">
+          {tierFilters.map((tier, idx) => (
+            <button
+              key={tier.label}
+              type="button"
+              className={`rounded-full px-4 py-2 text-xs font-semibold text-base-primary shadow-sm ${
+                idx === 0 ? 'bg-green-01 text-green-06' : 'bg-base-faint text-base-secondary'
+              }`}
+            >
+              <span className={`mr-2 inline-block h-2 w-2 rounded-full ${tier.color}`} />
+              {tier.label}
+            </button>
+          ))}
         </div>
+
+        {/* 통계 카드 */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {[
+            { label: '진행 중인 배틀', value: stats.totalBattles },
+            { label: '총 관전자', value: stats.totalSpectators },
+            { label: '참가 중인 플레이어', value: stats.totalPlayers },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="rounded-2xl bg-bg-layer-2 border border-border-soft px-6 py-4 shadow-sm"
+            >
+              <p className="text-3xl font-bold text-green-05">{item.value}</p>
+              <p className="mt-1 text-sm text-base-secondary">{item.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* 방 카드 리스트 */}
+        {rooms.length === 0 ? (
+          <div className="rounded-2xl bg-bg-layer-2 border border-border-soft px-6 py-8 text-center text-base-secondary shadow-sm">
+            현재 진행 중인 배틀이 없습니다.
+          </div>
+        ) : (
+          <RoomCardList
+            rooms={rooms}
+            onSpectate={handleJoinSpectator}
+            joiningRoomId={joiningRoomId}
+          />
+        )}
       </main>
 
       <Modal

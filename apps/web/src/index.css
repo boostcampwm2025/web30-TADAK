@@ -139,67 +139,8 @@ body {
   margin: 0;
 }
 
-.logo-gradient {
-  background: linear-gradient(90deg, #4b2cd3 0%, #008bcc 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* Custom utility classes for design palette */
-.bg-participant-card {
-  background: linear-gradient(
-    180deg,
-    var(--color-participant-gradient-start) 0%,
-    var(--color-participant-gradient-end) 100%
-  );
-}
-
-.bg-cta-main {
-  background: linear-gradient(135deg, var(--color-cta-main-start), var(--color-cta-main-end));
-}
-
-.bg-cta-modal {
-  background: linear-gradient(90deg, var(--color-cta-modal-start), var(--color-cta-modal-end));
-}
-
-.bg-modal-accent {
-  background: linear-gradient(
-    135deg,
-    var(--color-modal-accent-start),
-    var(--color-modal-accent-end)
-  );
-}
-
-.bg-participant-icon {
-  background-color: var(--color-participant-icon);
-}
-
-.text-spectator-icon {
-  color: var(--color-spectator-icon);
-}
-
-.bg-participant-check {
-  background-color: var(--color-participant-check);
-}
-
-.bg-participant-badge {
-  background-color: var(--color-participant-badge);
-}
-
-.bg-spectator-badge {
-  background-color: var(--color-spectator-badge);
-}
-
 .border-soft {
   border-color: var(--color-border-soft);
-}
-
-.border-neutral-card {
-  border-color: var(--color-neutral-card-border);
-}
-
-.bg-overlay {
-  background-color: var(--color-overlay);
 }
 
 .fade-slide-in {

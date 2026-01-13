@@ -1,5 +1,4 @@
-import { SOCKET_EVENT } from '@shared/constants/socket-event';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 import BattleHeader from '@/components/Battle/BattleHeader';
@@ -16,53 +15,60 @@ function BattlePage() {
   const isSpectator = searchParams.get('mode') === 'spectator';
   const { theme, toggleTheme } = useTheme();
   const resumeSession = useBattleSocketStore((state) => state.resumeSession);
-  const joinRoom = useBattleSocketStore((state) => state.joinRoom);
   const connect = useBattleSocketStore((state) => state.connect);
+  const joinRoom = useBattleSocketStore((state) => state.joinRoom);
   const user = useUserStore((state) => state.user);
+  const me = useRoomStore((state) => state.me);
 
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
-  const desiredRole = useMemo(() => (isSpectator ? 'spectator' : 'player'), [isSpectator]);
 
   useEffect(() => {
-    const ensureJoin = async () => {
-      // 세션 복구 시도
-      await resumeSession({ roomId, roleHint: desiredRole });
-
-      const currentMe = useRoomStore.getState().me;
-      const needsJoin = !currentMe || currentMe.roomId !== roomId || currentMe.role !== desiredRole;
-
-      if (needsJoin) {
+    if (me) return;
+    const desiredRole = isSpectator ? 'spectator' : 'player';
+    const attempt = async () => {
+      await resumeSession({ roomId, roleHint: desiredRole }).catch(() => {});
+      if (!useRoomStore.getState().me) {
         await joinRoom({
           roomId,
           requestedRole: desiredRole,
           userId: user?.id,
           username: user?.username,
           avatarUrl: user?.avatarUrl,
-        });
+        }).catch(() => {});
       }
     };
+    attempt();
+  }, [me, resumeSession, joinRoom, roomId, isSpectator, user?.avatarUrl, user?.id, user?.username]);
 
-    // 최초 실행
-    ensureJoin().catch(() => {
-      // 실패 시 사용자가 수동으로 재시도하게 둠
-    });
-
-    // 소켓 연결/재연결 시에도 다시 방 입장을 보장
-    const client = connect();
+  useEffect(() => {
+    const socket = connect();
     const handleReconnect = () => {
-      ensureJoin().catch(() => {});
+      // 소켓 재연결 시 저장된 세션 기준으로 다시 JOIN_ROOM 시도
+      const desiredRole = isSpectator ? 'spectator' : 'player';
+      resumeSession({ roleHint: desiredRole })
+        .catch(() => {})
+        .then(() => {
+          if (!useRoomStore.getState().me) {
+            joinRoom({
+              roomId,
+              requestedRole: desiredRole,
+              userId: user?.id,
+              username: user?.username,
+              avatarUrl: user?.avatarUrl,
+            }).catch(() => {});
+          }
+        });
     };
-    client.on(SOCKET_EVENT.CONNECT, handleReconnect);
-
+    socket.on('connect', handleReconnect);
     return () => {
-      client.off(SOCKET_EVENT.CONNECT, handleReconnect);
+      socket.off('connect', handleReconnect);
     };
   }, [
     connect,
-    desiredRole,
-    joinRoom,
     resumeSession,
+    joinRoom,
     roomId,
+    isSpectator,
     user?.avatarUrl,
     user?.id,
     user?.username,

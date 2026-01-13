@@ -53,7 +53,7 @@ function CodeEditor() {
   const handleChange = (value: string) => {
     setCode(value);
     if (!socket?.connected) return;
-    if (!me?.userId) return; // 방 입장 정보가 없으면 전송하지 않음(식별 불가)
+    if (!me?.userId) return; // 입장 정보 없으면 전송하지 않음
 
     socket.emit(BATTLE_EVENTS.CODE_CHANGE, {
       roomId,
