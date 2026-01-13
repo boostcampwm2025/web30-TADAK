@@ -36,7 +36,7 @@ export default function MatchingSuccess() {
   const myTier = { tier: 'BRONZE', division: 4 };
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center gap-10 select-none">
+    <div className="flex gap-4 w-full flex-col items-center justify-center select-none">
       {/* 매칭 성공 메시지 */}
       <div className="text-center">
         <div className="flex justify-center">
@@ -48,7 +48,7 @@ export default function MatchingSuccess() {
         <p className="mt-2 text-lg text-base-primary">2명의 플레이어가 모였습니다</p>
       </div>
 
-      <div className="flex items-center justify-center gap-24 w-2/3 max-w-6xl mx-auto bg-base-faint rounded-3xl py-12">
+      <div className="flex items-center justify-center gap-24 w-2/3 max-w-4xl mx-auto bg-base-faint rounded-3xl py-10">
         {/* 내 정보 */}
         <div className="flex flex-col items-center gap-4">
           <div className="flex h-24 w-24 items-center justify-center rounded-full">

@@ -1,8 +1,11 @@
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import { useEffect, useState } from 'react';
+import { LogIn } from 'lucide-react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import Header from '@/components/Header/Header';
+import Modal from '@/components/ui/Modal';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useMatchingStore } from '@/stores/matchingStore';
 import { useUserStore } from '@/stores/userStore';
@@ -45,9 +48,11 @@ function MainPage() {
     };
   }, [socket, connect]);
 
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
   const handleStartBattle = async () => {
     if (!user?.id) {
-      console.error('로그인이 필요합니다.');
+      setShowLoginModal(true);
       return;
     }
 
@@ -156,6 +161,26 @@ function MainPage() {
           )}
         </div>
       </main>
+
+      <Modal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        icon={LogIn}
+        title="로그인이 필요합니다"
+        description="배틀을 시작하려면 로그인이 필요합니다"
+        buttons={[
+          {
+            label: '취소',
+            onClick: () => setShowLoginModal(false),
+            variant: 'muted',
+          },
+          {
+            label: '로그인하기',
+            onClick: () => navigate('/login'),
+            variant: 'green',
+          },
+        ]}
+      />
     </div>
   );
 }
