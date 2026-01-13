@@ -2,8 +2,11 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { BATTLE_CONFIG } from '@packages/constants/battle';
 import { Battle } from '@packages/types/battle';
 import { MatchingUser } from '@packages/types/matching';
+import { ProblemDataPayload } from '@packages/types/problem';
 import { RoomUser } from '@packages/types/user';
 import Redis from 'ioredis';
+
+import { ProblemService } from '@/problem/problem.service';
 
 import { ROOM_CONFIG } from '../../../../packages/constants/socket-event';
 import { Room, RoomAvailabilityResponseDTO, RoomSettings } from '../../../../packages/types/room';
@@ -23,6 +26,7 @@ export class RoomService {
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     private readonly BattleService: BattleService,
+    private readonly problemService: ProblemService,
   ) {}
 
   // 기본 방 생성
@@ -57,7 +61,7 @@ export class RoomService {
   async createMatchedRoom(
     user1: MatchingUser,
     user2: MatchingUser,
-  ): Promise<{ room: Room; battle: Battle }> {
+  ): Promise<{ room: Room; battle: Battle; problem: ProblemDataPayload }> {
     try {
       // 방 생성: 유저 정보와 즉시 시작 상태 주입
       const now = new Date();
@@ -98,10 +102,31 @@ export class RoomService {
         users: room.currentPlayers.map((player) => player.userId),
       });
 
+      const problemEntity = await this.problemService.findOne(battle.problemId);
+      if (!problemEntity) {
+        throw new Error('Problem not found for the battle.');
+      }
+
+      const problem: ProblemDataPayload = {
+        id: problemEntity.id,
+        source: problemEntity.source,
+        difficulty: problemEntity.difficulty,
+        tags: problemEntity.tags,
+        url: problemEntity.url,
+        title: problemEntity.title,
+        timeLimit: problemEntity.timeLimit,
+        memoryLimit: problemEntity.memoryLimit,
+        statement: problemEntity.statement,
+        input: problemEntity.input,
+        output: problemEntity.output,
+        note: problemEntity.note,
+        examples: problemEntity.examples,
+      };
+
       this.logger.log(
         `Created matched room ${room.roomId} for users ${user1.userId} and ${user2.userId}`,
       );
-      return { room, battle };
+      return { room, battle, problem };
     } catch (error: unknown) {
       if (error instanceof Error)
         this.logger.error(`Failed to create matched room: ${error.message}`);

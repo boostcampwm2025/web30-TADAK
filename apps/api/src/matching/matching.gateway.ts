@@ -48,7 +48,13 @@ export class MatchingGateway implements OnGatewayDisconnect {
   }
 
   // 매칭 성공 이벤트를 두 유저에게 전송
-  emitMatchSuccess(user1: MatchingUser, user2: MatchingUser, room: Room, battle: Battle): void {
+  emitMatchSuccess(
+    user1: MatchingUser,
+    user2: MatchingUser,
+    room: Room,
+    battle: Battle,
+    problemInfo: { id: string; title: string },
+  ): void {
     // user1에게 전송
     this.server.to(user1.socketId).emit(SOCKET_EVENT.MATCH_SUCCESS, {
       roomId: room.roomId,
@@ -62,6 +68,7 @@ export class MatchingGateway implements OnGatewayDisconnect {
         tier: user2.tier,
         rate: user2.myRate,
       },
+      problem: problemInfo,
     });
 
     // user2에게 전송
@@ -77,6 +84,7 @@ export class MatchingGateway implements OnGatewayDisconnect {
         tier: user1.tier,
         rate: user1.myRate,
       },
+      problem: problemInfo,
     });
   }
 

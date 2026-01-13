@@ -4,14 +4,24 @@ import { Battle, BattleUser, CreateBattleDTO, UpdateUserCodeDTO } from '@package
 import { RoomUser } from '@packages/types/user';
 
 import { BattleRedisService } from '@/battle/battle-redis.service';
+import { ProblemService } from '@/problem/problem.service';
 
 @Injectable()
 export class BattleService {
-  constructor(private readonly battleRedisService: BattleRedisService) {}
+  constructor(
+    private readonly battleRedisService: BattleRedisService,
+    private readonly problemService: ProblemService,
+  ) {}
 
   async createBattle(dto: CreateBattleDTO): Promise<Battle> {
     // TODO: 배틀 ID 생성 로직 추가
     const battleId = `battle-${Date.now()}`;
+
+    // 임시 문제 선택
+    const problem = await this.problemService.findFirst();
+    if (!problem) {
+      throw new Error('No problems available.');
+    }
 
     const users: BattleUser[] = dto.users.map((userId) => ({
       userId,
@@ -20,7 +30,7 @@ export class BattleService {
       language: BATTLE_CONFIG.DEFAULT_LANGUAGE,
       progress: {
         passedCount: 0,
-        totalCount: 0,
+        totalCount: Array.isArray(problem.testcases) ? (problem.testcases as any[]).length : 0,
       },
       isConnected: true,
       isFinished: false,
@@ -29,6 +39,7 @@ export class BattleService {
     const battle: Battle = {
       battleId,
       roomId: dto.roomId,
+      problemId: problem.id,
       status: 'running',
       config: {
         duration: dto.config.duration || BATTLE_CONFIG.DURATION,
@@ -97,6 +108,12 @@ export class BattleService {
 
   async getBattle(battleId: string): Promise<Battle | null> {
     // TODO: 권한 체크 추가 (사용자가 해당 배틀에 접근 가능한지 또는 비밀번호 존재 등)
+    return this.battleRedisService.getBattle(battleId);
+  }
+
+  async getBattleByRoomId(roomId: string): Promise<Battle | null> {
+    const battleId = await this.battleRedisService.getBattleIdByRoomId(roomId);
+    if (!battleId) return null;
     return this.battleRedisService.getBattle(battleId);
   }
 
