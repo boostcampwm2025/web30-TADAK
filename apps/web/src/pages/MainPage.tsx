@@ -31,6 +31,7 @@ function MainPage() {
   const requestRoomList = useBattleSocketStore((state) => state.requestRoomList);
   const rooms = useBattleSocketStore((state) => state.rooms);
   const joinRoom = useBattleSocketStore((state) => state.joinRoom);
+  const socket = useBattleSocketStore((state) => state.socket);
 
   const startMatching = useMatchingStore((state) => state.startMatching);
   const registerMatchingListeners = useMatchingStore((state) => state.registerMatchingListeners);
@@ -38,16 +39,29 @@ function MainPage() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [joiningRoomId, setJoiningRoomId] = useState<string | null>(null);
 
+  const ensureSocketReady = async () => {
+    const activeSocket = socket ?? connect();
+    if (!activeSocket.connected) {
+      await new Promise<void>((resolve) => activeSocket.once('connect', () => resolve()));
+    }
+    return activeSocket;
+  };
+
   useEffect(() => {
-    const socket = connect();
-    if (!socket.connected) socket.connect();
-    subscribeRoomList();
-    requestRoomList();
+    let mounted = true;
+    ensureSocketReady()
+      .then(() => {
+        if (!mounted) return;
+        subscribeRoomList();
+        requestRoomList();
+      })
+      .catch(() => {});
 
     return () => {
+      mounted = false;
       unsubscribeRoomList();
     };
-  }, [connect, subscribeRoomList, unsubscribeRoomList, requestRoomList]);
+  }, [connect, requestRoomList, subscribeRoomList, unsubscribeRoomList, socket]);
 
   const stats = useMemo(() => {
     const totalBattles = rooms.length;
@@ -66,14 +80,11 @@ function MainPage() {
     }
 
     try {
-      const socket = connect();
-      if (!socket.connected) {
-        await new Promise<void>((resolve) => socket.once('connect', () => resolve()));
-      }
-      if (!socket.id) throw new Error('Socket ID를 받지 못했습니다.');
+      const activeSocket = await ensureSocketReady();
+      if (!activeSocket.id) throw new Error('Socket ID를 받지 못했습니다.');
 
-      registerMatchingListeners(socket);
-      await startMatching(user.id, socket.id);
+      registerMatchingListeners(activeSocket);
+      await startMatching(user.id, activeSocket.id);
       navigate('/matching');
     } catch (error) {
       console.error('매칭 시작 중 오류:', error);
@@ -83,10 +94,7 @@ function MainPage() {
   const handleJoinSpectator = async (roomId: string) => {
     setJoiningRoomId(roomId);
     try {
-      const socket = connect();
-      if (!socket.connected) {
-        await new Promise<void>((resolve) => socket.once('connect', () => resolve()));
-      }
+      await ensureSocketReady();
       await joinRoom({
         roomId,
         requestedRole: 'spectator',
