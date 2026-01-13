@@ -9,6 +9,7 @@ import { Problem } from './problem/problem.entity';
 import { ProblemModule } from './problem/problem.module';
 import { RedisModule } from './redis/redis.module';
 import { RoomModule } from './room/room.module';
+import { Submission } from './submission/submission.entity';
 import { User } from './user/user.entity';
 import { UserModule } from './user/user.module';
 
@@ -35,6 +36,7 @@ import { UserModule } from './user/user.module';
           // 예: User
           User,
           Problem,
+          Submission,
         ],
         synchronize: true, // 개발 단계에서는 true (Entity와 DB 스키마 동기화)
         logging: ['error'], // 에러만 로그로 출력
