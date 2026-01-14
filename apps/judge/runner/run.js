@@ -31,6 +31,12 @@ const OUTPUT_DIR = IS_DOCKER
   ? path.join(BASE_DIR, 'output')
   : path.join(BASE_DIR, 'submissions', submissionId);
 
+// --- 폴더 자동 생성 (Directory Preparation) ---
+// 실행 결과를 저장할 폴더가 없으면 자동으로 생성합니다.
+if (!fs.existsSync(OUTPUT_DIR)) {
+  fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+}
+
 /**
  * 메인 실행 함수
  */
