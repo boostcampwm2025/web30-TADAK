@@ -50,7 +50,6 @@ export class SubmissionService {
     return {
       submissionId: savedSubmission.id,
       status: 'PENDING',
-      message: '채점이 시작되었습니다.',
     };
   }
 }
