@@ -1,16 +1,25 @@
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { PUBSUB_CHANNELS } from '@packages/constants/pubsub';
 import type { FinalResultMessage, TestcaseUpdateMessage } from '@packages/types/pubsub';
 import Redis from 'ioredis';
+import { Repository } from 'typeorm';
 
 import { REDIS_CLIENT } from '../redis/redis.module';
+import { RedisKeys } from '../redis/redis-key.constant';
+import { Submission } from '../submission/submission.entity';
+import { PubsubGateway } from './pubsub.gateway';
 
 @Injectable()
 export class PubsubSubscriberService implements OnModuleInit {
   private readonly logger = new Logger(PubsubSubscriberService.name);
   private readonly subscriber: Redis;
 
-  constructor(@Inject(REDIS_CLIENT) private readonly redisClient: Redis) {
+  constructor(
+    @Inject(REDIS_CLIENT) private readonly redisClient: Redis,
+    @InjectRepository(Submission) private readonly submissionRepository: Repository<Submission>,
+    private readonly pubsubGateway: PubsubGateway,
+  ) {
     this.subscriber = this.redisClient.duplicate();
   }
 
@@ -19,35 +28,78 @@ export class PubsubSubscriberService implements OnModuleInit {
     this.logger.log(`Subscribed to channel: ${PUBSUB_CHANNELS.SUBMISSION_RESULT}`);
 
     this.subscriber.on('message', (channel, message) => {
-      this.handleMessage(channel, message);
+      void this.handleMessage(channel, message);
     });
   }
 
-  private handleMessage(channel: string, message: string) {
+  private async handleMessage(channel: string, message: string) {
     try {
       const parsedMessage = JSON.parse(message) as TestcaseUpdateMessage | FinalResultMessage;
 
       if (parsedMessage.type === 'TESTCASE_UPDATE') {
-        this.handleTestcaseUpdate(parsedMessage);
+        await this.handleTestcaseUpdate(parsedMessage);
       } else if (parsedMessage.type === 'FINAL_RESULT') {
-        this.handleFinalResult(parsedMessage);
+        await this.handleFinalResult(parsedMessage);
       }
     } catch (error) {
       this.logger.error(`Failed to parse message from channel ${channel}:`, error);
     }
   }
 
-  private handleTestcaseUpdate(message: TestcaseUpdateMessage) {
+  private async handleTestcaseUpdate(message: TestcaseUpdateMessage) {
     this.logger.log(
       `[TESTCASE_UPDATE] Submission ${message.submissionId} - TC ${message.testcase.index}: ${message.testcase.status}`,
     );
-    // TODO: WebSocket으로 클라이언트에 전달
+
+    const socketId = await this.getSocketIdBySubmissionId(message.submissionId);
+    if (socketId) {
+      this.pubsubGateway.emitTestcaseUpdate(socketId, message);
+    }
   }
 
-  private handleFinalResult(message: FinalResultMessage) {
+  private async handleFinalResult(message: FinalResultMessage) {
     this.logger.log(
       `[FINAL_RESULT] Submission ${message.submissionId}: ${message.status} (${message.result.passed}/${message.result.total})`,
     );
-    // TODO: WebSocket으로 클라이언트에 전달
+
+    const roomId = await this.getRoomIdBySubmissionId(message.submissionId);
+    if (roomId) {
+      this.pubsubGateway.emitFinalResult(roomId, message);
+    }
+  }
+
+  private async getSocketIdBySubmissionId(submissionId: number): Promise<string | null> {
+    const submission = await this.submissionRepository.findOne({ where: { id: submissionId } });
+    if (!submission) {
+      this.logger.warn(`Submission ${submissionId} not found`);
+      return null;
+    }
+
+    const socketId = await this.redisClient.hget(
+      RedisKeys.matchingUser(submission.userId),
+      'socketId',
+    );
+    if (!socketId) {
+      this.logger.warn(`SocketId not found for user ${submission.userId}`);
+      return null;
+    }
+
+    return socketId;
+  }
+
+  private async getRoomIdBySubmissionId(submissionId: number): Promise<string | null> {
+    const submission = await this.submissionRepository.findOne({ where: { id: submissionId } });
+    if (!submission) {
+      this.logger.warn(`Submission ${submissionId} not found`);
+      return null;
+    }
+
+    const roomId = await this.redisClient.hget(RedisKeys.matchingUser(submission.userId), 'roomId');
+    if (!roomId) {
+      this.logger.warn(`RoomId not found for user ${submission.userId}`);
+      return null;
+    }
+
+    return roomId;
   }
 }
