@@ -2,6 +2,7 @@ import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 
+import { DockerCleanupService } from '../docker/docker.cleanup.service';
 import { DockerRunnerService } from '../docker/docker.service';
 import { SUBMISSION_QUEUE, SUBMISSION_WORKER_CONCURRENCY } from './submission.constants';
 import { parseSubmissionJobPayload, SubmissionJobPayload } from './submission.payload';
@@ -10,7 +11,10 @@ import { parseSubmissionJobPayload, SubmissionJobPayload } from './submission.pa
 export class SubmissionProcessor extends WorkerHost {
   private readonly logger = new Logger(SubmissionProcessor.name);
 
-  constructor(private readonly dockerRunnerService: DockerRunnerService) {
+  constructor(
+    private readonly dockerRunnerService: DockerRunnerService,
+    private readonly dockerCleanupService: DockerCleanupService,
+  ) {
     super();
   }
 
@@ -32,11 +36,15 @@ export class SubmissionProcessor extends WorkerHost {
       `Job ${job.id ?? 'unknown'} received: type=${payload.type}, problemId=${payload.problemId}, submissionId=${payload.submissionId ?? 'null'}`,
     );
 
-    const result = await this.dockerRunnerService.runSubmission({ submissionId: executionId });
+    try {
+      const result = await this.dockerRunnerService.runSubmission({ submissionId: executionId });
 
-    this.logger.log(
-      `Docker run completed: exitCode=${result.exitCode ?? 'null'}, signal=${result.signal ?? 'null'}`,
-    );
+      this.logger.log(
+        `Docker run completed: exitCode=${result.exitCode ?? 'null'}, signal=${result.signal ?? 'null'}`,
+      );
+    } finally {
+      await this.dockerCleanupService.cleanupExecution(executionId);
+    }
   }
 
   @OnWorkerEvent('failed')
