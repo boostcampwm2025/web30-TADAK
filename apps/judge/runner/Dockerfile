@@ -14,7 +14,7 @@ RUN rm -f /usr/bin/curl /usr/bin/wget
 # 5. 작업 디렉토리 설정 및 파일 복사
 WORKDIR /runner
 
-COPY run.js .
+COPY run.js wrapper.js ./
 
 # 6. 소유권 변경 및 사용자 전환
 RUN chown -R coder:coder /runner
