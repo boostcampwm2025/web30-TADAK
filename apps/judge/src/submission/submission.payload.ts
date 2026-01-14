@@ -2,7 +2,7 @@ export type SubmissionJobType = 'SUBMISSION' | 'TEST';
 
 export interface SubmissionJobPayload {
   submissionId: number | null;
-  problemId: number;
+  problemId: string;
   code: string;
   language: string;
   type: SubmissionJobType;
@@ -17,7 +17,7 @@ export function parseSubmissionJobPayload(payload: unknown): SubmissionJobPayloa
 
   const data = payload as Record<string, unknown>;
   const type = parseJobType(data.type);
-  const problemId = parsePositiveNumber(data.problemId, 'problemId');
+  const problemId = parseNonEmptyString(data.problemId, 'problemId');
   const code = parseNonEmptyString(data.code, 'code');
   const language = parseNonEmptyString(data.language, 'language');
   const submissionId = parseNullableNumber(data.submissionId, 'submissionId');
@@ -40,14 +40,6 @@ export function parseSubmissionJobPayload(payload: unknown): SubmissionJobPayloa
 function parseJobType(value: unknown): SubmissionJobType {
   if (value !== 'SUBMISSION' && value !== 'TEST') {
     throw new Error('"type" must be either "SUBMISSION" or "TEST".');
-  }
-
-  return value;
-}
-
-function parsePositiveNumber(value: unknown, field: string): number {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
-    throw new Error(`"${field}" must be a positive number.`);
   }
 
   return value;
