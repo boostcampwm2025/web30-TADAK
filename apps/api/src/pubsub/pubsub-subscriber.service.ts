@@ -1,10 +1,11 @@
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PUBSUB_CHANNELS } from '@packages/constants/pubsub';
 import type { FinalResultMessage, TestcaseUpdateMessage } from '@packages/types/pubsub';
 import Redis from 'ioredis';
 import { Repository } from 'typeorm';
 
+import { BattleGateway } from '../battle/battle.gateway';
 import { REDIS_CLIENT } from '../redis/redis.module';
 import { RedisKeys } from '../redis/redis-key.constant';
 import { Submission } from '../submission/submission.entity';
@@ -19,6 +20,7 @@ export class PubsubSubscriberService implements OnModuleInit {
     @Inject(REDIS_CLIENT) private readonly redisClient: Redis,
     @InjectRepository(Submission) private readonly submissionRepository: Repository<Submission>,
     private readonly pubsubGateway: PubsubGateway,
+    @Inject(forwardRef(() => BattleGateway)) private readonly battleGateway: BattleGateway,
   ) {
     this.subscriber = this.redisClient.duplicate();
   }
@@ -62,9 +64,15 @@ export class PubsubSubscriberService implements OnModuleInit {
       `[FINAL_RESULT] Submission ${message.submissionId}: ${message.status} (${message.result.passed}/${message.result.total})`,
     );
 
-    const roomId = await this.getRoomIdBySubmissionId(message.submissionId);
-    if (roomId) {
-      this.pubsubGateway.emitFinalResult(roomId, message);
+    const userInfo = await this.getUserInfoBySubmissionId(message.submissionId);
+
+    if (userInfo?.roomId) {
+      this.pubsubGateway.emitFinalResult(userInfo.roomId, message);
+      this.battleGateway.handleUserFinished({
+        roomId: userInfo.roomId,
+        userId: userInfo.userId,
+        username: userInfo.username,
+      });
     }
   }
 
@@ -87,19 +95,26 @@ export class PubsubSubscriberService implements OnModuleInit {
     return socketId;
   }
 
-  private async getRoomIdBySubmissionId(submissionId: number): Promise<string | null> {
+  // submissionId로 유저 정보 조회 (roomId, username)
+  private async getUserInfoBySubmissionId(
+    submissionId: number,
+  ): Promise<{ roomId: string; userId: string; username: string } | null> {
     const submission = await this.submissionRepository.findOne({ where: { id: submissionId } });
     if (!submission) {
       this.logger.warn(`Submission ${submissionId} not found`);
       return null;
     }
 
-    const roomId = await this.redisClient.hget(RedisKeys.matchingUser(submission.userId), 'roomId');
-    if (!roomId) {
+    const userData = await this.redisClient.hgetall(RedisKeys.matchingUser(submission.userId));
+    if (!userData?.roomId) {
       this.logger.warn(`RoomId not found for user ${submission.userId}`);
       return null;
     }
 
-    return roomId;
+    return {
+      roomId: userData.roomId,
+      userId: submission.userId,
+      username: userData.username ?? '플레이어',
+    };
   }
 }
