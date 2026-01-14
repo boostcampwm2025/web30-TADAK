@@ -1,8 +1,10 @@
+export type SubmissionJobType = 'TEST' | 'SUBMISSION';
+
 export interface Metadata {
   problemId: number;
   timeLimit: number;
   memoryLimit: number;
-  type: 'TEST' | 'SUBMISSION';
+  type: SubmissionJobType;
 }
 
 export interface Testcase {
