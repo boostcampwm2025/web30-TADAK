@@ -6,7 +6,7 @@ import type { Metadata, SubmissionJobType, Testcase } from './judge.types';
 
 @Injectable()
 export class JudgeReader {
-  private readonly DATA_DIR = '/judge-data';
+  private readonly DATA_DIR = process.env.JUDGE_VOLUME || '/judge-data';
 
   readMetadata(submissionId: number): Metadata {
     const submissionDir = this.getSubmissionDir(submissionId);
