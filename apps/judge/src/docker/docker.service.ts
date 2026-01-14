@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import path from 'node:path';
 
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -7,9 +8,9 @@ import {
   DOCKER_CPU_LIMIT,
   DOCKER_DEFAULT_MEMORY_LIMIT_MB,
   DOCKER_PIDS_LIMIT,
-  DOCKER_PROBLEMS_VOLUME,
+  DOCKER_PROBLEMS_PATH,
   DOCKER_RUNNER_IMAGE,
-  DOCKER_SUBMISSIONS_VOLUME,
+  DOCKER_SUBMISSIONS_PATH,
   DOCKER_TMPFS_SIZE_MB,
 } from './docker.constants';
 
@@ -38,8 +39,9 @@ export class DockerRunnerService {
 
   private buildRunArgs(options: DockerRunOptions): string[] {
     const image = this.getString('JUDGE_RUNNER_IMAGE', DOCKER_RUNNER_IMAGE);
-    const problemsVolume = this.getString('JUDGE_PROBLEMS_VOLUME', DOCKER_PROBLEMS_VOLUME);
-    const submissionsVolume = this.getString('JUDGE_SUBMISSIONS_VOLUME', DOCKER_SUBMISSIONS_VOLUME);
+    const problemsPath = this.getString('JUDGE_PROBLEMS_PATH', DOCKER_PROBLEMS_PATH);
+    const submissionsPath = this.getString('JUDGE_SUBMISSIONS_PATH', DOCKER_SUBMISSIONS_PATH);
+    const submissionOutputPath = path.posix.join(submissionsPath, options.submissionId);
     const memoryLimitMb =
       options.memoryLimitMb ??
       this.getNumber('JUDGE_DEFAULT_MEMORY_LIMIT_MB', DOCKER_DEFAULT_MEMORY_LIMIT_MB);
@@ -48,9 +50,9 @@ export class DockerRunnerService {
       'run',
       '--rm',
       '-v',
-      `${problemsVolume}:/app/data:ro`,
+      `${problemsPath}:/app/data:ro`,
       '-v',
-      `${submissionsVolume}:/app/output:rw`,
+      `${submissionOutputPath}:/app/output:rw`,
       '--network',
       'none',
       '--memory',
