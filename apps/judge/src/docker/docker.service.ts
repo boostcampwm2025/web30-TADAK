@@ -5,6 +5,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import {
+  DOCKER_CONTAINER_NAME,
   DOCKER_CPU_LIMIT,
   DOCKER_DEFAULT_MEMORY_LIMIT_MB,
   DOCKER_PIDS_LIMIT,
@@ -45,10 +46,12 @@ export class DockerRunnerService {
     const memoryLimitMb =
       options.memoryLimitMb ??
       this.getNumber('JUDGE_DEFAULT_MEMORY_LIMIT_MB', DOCKER_DEFAULT_MEMORY_LIMIT_MB);
-
+    const containerName = `${DOCKER_CONTAINER_NAME}-${options.submissionId}`;
     return [
       'run',
       '--rm',
+      '--name',
+      containerName,
       '-v',
       `${problemsPath}:/app/data:ro`,
       '-v',
