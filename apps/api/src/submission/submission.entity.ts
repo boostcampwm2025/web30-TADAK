@@ -31,7 +31,4 @@ export class Submission {
 
   @Column({ type: 'int', nullable: true })
   memoryUsed: number;
-
-  @Column({ type: 'text', nullable: true })
-  output: string;
 }
