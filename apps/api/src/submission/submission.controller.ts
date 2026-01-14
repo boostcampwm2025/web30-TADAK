@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Headers, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
 import { User } from '../user/user.entity';
@@ -14,5 +14,16 @@ export class SubmissionController {
   async submit(@Req() req: { user: User }, @Body() dto: CreateSubmissionDto) {
     const userId = req.user.id;
     return this.submissionService.createSubmission(dto, userId);
+  }
+
+  @Post('dry-run')
+  @UseGuards(AuthGuard('jwt'))
+  async dryRun(
+    @Req() req: { user: User },
+    @Body() dto: CreateSubmissionDto,
+    @Headers('x-socket-id') socketId: string,
+  ) {
+    const userId = req.user.id;
+    return this.submissionService.executeTest(dto, userId, socketId);
   }
 }
