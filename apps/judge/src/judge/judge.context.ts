@@ -14,7 +14,7 @@ export class JudgeContext {
 
   constructor(
     public readonly submissionId: number,
-    private readonly testcases: any[],
+    private readonly testcases: Testcase[],
     private readonly reader: JudgeReader,
     private readonly checker: JudgeChecker,
     private readonly pubsub: PubsubService,
@@ -32,7 +32,7 @@ export class JudgeContext {
       if (!this.reader.hasOutputFile(this.submissionId, i)) break;
 
       const actualOutput = this.reader.readOutputFile(this.submissionId, i);
-      const testcase = this.testcases[i] as Testcase;
+      const testcase = this.testcases[i];
 
       const isCorrect = this.checker.compare(actualOutput, testcase.output);
       const tcStatus: TestcaseStatus = isCorrect ? 'ACCEPTED' : 'WRONG_ANSWER';
