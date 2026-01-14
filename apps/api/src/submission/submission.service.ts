@@ -1,7 +1,7 @@
-import { InjectQueue } from '@nestjs/bull';
+import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import type { Queue } from 'bull';
+import type { Queue } from 'bullmq';
 import type { Repository } from 'typeorm';
 
 import { CreateSubmissionDto } from './create-submission.dto';
@@ -31,7 +31,7 @@ export class SubmissionService {
 
     // 큐에 작업 등록
     try {
-      await this.submissionQueue.add({
+      await this.submissionQueue.add('submission-job', {
         type: 'SUBMISSION',
         submissionId: savedSubmission.id,
         problemId: dto.problemId,
