@@ -52,4 +52,17 @@ export class SubmissionService {
       status: 'PENDING',
     };
   }
+
+  async executeTest(dto: CreateSubmissionDto, userId: string, socketId: string) {
+    // 큐에 작업 등록
+    await this.submissionQueue.add('test-job', {
+      type: 'TEST',
+      submissionId: null,
+      problemId: dto.problemId,
+      code: dto.code,
+      language: dto.language,
+      userId,
+      socketId,
+    });
+  }
 }
