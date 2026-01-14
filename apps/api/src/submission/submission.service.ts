@@ -17,7 +17,7 @@ export class SubmissionService {
     private submissionQueue: Queue,
   ) {}
 
-  async createSubmission(dto: CreateSubmissionDto, userId: string) {
+  async submit(dto: CreateSubmissionDto, userId: string) {
     // DB에 저장
     const submission = this.submissionRepository.create({
       problemId: dto.problemId,

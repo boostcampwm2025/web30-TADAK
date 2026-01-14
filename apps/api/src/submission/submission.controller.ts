@@ -13,7 +13,7 @@ export class SubmissionController {
   @UseGuards(AuthGuard('jwt'))
   async submit(@Req() req: { user: User }, @Body() dto: CreateSubmissionDto) {
     const userId = req.user.id;
-    return this.submissionService.createSubmission(dto, userId);
+    return this.submissionService.submit(dto, userId);
   }
 
   @Post('dry-run')
