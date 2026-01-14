@@ -1,19 +1,17 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PUBSUB_CHANNELS } from '@packages/constants/pubsub';
 import type { FinalResultMessage, TestcaseUpdateMessage } from '@packages/types/pubsub';
 import Redis from 'ioredis';
 
+import { REDIS_CLIENT } from '../redis/redis.module';
+
 @Injectable()
-export class RedisSubscriberService implements OnModuleInit {
-  private readonly logger = new Logger(RedisSubscriberService.name);
+export class PubsubSubscriberService implements OnModuleInit {
+  private readonly logger = new Logger(PubsubSubscriberService.name);
   private readonly subscriber: Redis;
 
-  constructor(private readonly configService: ConfigService) {
-    this.subscriber = new Redis({
-      host: this.configService.get('REDIS_HOST'),
-      port: this.configService.get('REDIS_PORT'),
-    });
+  constructor(@Inject(REDIS_CLIENT) private readonly redisClient: Redis) {
+    this.subscriber = this.redisClient.duplicate();
   }
 
   async onModuleInit() {
