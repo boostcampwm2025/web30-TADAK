@@ -51,8 +51,8 @@ export class BattleGateway {
     }
   }
 
-  @SubscribeMessage(BATTLE_EVENTS.USER_TEST_RESULT)
-  handleUserTestResult(@MessageBody() payload: UserTestResultPayload) {
+  // 테스트 결과 채팅 메시지 전송
+  handleUserTestResult(payload: UserTestResultPayload) {
     const { roomId, username, passed } = payload;
     if (!roomId) return;
 
@@ -70,8 +70,8 @@ export class BattleGateway {
     this.server.to(roomId).emit(SOCKET_EVENT.RECEIVE_CHAT, systemMessage);
   }
 
-  @SubscribeMessage(BATTLE_EVENTS.USER_FINISHED)
-  handleUserFinished(@MessageBody() payload: UserFinishedPayload) {
+  // 제출 완료 채팅 메시지 전송
+  handleUserFinished(payload: UserFinishedPayload) {
     const { roomId, username } = payload;
     if (!roomId) return;
 

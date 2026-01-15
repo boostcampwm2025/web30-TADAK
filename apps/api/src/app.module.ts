@@ -8,6 +8,7 @@ import { BattleModule } from './battle/battle.module';
 import { MatchingModule } from './matching/matching.module';
 import { Problem } from './problem/problem.entity';
 import { ProblemModule } from './problem/problem.module';
+import { PubsubModule } from './pubsub/pubsub.module';
 import { RedisModule } from './redis/redis.module';
 import { RoomModule } from './room/room.module';
 import { Submission } from './submission/submission.entity';
@@ -68,6 +69,7 @@ import { UserModule } from './user/user.module';
     ProblemModule,
     SubmissionModule,
     AuthModule,
+    PubsubModule,
   ],
   controllers: [],
   providers: [],

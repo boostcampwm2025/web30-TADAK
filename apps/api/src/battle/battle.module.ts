@@ -8,6 +8,6 @@ import { ProblemModule } from '@/problem/problem.module';
 @Module({
   imports: [ProblemModule],
   providers: [BattleService, BattleRedisService, BattleGateway],
-  exports: [BattleService],
+  exports: [BattleService, BattleGateway],
 })
 export class BattleModule {}
