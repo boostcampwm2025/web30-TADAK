@@ -17,7 +17,7 @@ export class SubmissionService {
     private submissionQueue: Queue,
   ) {}
 
-  async createSubmission(dto: CreateSubmissionDto, userId: string) {
+  async submit(dto: CreateSubmissionDto, userId: string) {
     // DB에 저장
     const submission = this.submissionRepository.create({
       problemId: dto.problemId,
@@ -51,5 +51,18 @@ export class SubmissionService {
       submissionId: savedSubmission.id,
       status: 'PENDING',
     };
+  }
+
+  async executeTest(dto: CreateSubmissionDto, userId: string, socketId: string) {
+    // 큐에 작업 등록
+    await this.submissionQueue.add('test-job', {
+      type: 'TEST',
+      submissionId: null,
+      problemId: dto.problemId,
+      code: dto.code,
+      language: dto.language,
+      userId,
+      socketId,
+    });
   }
 }
