@@ -6,6 +6,7 @@ import { DockerCleanupService } from '../docker/docker.cleanup.service';
 import { DockerRunnerService } from '../docker/docker.service';
 import { SUBMISSION_QUEUE, SUBMISSION_WORKER_CONCURRENCY } from './submission.constants';
 import { parseSubmissionJobPayload, SubmissionJobPayload } from './submission.payload';
+import { SubmissionService } from './submission.service';
 
 @Processor(SUBMISSION_QUEUE, { concurrency: SUBMISSION_WORKER_CONCURRENCY })
 export class SubmissionProcessor extends WorkerHost {
@@ -14,6 +15,7 @@ export class SubmissionProcessor extends WorkerHost {
   constructor(
     private readonly dockerRunnerService: DockerRunnerService,
     private readonly dockerCleanupService: DockerCleanupService,
+    private readonly submissionService: SubmissionService,
   ) {
     super();
   }
@@ -28,6 +30,17 @@ export class SubmissionProcessor extends WorkerHost {
     );
 
     try {
+      // 문제 데이터 준비
+      await this.submissionService.prepareProblemData(payload.problemId);
+
+      // 제출 데이터 준비
+      await this.submissionService.prepareSubmissionData(
+        executionId,
+        payload.type,
+        payload.problemId,
+        payload.code,
+      );
+
       const result = await this.dockerRunnerService.runSubmission({ submissionId: executionId });
 
       this.logger.log(
