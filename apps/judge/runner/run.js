@@ -101,6 +101,7 @@ async function main() {
     const usedMemory = parts[1] ? parseInt(parts[1], 10) : 0;
 
     const caseResult = {
+      status: result.status, // 추가: 개별 케이스의 상태 (ACCEPTED, OUTPUT_LIMIT_EXCEEDED 등)
       output: rawOutput,
       time: result.time,
       memory: Math.round((usedMemory / 1024 / 1024) * 100) / 100, // Byte -> MB 변환 (소수점 2자리)
