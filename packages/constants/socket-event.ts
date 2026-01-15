@@ -30,6 +30,7 @@ export const SOCKET_EVENT = {
   ROOM_USER_LEFT: 'room-left', // 유저 퇴장 알림
   RECEIVE_CHAT: 'receive-chat', // 관전자 채팅 수신(일반/시스템)
   ROOM_LIST: 'room-list', // 방 목록 응답/브로드캐스트
+  PROBLEM_INFO: 'problem-info', // 배틀과 문제에 대한 정보
 
   // === Matching ===
   MATCH_SUCCESS: 'match-success', // 매칭 성공 알림

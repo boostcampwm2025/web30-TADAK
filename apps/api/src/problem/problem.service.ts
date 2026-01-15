@@ -27,7 +27,7 @@ export class ProblemService implements OnModuleInit {
 
   async importProblemsFromJson() {
     try {
-      const filePath = path.join(process.cwd(), 'data/problem_sample.json');
+      const filePath = path.join(__dirname, '../data/problem_sample.json');
       if (!fs.existsSync(filePath)) {
         this.logger.error(`File not found: ${filePath}`);
         return;
@@ -58,8 +58,8 @@ export class ProblemService implements OnModuleInit {
 
         problem.url = data.url;
         problem.title = data.title;
-        problem.timeLimit = data.time_limit;
-        problem.memoryLimit = data.memory_limit;
+        problem.timeLimit = data.timeLimit;
+        problem.memoryLimit = data.memoryLimit;
         problem.statement = data.statement;
         problem.input = data.input;
         problem.output = data.output;
@@ -79,5 +79,16 @@ export class ProblemService implements OnModuleInit {
 
   async findAll(): Promise<Problem[]> {
     return this.problemRepository.find();
+  }
+
+  async findFirst(): Promise<Problem | null> {
+    return this.problemRepository.findOne({
+      where: { difficulty: 'EASY' },
+      order: { id: 'ASC' },
+    });
+  }
+
+  async findOne(id: string): Promise<Problem | null> {
+    return this.problemRepository.findOne({ where: { id } });
   }
 }

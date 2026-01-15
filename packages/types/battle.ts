@@ -5,6 +5,7 @@ export type BattleResult = 'win' | 'lose' | 'draw';
 export interface Battle {
   battleId: string;
   roomId: string;
+  problemId: string;
   status: BattleStatus;
 
   config: {

@@ -6,10 +6,12 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
+import { ProblemDataPayload } from '@packages/types/problem';
 import Redis from 'ioredis';
 import { Server, Socket } from 'socket.io';
 
 import { BattleService } from '@/battle/battle.service';
+import { ProblemService } from '@/problem/problem.service';
 
 import { CHAT_TYPE } from '../../../../packages/constants/chat';
 import {
@@ -33,6 +35,7 @@ export class RoomGateway {
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     private readonly roomService: RoomService,
     private readonly battleService: BattleService,
+    private readonly problemService: ProblemService,
   ) {}
 
   @SubscribeMessage(SOCKET_EVENT.ROOM_LIST_REQUEST)
@@ -168,6 +171,29 @@ export class RoomGateway {
       playerCount: room.currentPlayers.length,
       spectatorCount: room.currentSpectators.length,
     });
+
+    // 문제 정보 전송
+    const battle = await this.battleService.getBattleByRoomId(roomId);
+    if (battle) {
+      const problemEntity = await this.problemService.findOne(battle.problemId);
+      if (problemEntity) {
+        client.emit(SOCKET_EVENT.PROBLEM_INFO, {
+          id: problemEntity.id,
+          source: problemEntity.source,
+          difficulty: problemEntity.difficulty,
+          tags: problemEntity.tags,
+          url: problemEntity.url,
+          title: problemEntity.title,
+          timeLimit: problemEntity.timeLimit,
+          memoryLimit: problemEntity.memoryLimit,
+          statement: problemEntity.statement,
+          input: problemEntity.input,
+          output: problemEntity.output,
+          note: problemEntity.note,
+          examples: problemEntity.examples,
+        } as ProblemDataPayload);
+      }
+    }
 
     // 최신 인원 정보를 브로드캐스트
     const availability = await this.roomService.getRoomAvailability(roomId);
