@@ -33,11 +33,14 @@ export class JudgeContext {
 
       const outputResult = this.reader.readOutputFile(this.submissionId, i);
       const testcase = this.testcases[i];
+      const { time, memory, status: runnerStatus } = outputResult;
 
-      const isCorrect = this.checker.compare(outputResult.output, testcase.output);
-      const tcStatus: TestcaseStatus = isCorrect ? 'ACCEPTED' : 'WRONG_ANSWER';
-
-      const { time, memory } = outputResult;
+      // ACCEPTED인 경우에만 output 비교하여 WRONG_ANSWER 판정
+      let tcStatus: TestcaseStatus = runnerStatus;
+      if (runnerStatus === 'ACCEPTED') {
+        const isCorrect = this.checker.compare(outputResult.output, testcase.output);
+        tcStatus = isCorrect ? 'ACCEPTED' : 'WRONG_ANSWER';
+      }
 
       await this.publishUpdate(i, tcStatus, time, memory);
       this.updateStatistics(tcStatus, time, memory);
@@ -85,12 +88,12 @@ export class JudgeContext {
   }
 
   private updateStatistics(status: TestcaseStatus, time: number, memory: number) {
-    this.maxTime = Math.max(this.maxTime, time);
-    this.maxMemory = Math.max(this.maxMemory, memory);
     if (status === 'ACCEPTED') {
       this.passed++;
+      this.maxTime = Math.max(this.maxTime, time);
+      this.maxMemory = Math.max(this.maxMemory, memory);
     } else {
-      this.finalStatus = status; // 하나라도 틀리면 최종 상태 업데이트
+      this.finalStatus = 'WRONG_ANSWER';
     }
   }
 }

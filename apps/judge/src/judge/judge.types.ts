@@ -1,3 +1,5 @@
+import type { TestcaseStatus } from '@packages/types/pubsub';
+
 export type SubmissionJobType = 'TEST' | 'SUBMISSION';
 
 export interface Metadata {
@@ -17,4 +19,5 @@ export interface OutputResult {
   output: string;
   time: number;
   memory: number;
+  status: TestcaseStatus;
 }
