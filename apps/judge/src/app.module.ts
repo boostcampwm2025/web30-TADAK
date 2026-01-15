@@ -2,8 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { PubSubModule } from './pubsub/pubsub.module';
 import { RedisModule } from './redis/redis.module';
+import { SubmissionModule } from './submission/submission.module';
+import { PubSubModule } from './pubsub/pubsub.module';
 
 @Module({
   imports: [
@@ -30,7 +31,9 @@ import { RedisModule } from './redis/redis.module';
       inject: [ConfigService],
     }),
 
+    // Redis 연결 설정
     RedisModule,
+    SubmissionModule,
     PubSubModule,
   ],
   controllers: [],
