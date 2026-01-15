@@ -9,8 +9,8 @@ import { Problem } from '../problem/problem.entity';
 type SubmissionJobType = 'TEST' | 'SUBMISSION';
 
 @Injectable()
-export class SubmissionFileService {
-  private readonly logger = new Logger(SubmissionFileService.name);
+export class SubmissionService {
+  private readonly logger = new Logger(SubmissionService.name);
   private readonly baseDir = '/judge-data';
   private readonly problemsDir = path.join(this.baseDir, 'problems');
   private readonly submissionsDir = path.join(this.baseDir, 'submissions');
