@@ -64,6 +64,31 @@ export class PubsubSubscriberService implements OnModuleInit {
       `[FINAL_RESULT] Submission ${message.submissionId}: ${message.status} (${message.result.passed}/${message.result.total})`,
     );
 
+    // submissionId로 type 확인
+    const submissionType = await this.getSubmissionType(message.submissionId);
+
+    // SUBMISSION 타입만 DB 업데이트
+    if (submissionType === 'SUBMISSION') {
+      try {
+        await this.submissionRepository.update(message.submissionId, {
+          status: message.status,
+          passedTestCases: message.result.passed,
+          totalTestCases: message.result.total,
+          executionTime: message.result.time,
+          memoryUsed: message.result.memory,
+        });
+        this.logger.log(`[FINAL_RESULT] DB updated for submission ${message.submissionId}`);
+      } catch (error) {
+        this.logger.error(
+          `[FINAL_RESULT] Failed to update DB for submission ${message.submissionId}`,
+          error,
+        );
+      }
+    } else {
+      this.logger.debug(`[FINAL_RESULT] Skipping DB update for TEST type: ${message.submissionId}`);
+    }
+
+    // WebSocket 전송
     const userInfo = await this.getUserInfoBySubmissionId(message.submissionId);
 
     if (userInfo?.roomId) {
@@ -73,6 +98,28 @@ export class PubsubSubscriberService implements OnModuleInit {
         userId: userInfo.userId,
         username: userInfo.username,
       });
+    }
+  }
+
+  private async getSubmissionType(submissionId: number): Promise<'TEST' | 'SUBMISSION' | null> {
+    const fs = await import('fs');
+    const path = await import('path');
+
+    const metaPath = path.join('/judge-data/submissions', String(submissionId), 'meta.json');
+
+    try {
+      if (!fs.existsSync(metaPath)) {
+        this.logger.warn(`[getSubmissionType] meta.json not found for ${submissionId}`);
+        return null;
+      }
+
+      const metaContent = fs.readFileSync(metaPath, 'utf-8');
+      const meta = JSON.parse(metaContent) as { type: 'TEST' | 'SUBMISSION' };
+
+      return meta.type;
+    } catch (error) {
+      this.logger.error(`[getSubmissionType] Failed to read meta.json for ${submissionId}`, error);
+      return null;
     }
   }
 
