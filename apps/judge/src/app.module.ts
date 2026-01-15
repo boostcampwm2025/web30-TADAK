@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { PubSubModule } from './pubsub/pubsub.module';
 import { RedisModule } from './redis/redis.module';
 import { SubmissionModule } from './submission/submission.module';
-import { PubSubModule } from './pubsub/pubsub.module';
 
 @Module({
   imports: [
@@ -24,13 +24,12 @@ import { PubSubModule } from './pubsub/pubsub.module';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
-        entities: [],
-        synchronize: true,
+        entities: [`${__dirname}/**/*.entity{.ts,.js}`],
+        synchronize: false,
         logging: ['error'],
       }),
       inject: [ConfigService],
     }),
-    
 
     // Redis 연결 설정
     RedisModule,
