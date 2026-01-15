@@ -57,6 +57,8 @@ export class DockerRunnerService {
       `${problemsPath}:/app/data:ro`,
       '-v',
       `${submissionOutputPath}:/app/output:rw`,
+      '-e',
+      'IS_DOCKER=true',
       '--network',
       'none',
       '--memory',
