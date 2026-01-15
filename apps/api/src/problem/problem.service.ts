@@ -58,8 +58,9 @@ export class ProblemService implements OnModuleInit {
 
         problem.url = data.url;
         problem.title = data.title;
-        problem.timeLimit = data.timeLimit;
-        problem.memoryLimit = data.memoryLimit;
+        // JSON 파일은 snake_case 사용
+        problem.timeLimit = data.timeLimit ?? data.timeLimit;
+        problem.memoryLimit = data.memoryLimit ?? data.memoryLimit;
         problem.statement = data.statement;
         problem.input = data.input;
         problem.output = data.output;
