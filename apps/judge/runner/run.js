@@ -95,8 +95,21 @@ async function main() {
     const result = await runTestCase(solutionFile, testCase.input, timeLimit, memoryLimit);
 
     // 4. 실행 결과 파일 저장 (Save Results)
-    // 표준 출력(stdout) 저장 -> output_{i}.txt
-    fs.writeFileSync(path.join(OUTPUT_DIR, `output_${i}.txt`), result.stdout);
+    // stdout에서 메트릭 정보 분리
+    const parts = result.stdout.split('\n---METRIC---\n');
+    const rawOutput = parts[0];
+    const usedMemory = parts[1] ? parseInt(parts[1], 10) : 0;
+
+    const caseResult = {
+      output: rawOutput,
+      time: result.time,
+      memory: Math.round((usedMemory / 1024 / 1024) * 100) / 100, // Byte -> MB 변환 (소수점 2자리)
+    };
+
+    fs.writeFileSync(
+      path.join(OUTPUT_DIR, `output_${i}.json`),
+      JSON.stringify(caseResult, null, 2),
+    );
 
     // 표준 에러(stderr)가 있다면 저장 -> error_{i}.txt
     if (result.stderr) {
@@ -133,7 +146,7 @@ function runTestCase(solutionFile, input, timeLimit, memoryLimit) {
         solutionFile,
       ],
       {
-        stdio: ['pipe', 'pipe', 'pipe'], // stdin, stdout, stderr를 부모와 연결
+        stdio: ['pipe', 'pipe', 'pipe'], // 다시 pipe로 복구
       },
     );
 
@@ -159,9 +172,11 @@ function runTestCase(solutionFile, input, timeLimit, memoryLimit) {
     });
 
     // stderr(표준 에러) 수집
-    child.stderr.on('data', (data) => {
-      stderrBuffer += data.toString();
-    });
+    if (child.stderr) {
+      child.stderr.on('data', (data) => {
+        stderrBuffer += data.toString();
+      });
+    }
 
     // stdin(표준 입력)에 테스트 케이스 주입
     child.stdin.write(input);
