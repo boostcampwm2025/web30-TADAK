@@ -3,8 +3,10 @@ export type TestcaseStatus =
   | 'WRONG_ANSWER'
   | 'TIME_LIMIT_EXCEEDED'
   | 'MEMORY_LIMIT_EXCEEDED'
+  | 'OUTPUT_LIMIT_EXCEEDED'
   | 'RUNTIME_ERROR'
-  | 'COMPILE_ERROR';
+  | 'COMPILE_ERROR'
+  | 'INTERNAL_ERROR';
 
 // 각 테스트케이스 결과 전송 (실시간)
 export interface TestcaseUpdateMessage {
