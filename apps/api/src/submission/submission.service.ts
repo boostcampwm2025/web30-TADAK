@@ -54,10 +54,13 @@ export class SubmissionService {
   }
 
   async executeTest(dto: CreateSubmissionDto, userId: string, socketId: string) {
+    // 테스트용 submissionId 생성
+    const testSubmissionId = `test-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
     // 큐에 작업 등록
     await this.submissionQueue.add('test-job', {
       type: 'TEST',
-      submissionId: null,
+      submissionId: testSubmissionId,
       problemId: dto.problemId,
       code: dto.code,
       language: dto.language,
