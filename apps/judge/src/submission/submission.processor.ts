@@ -21,16 +21,7 @@ export class SubmissionProcessor extends WorkerHost {
   async process(job: Job<SubmissionJobPayload>): Promise<void> {
     const payload = parseSubmissionJobPayload(job.data);
     // 컨테이너 실행에 사용할 실행 ID 결정
-    const executionId =
-      payload.submissionId !== null
-        ? String(payload.submissionId)
-        : job.id !== undefined && job.id !== null
-          ? String(job.id)
-          : null;
-
-    if (!executionId) {
-      throw new Error('Execution id is required to run docker container.');
-    }
+    const executionId = String(payload.submissionId);
 
     this.logger.log(
       `Job ${job.id ?? 'unknown'} received: type=${payload.type}, problemId=${payload.problemId}, submissionId=${payload.submissionId ?? 'null'}`,
