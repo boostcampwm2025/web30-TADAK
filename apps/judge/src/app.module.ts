@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { JudgeModule } from './judge/judge.module';
 import { PubSubModule } from './pubsub/pubsub.module';
 import { RedisModule } from './redis/redis.module';
 import { SubmissionModule } from './submission/submission.module';
@@ -35,6 +36,7 @@ import { SubmissionModule } from './submission/submission.module';
     RedisModule,
     SubmissionModule,
     PubSubModule,
+    JudgeModule,
   ],
   controllers: [],
   providers: [],

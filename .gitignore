@@ -12,3 +12,9 @@ node_modules
 .env.production
 .env.test
 .env.dev
+
+# Judge data
+judge-data/
+
+# Test files
+apps/judge/test-runner.ts
