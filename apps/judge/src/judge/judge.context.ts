@@ -31,15 +31,13 @@ export class JudgeContext {
     for (let i = this.lastProcessedIndex + 1; i < this.testcases.length; i++) {
       if (!this.reader.hasOutputFile(this.submissionId, i)) break;
 
-      const actualOutput = this.reader.readOutputFile(this.submissionId, i);
+      const outputResult = this.reader.readOutputFile(this.submissionId, i);
       const testcase = this.testcases[i];
 
-      const isCorrect = this.checker.compare(actualOutput, testcase.output);
+      const isCorrect = this.checker.compare(outputResult.output, testcase.output);
       const tcStatus: TestcaseStatus = isCorrect ? 'ACCEPTED' : 'WRONG_ANSWER';
 
-      // TODO: 각 테스트케이스 시간/메모리 데이터 읽기
-      const time = 0;
-      const memory = 0;
+      const { time, memory } = outputResult;
 
       await this.publishUpdate(i, tcStatus, time, memory);
       this.updateStatistics(tcStatus, time, memory);

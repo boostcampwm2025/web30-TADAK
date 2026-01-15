@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import type { Metadata, SubmissionJobType, Testcase } from './judge.types';
+import type { Metadata, OutputResult, SubmissionJobType, Testcase } from './judge.types';
 
 @Injectable()
 export class JudgeReader {
@@ -34,14 +34,14 @@ export class JudgeReader {
 
   hasOutputFile(submissionId: number, index: number): boolean {
     const submissionDir = this.getSubmissionDir(submissionId);
-    const outputPath = path.join(submissionDir, `output_${index}.txt`);
+    const outputPath = path.join(submissionDir, `output_${index}.json`);
     return fs.existsSync(outputPath);
   }
 
-  readOutputFile(submissionId: number, index: number): string {
+  readOutputFile(submissionId: number, index: number): OutputResult {
     const submissionDir = this.getSubmissionDir(submissionId);
-    const outputPath = path.join(submissionDir, `output_${index}.txt`);
-    return fs.readFileSync(outputPath, 'utf8');
+    const outputPath = path.join(submissionDir, `output_${index}.json`);
+    return JSON.parse(fs.readFileSync(outputPath, 'utf8')) as OutputResult;
   }
 
   private getSubmissionDir(submissionId: number): string {

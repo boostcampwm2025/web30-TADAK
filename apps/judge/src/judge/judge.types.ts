@@ -12,3 +12,9 @@ export interface Testcase {
   input: string;
   output: string;
 }
+
+export interface OutputResult {
+  output: string;
+  time: number;
+  memory: number;
+}
