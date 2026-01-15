@@ -7,7 +7,7 @@
 cp .env.dev.example .env.dev
 
 # 2. Docker 실행 (빌드 + 백그라운드)
-docker compose -f docker-compose.dev.yml up --build -d
+docker compose --env-file .env.dev -f docker-compose.dev.yml up --build -d
 
 # 3. 로그 확인
 docker compose -f docker-compose.dev.yml logs -f
@@ -53,16 +53,16 @@ docker compose -f docker-compose.prod.yml up -d redis
 
 ```bash
 # 컨테이너 상태 확인
-docker compose -f docker-compose.dev.yml ps
+docker compose --env-file .env.dev -f docker-compose.dev.yml ps
 
 # 데이터베이스 초기화 (볼륨 삭제)
-docker compose -f docker-compose.dev.yml down -v
+docker compose --env-file .env.dev -f docker-compose.dev.yml down -v
 
 # MySQL 접속
-docker compose -f docker-compose.dev.yml exec mysql mysql -u web30 -p
+docker compose --env-file .env.dev -f docker-compose.dev.yml exec mysql mysql -u web30 -p
 
 # Redis 접속
-docker compose -f docker-compose.dev.yml exec redis redis-cli
+docker compose --env-file .env.dev -f docker-compose.dev.yml exec redis redis-cli
 ```
 
 ## 참고사항

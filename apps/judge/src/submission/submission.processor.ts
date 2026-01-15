@@ -4,6 +4,7 @@ import { Job } from 'bullmq';
 
 import { DockerCleanupService } from '../docker/docker.cleanup.service';
 import { DockerRunnerService } from '../docker/docker.service';
+import { JudgeService } from '../judge/judge.service';
 import { SUBMISSION_QUEUE, SUBMISSION_WORKER_CONCURRENCY } from './submission.constants';
 import { parseSubmissionJobPayload, SubmissionJobPayload } from './submission.payload';
 import { SubmissionService } from './submission.service';
@@ -16,6 +17,7 @@ export class SubmissionProcessor extends WorkerHost {
     private readonly dockerRunnerService: DockerRunnerService,
     private readonly dockerCleanupService: DockerCleanupService,
     private readonly submissionService: SubmissionService,
+    private readonly judgeService: JudgeService,
   ) {
     super();
   }
@@ -39,13 +41,29 @@ export class SubmissionProcessor extends WorkerHost {
         payload.type,
         payload.problemId,
         payload.code,
+        payload.socketId,
       );
+
+      const judgePromise = this.judgeService
+        .judgeSubmission(executionId)
+        .catch((error: unknown) => {
+          if (error instanceof Error) {
+            this.logger.error(`Judge failed for submission ${executionId}`, error.stack);
+          } else {
+            this.logger.error(`Judge failed for submission ${executionId}`, String(error));
+          }
+        });
 
       const result = await this.dockerRunnerService.runSubmission({ submissionId: executionId });
 
       this.logger.log(
         `Docker run completed: exitCode=${result.exitCode ?? 'null'}, signal=${result.signal ?? 'null'}`,
       );
+      if (result.stderr && result.stderr.trim().length > 0) {
+        this.logger.warn(`Docker stderr: ${result.stderr.trim()}`);
+      }
+
+      await judgePromise;
     } finally {
       await this.dockerCleanupService.cleanupExecution(executionId);
     }

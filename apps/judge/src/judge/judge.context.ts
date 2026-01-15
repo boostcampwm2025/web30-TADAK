@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { TestcaseStatus } from '@packages/types/pubsub';
 
 import { PubsubService } from '../pubsub/pubsub.service';
@@ -11,14 +12,21 @@ export class JudgeContext {
   private maxTime = 0;
   private maxMemory = 0;
   private finalStatus: TestcaseStatus = 'ACCEPTED';
+  private readonly submissionIdValue: number | string;
+  private readonly logger = new Logger(JudgeContext.name);
 
   constructor(
-    public readonly submissionId: number,
+    public readonly submissionId: string,
+    private readonly socketId: string | undefined,
     private readonly testcases: Testcase[],
     private readonly reader: JudgeReader,
     private readonly checker: JudgeChecker,
     private readonly pubsub: PubsubService,
-  ) {}
+  ) {
+    const parsed = Number(submissionId);
+    this.submissionIdValue =
+      Number.isFinite(parsed) && String(parsed) === submissionId ? parsed : submissionId;
+  }
 
   hasNewOutput(): boolean {
     const nextIndex = this.lastProcessedIndex + 1;
@@ -42,6 +50,8 @@ export class JudgeContext {
         tcStatus = isCorrect ? 'ACCEPTED' : 'WRONG_ANSWER';
       }
 
+      this.logger.log(outputResult, testcase, tcStatus);
+
       await this.publishUpdate(i, tcStatus, time, memory);
       this.updateStatistics(tcStatus, time, memory);
 
@@ -56,7 +66,8 @@ export class JudgeContext {
   async reportFinalResult(): Promise<void> {
     await this.pubsub.publishFinalResult({
       type: 'FINAL_RESULT',
-      submissionId: this.submissionId,
+      submissionId: this.submissionIdValue,
+      socketId: this.socketId,
       status: this.finalStatus,
       result: {
         passed: this.passed,
@@ -77,7 +88,8 @@ export class JudgeContext {
   private async publishUpdate(index: number, status: TestcaseStatus, time: number, memory: number) {
     await this.pubsub.publishTestcaseUpdate({
       type: 'TESTCASE_UPDATE',
-      submissionId: this.submissionId,
+      submissionId: this.submissionIdValue,
+      socketId: this.socketId,
       testcase: { index: index + 1, status, time, memory },
       progress: {
         completed: index + 1,

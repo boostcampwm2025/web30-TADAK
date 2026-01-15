@@ -28,4 +28,14 @@ export class PubsubGateway {
     });
     this.logger.log(`Broadcast final-result to room ${roomId}`);
   }
+
+  // 특정 소켓에 최종 결과 전달 (테스트 실행 등)
+  emitFinalResultToSocket(socketId: string, message: FinalResultMessage): void {
+    this.server.to(socketId).emit('submission-result', {
+      submissionId: message.submissionId,
+      status: message.status,
+      result: message.result,
+    });
+    this.logger.log(`Sent final-result to socket ${socketId}`);
+  }
 }
