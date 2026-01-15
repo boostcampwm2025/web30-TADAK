@@ -1,5 +1,6 @@
 # Base
 FROM node:22-alpine AS base
+RUN apk add --no-cache docker-cli
 RUN corepack enable && corepack prepare pnpm@10.20.0 --activate
 WORKDIR /app
 
@@ -32,6 +33,7 @@ RUN pnpm run build
 
 # production
 FROM node:22-alpine AS production
+RUN apk add --no-cache docker-cli
 RUN corepack enable && corepack prepare pnpm@10.20.0 --activate
 WORKDIR /app
 
