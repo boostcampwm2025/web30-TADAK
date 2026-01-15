@@ -2,8 +2,10 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { JudgeModule } from './judge/judge.module';
 import { PubSubModule } from './pubsub/pubsub.module';
 import { RedisModule } from './redis/redis.module';
+import { SubmissionModule } from './submission/submission.module';
 
 @Module({
   imports: [
@@ -23,15 +25,18 @@ import { RedisModule } from './redis/redis.module';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
-        entities: [],
-        synchronize: true,
+        entities: [`${__dirname}/**/*.entity{.ts,.js}`],
+        synchronize: false,
         logging: ['error'],
       }),
       inject: [ConfigService],
     }),
 
+    // Redis 연결 설정
     RedisModule,
+    SubmissionModule,
     PubSubModule,
+    JudgeModule,
   ],
   controllers: [],
   providers: [],
