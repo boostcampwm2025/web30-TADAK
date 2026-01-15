@@ -8,7 +8,6 @@ import {
   DOCKER_CONTAINER_NAME,
   DOCKER_CPU_LIMIT,
   DOCKER_DEFAULT_MEMORY_LIMIT_MB,
-  DOCKER_PIDS_LIMIT,
   DOCKER_PROBLEMS_PATH,
   DOCKER_RUNNER_IMAGE,
   DOCKER_SUBMISSIONS_PATH,
@@ -40,9 +39,11 @@ export class DockerRunnerService {
 
   private buildRunArgs(options: DockerRunOptions): string[] {
     const image = this.getString('JUDGE_RUNNER_IMAGE', DOCKER_RUNNER_IMAGE);
-    const problemsPath = this.getString('JUDGE_PROBLEMS_PATH', DOCKER_PROBLEMS_PATH);
-    const submissionsPath = this.getString('JUDGE_SUBMISSIONS_PATH', DOCKER_SUBMISSIONS_PATH);
-    const submissionOutputPath = path.posix.join(submissionsPath, options.submissionId);
+    const problemsPath = path.resolve(this.getString('JUDGE_PROBLEMS_PATH', DOCKER_PROBLEMS_PATH));
+    const submissionsPath = path.resolve(
+      this.getString('JUDGE_SUBMISSIONS_PATH', DOCKER_SUBMISSIONS_PATH),
+    );
+    const submissionOutputPath = path.join(submissionsPath, options.submissionId);
     const memoryLimitMb =
       options.memoryLimitMb ??
       this.getNumber('JUDGE_DEFAULT_MEMORY_LIMIT_MB', DOCKER_DEFAULT_MEMORY_LIMIT_MB);
@@ -62,8 +63,6 @@ export class DockerRunnerService {
       `${memoryLimitMb}m`,
       '--cpus',
       `${DOCKER_CPU_LIMIT}`,
-      '--pids-limit',
-      `${DOCKER_PIDS_LIMIT}`,
       '--tmpfs',
       `/tmp:size=${DOCKER_TMPFS_SIZE_MB}m`,
       image,
