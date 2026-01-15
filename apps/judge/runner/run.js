@@ -51,7 +51,7 @@ async function main() {
   if (!fs.existsSync(metaPath)) {
     console.error(`[Error] Meta file not found: ${metaPath}`);
     console.error(`[Debug] Looked in: ${OUTPUT_DIR}`);
-    process.exit(1);
+    process.exit(1); // meta.json 파일 없을 시 즉시 종료
   }
 
   const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
@@ -73,7 +73,7 @@ async function main() {
 
   if (!fs.existsSync(casesPath)) {
     console.error(`[Error] Cases file not found: ${casesPath}`);
-    process.exit(1);
+    process.exit(1); // 테스트 파일 없을 시 즉시 종료
   }
 
   console.log(`[Runner] Loading cases from: ${casesFileName}`);
@@ -83,7 +83,7 @@ async function main() {
 
   if (!fs.existsSync(solutionFile)) {
     console.error(`[Error] Solution file not found: ${solutionFile}`);
-    process.exit(1);
+    process.exit(1); // solution.js 파일 없을 시 즉시 종료
   }
 
   // 3. 테스트 케이스별 실행 (Execute User Code)
@@ -155,12 +155,13 @@ function runTestCase(solutionFile, input, timeLimit, memoryLimit) {
     let stderrBuffer = '';
 
     // 시간 초과(Time Limit Exceeded) 감시 타이머
+    // 실제 timeLimit보다 약간의 여유(1초)를 주어 시스템 오버헤드를 허용합니다.
     const timer = setTimeout(() => {
       if (child.exitCode === null) {
         child.kill('SIGKILL'); // 강제 종료
         status = 'TIME_LIMIT_EXCEEDED';
       }
-    }, timeLimit);
+    }, timeLimit + 1000);
 
     // stdout(표준 출력) 수집
     child.stdout.on('data', (data) => {
