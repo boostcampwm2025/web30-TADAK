@@ -1,0 +1,52 @@
+name: Deploy to Dev
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Build check
+        run: pnpm run build
+
+  cd:
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /root/web30-boostcamp
+            git pull origin dev
+            pnpm install
+            # 프론트엔드 빌드 및 동기화
+            pnpm --filter ./apps/web... build
+            sudo rsync -av --delete /root/web30-boostcamp/apps/web/dist/ /var/www/port30/web/
+            # 백엔드 및 기타 서비스 재빌드 및 실행
+            docker-compose -f docker-compose.prod.yml up -d --build
