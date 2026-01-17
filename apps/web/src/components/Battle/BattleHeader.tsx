@@ -36,7 +36,8 @@ function BattleHeader({ theme, onToggleTheme }: BattleHeaderProps) {
   return (
     <header className="flex w-full items-center justify-between rounded-2xl px-5 text-base-primary backdrop-blur dark:shadow-slate-950/40">
       <div className="flex items-center gap-3">
-        <img src={logo} alt="CodeRENA 로고" className="h-11 w-40 object-contain" />
+        <img src={logo} alt="TADAK 로고" className="h-12 w-auto" />
+        <span className="text-2xl font-black tracking-tight">TADAK</span>
       </div>
 
       <div className="flex items-center gap-3">

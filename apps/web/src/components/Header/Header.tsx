@@ -47,6 +47,7 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-8 py-2">
         <Link to="/" className="flex items-center gap-3">
           <img src={LogoImage} alt="TADAK 로고" className="h-12 w-auto" />
+          <span className="text-2xl font-black tracking-tight">TADAK</span>
         </Link>
         <div className="flex items-center gap-4">
           {rightContent ? (
