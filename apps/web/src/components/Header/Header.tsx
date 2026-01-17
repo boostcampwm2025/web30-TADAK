@@ -45,9 +45,9 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
   return (
     <header className="border-b border-border-soft bg-bg-layer-2 shadow-sm">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-8 py-2">
-        <div className="flex items-center gap-3">
+        <Link to="/" className="flex items-center gap-3">
           <img src={LogoImage} alt="TADAK 로고" className="h-12 w-auto" />
-        </div>
+        </Link>
         <div className="flex items-center gap-4">
           {rightContent ? (
             rightContent
