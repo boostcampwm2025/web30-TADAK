@@ -39,10 +39,13 @@ export class DockerRunnerService {
 
   private buildRunArgs(options: DockerRunOptions): string[] {
     const image = this.getString('JUDGE_RUNNER_IMAGE', DOCKER_RUNNER_IMAGE);
-    const problemsPath = path.resolve(this.getString('JUDGE_PROBLEMS_PATH', DOCKER_PROBLEMS_PATH));
-    const submissionsPath = path.resolve(
-      this.getString('JUDGE_SUBMISSIONS_PATH', DOCKER_SUBMISSIONS_PATH),
-    );
+    const hostBasePath = this.getString('JUDGE_HOST_PATH', '');
+    const problemsPath = hostBasePath
+      ? path.resolve(hostBasePath)
+      : path.resolve(this.getString('JUDGE_PROBLEMS_PATH', DOCKER_PROBLEMS_PATH));
+    const submissionsPath = hostBasePath
+      ? path.resolve(hostBasePath, 'submissions')
+      : path.resolve(this.getString('JUDGE_SUBMISSIONS_PATH', DOCKER_SUBMISSIONS_PATH));
     const submissionOutputPath = path.join(submissionsPath, options.submissionId);
     const memoryLimitMb =
       options.memoryLimitMb ??

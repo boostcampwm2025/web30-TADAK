@@ -18,9 +18,10 @@ export class DockerCleanupService {
   }
 
   private async removeSubmissionFiles(executionId: string): Promise<void> {
-    const submissionsPath = path.resolve(
-      this.getString('JUDGE_SUBMISSIONS_PATH', DOCKER_SUBMISSIONS_PATH),
-    );
+    const volumePath = this.getString('JUDGE_VOLUME', '');
+    const submissionsPath = volumePath
+      ? path.resolve(volumePath, 'submissions')
+      : path.resolve(this.getString('JUDGE_SUBMISSIONS_PATH', DOCKER_SUBMISSIONS_PATH));
     const targetPath = path.join(submissionsPath, executionId);
 
     try {
