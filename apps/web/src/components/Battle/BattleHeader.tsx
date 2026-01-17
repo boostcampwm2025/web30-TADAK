@@ -1,7 +1,9 @@
-import { Eye, Moon, Sun, Timer } from 'lucide-react';
+import { AlertCircle, Eye, Moon, Sun, Timer } from 'lucide-react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import logo from '@/assets/logo.png';
+import Modal from '@/components/ui/Modal';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 
 interface BattleHeaderProps {
@@ -14,12 +16,21 @@ function BattleHeader({ theme, onToggleTheme }: BattleHeaderProps) {
   const { roomId } = useParams<{ roomId: string }>();
   const leaveRoom = useBattleSocketStore((state) => state.leaveRoom);
   const spectatorCount = useBattleSocketStore((state) => state.spectatorCount);
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 
-  const handleLeave = () => {
+  const handleLeaveClick = () => {
+    setIsLeaveModalOpen(true);
+  };
+
+  const handleConfirmLeave = () => {
     if (roomId) {
       leaveRoom(roomId);
     }
     navigate('/');
+  };
+
+  const handleCancelLeave = () => {
+    setIsLeaveModalOpen(false);
   };
 
   return (
@@ -49,12 +60,35 @@ function BattleHeader({ theme, onToggleTheme }: BattleHeaderProps) {
           {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </button>
         <button
-          onClick={handleLeave}
+          onClick={handleLeaveClick}
           className="inline-flex h-10 w-20 items-center justify-center rounded-full bg-base-faint text-sm font-bold text-base-primary transition hover:brightness-110"
         >
           나가기
         </button>
       </div>
+
+      <Modal
+        isOpen={isLeaveModalOpen}
+        onClose={handleCancelLeave}
+        icon={AlertCircle}
+        iconColor="text-error-01"
+        iconBgColor="bg-error-01/20"
+        title="대결에서 나가시겠습니까?"
+        description="진행 중인 문제 풀이가 모두 사라집니다."
+        buttons={[
+          {
+            label: '취소',
+            onClick: handleCancelLeave,
+            variant: 'muted',
+          },
+          {
+            label: '나가기',
+            onClick: handleConfirmLeave,
+            variant: 'black',
+          },
+        ]}
+        closeOnBackdrop={false}
+      />
     </header>
   );
 }
