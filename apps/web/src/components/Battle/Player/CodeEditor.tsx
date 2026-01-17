@@ -1,9 +1,11 @@
-import { BATTLE_EVENTS } from '@shared/constants/battle';
+import { BATTLE_CONFIG, BATTLE_EVENTS } from '@shared/constants/battle';
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
+import type { ProblemDataPayload } from '@shared/types/problem';
 import { Code } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
+import { createDryRun, createSubmission } from '@/apis/submission';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import type { Player } from '@/stores/roomStore';
 import { useRoomStore } from '@/stores/roomStore';
@@ -21,6 +23,10 @@ function CodeEditor() {
   const [code, setCode] = useState(`function solution() {
   // TODO
 }`);
+  const [problemId, setProblemId] = useState<string | null>(null);
+  const [statusText, setStatusText] = useState('대기 중');
+  const [isTesting, setIsTesting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     connect();
@@ -50,6 +56,21 @@ function CodeEditor() {
     };
   }, [roomId, setMe, socket]);
 
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleProblemInfo = (payload: ProblemDataPayload) => {
+      if (payload?.id) {
+        setProblemId(payload.id);
+      }
+    };
+
+    socket.on(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
+    return () => {
+      socket.off(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
+    };
+  }, [socket]);
+
   const handleChange = (value: string) => {
     setCode(value);
     if (!socket?.connected) return;
@@ -59,8 +80,52 @@ function CodeEditor() {
       roomId,
       userId: me.userId,
       code: value,
-      language: 'javascript',
+      language: BATTLE_CONFIG.DEFAULT_LANGUAGE,
     });
+  };
+
+  const handleDryRun = async () => {
+    if (!socket?.connected || !socket.id) {
+      setStatusText('소켓 연결이 필요합니다');
+      return;
+    }
+    if (!problemId) {
+      setStatusText('문제 정보를 불러오는 중입니다');
+      return;
+    }
+    if (isTesting || isSubmitting) return;
+
+    setIsTesting(true);
+    setStatusText('테스트 요청 중');
+    try {
+      await createDryRun({ problemId, code, language: BATTLE_CONFIG.DEFAULT_LANGUAGE }, socket.id);
+      setStatusText('테스트 대기 중');
+    } catch (error) {
+      console.error(error);
+      setStatusText('테스트 요청 실패');
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!problemId) {
+      setStatusText('문제 정보를 불러오는 중입니다');
+      return;
+    }
+    if (isTesting || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setStatusText('제출 요청 중');
+    try {
+      await createSubmission({ problemId, code, language: BATTLE_CONFIG.DEFAULT_LANGUAGE });
+      setStatusText('채점 대기 중');
+    } catch (error) {
+      console.error(error);
+      setStatusText('제출 요청 실패');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -91,37 +156,23 @@ function CodeEditor() {
           />
         </div>
         <div className="flex items-center justify-between rounded-xl  bg-(bg-layer-2) px-4 py-3 text-sm font-semibold">
-          <button className="inline-flex items-center gap-2 rounded-lg bg-base-muted px-3 py-2 text-xs font-semibold text-base-primary transition hover:brightness-110">
+          <button
+            type="button"
+            onClick={handleDryRun}
+            disabled={isTesting || isSubmitting}
+            className="inline-flex items-center gap-2 rounded-lg bg-base-muted px-3 py-2 text-xs font-semibold text-base-primary transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+          >
             ▶ 코드 실행
           </button>
           <div className="text-xs text-base-secondary">
-            테스트: <span className="text-green-05">0/10</span> 통과
+            {statusText} · <span className="text-green-05">0/10</span> 통과
           </div>
           <div className="flex items-center gap-2">
             <button
-              type="button"
-              onClick={() => {
-                if (!socket) return;
-                socket.emit(BATTLE_EVENTS.USER_TEST_RESULT, {
-                  roomId,
-                  username: me?.username ?? '플레이어',
-                  passed: true,
-                });
-              }}
-              className="rounded-lg bg-base-muted px-3 py-2 text-xs font-semibold text-base-primary transition hover:brightness-110"
-            >
-              테스트 메시지
-            </button>
-            <button
               className="rounded-lg bg-green-05 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-emerald-500/30 transition hover:brightness-110"
               type="button"
-              onClick={() => {
-                if (!socket) return;
-                socket.emit(BATTLE_EVENTS.USER_FINISHED, {
-                  roomId,
-                  username: me?.username ?? '플레이어',
-                });
-              }}
+              onClick={handleSubmit}
+              disabled={isTesting || isSubmitting}
             >
               제출하기
             </button>
