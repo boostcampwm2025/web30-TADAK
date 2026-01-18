@@ -42,11 +42,14 @@ function parseJobType(value: unknown): SubmissionJobType {
 }
 
 function parseNonEmptyString(value: unknown, field: string): string {
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    throw new Error(`"${field}" must be a non-empty string.`);
+  // 숫자인 경우 문자열로 변환
+  const normalizedValue = typeof value === 'number' ? String(value) : value;
+
+  if (typeof normalizedValue !== 'string' || normalizedValue.trim().length === 0) {
+    throw new Error(`"${field}" must be a non-empty string or a number.`);
   }
 
-  return value;
+  return normalizedValue;
 }
 
 function parseOptionalString(value: unknown, field: string): string | undefined {

@@ -10,7 +10,7 @@ export class JudgeReader {
 
   readMetadata(submissionId: string): Metadata {
     const submissionDir = this.getSubmissionDir(submissionId);
-    const metadataPath = path.join(submissionDir, 'metadata.json');
+    const metadataPath = path.join(submissionDir, 'meta.json');
 
     if (!fs.existsSync(metadataPath)) {
       throw new Error(`Metadata file not found for submission ${submissionId}`);

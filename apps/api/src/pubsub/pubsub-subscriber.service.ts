@@ -101,7 +101,7 @@ export class PubsubSubscriberService implements OnModuleInit {
     }
   }
 
-  private async getSubmissionType(submissionId: number): Promise<'TEST' | 'SUBMISSION' | null> {
+  private async getSubmissionType(submissionId: string): Promise<'TEST' | 'SUBMISSION' | null> {
     const fs = await import('fs');
     const path = await import('path');
 
@@ -123,7 +123,7 @@ export class PubsubSubscriberService implements OnModuleInit {
     }
   }
 
-  private async getSocketIdBySubmissionId(submissionId: number): Promise<string | null> {
+  private async getSocketIdBySubmissionId(submissionId: string): Promise<string | null> {
     const submission = await this.submissionRepository.findOne({ where: { id: submissionId } });
     if (!submission) {
       this.logger.warn(`Submission ${submissionId} not found`);
@@ -144,7 +144,7 @@ export class PubsubSubscriberService implements OnModuleInit {
 
   // submissionId로 유저 정보 조회 (roomId, username)
   private async getUserInfoBySubmissionId(
-    submissionId: number,
+    submissionId: string,
   ): Promise<{ roomId: string; userId: string; username: string } | null> {
     const submission = await this.submissionRepository.findOne({ where: { id: submissionId } });
     if (!submission) {

@@ -74,7 +74,7 @@ export class SubmissionService {
       memoryLimit: problem.memoryLimit,
       type,
     };
-    const metadataPath = path.join(submissionDir, 'metadata.json');
+    const metadataPath = path.join(submissionDir, 'meta.json');
     fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
 
     const solutionPath = path.join(submissionDir, 'solution.js');

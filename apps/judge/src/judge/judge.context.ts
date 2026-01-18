@@ -54,7 +54,7 @@ export class JudgeContext {
   }
 
   async reportFinalResult(): Promise<void> {
-    const submissionId = this.submissionId as unknown as number;
+    const submissionId = this.submissionId as unknown as string;
     await this.pubsub.publishFinalResult({
       type: 'FINAL_RESULT',
       submissionId,
@@ -76,7 +76,7 @@ export class JudgeContext {
   }
 
   private async publishUpdate(index: number, status: TestcaseStatus, time: number, memory: number) {
-    const submissionId = this.submissionId as unknown as number;
+    const submissionId = this.submissionId as unknown as string;
     await this.pubsub.publishTestcaseUpdate({
       type: 'TESTCASE_UPDATE',
       submissionId,
