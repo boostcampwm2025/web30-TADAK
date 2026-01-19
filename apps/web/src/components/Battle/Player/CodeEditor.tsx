@@ -322,10 +322,9 @@ function CodeEditor() {
             value={code}
             onChange={(e) => handleChange(e.target.value)}
             spellCheck={false}
-            className="h-full min-h-[clamp(260px,50vh,520px)] w-full resize-none rounded-xl bg-(bg-layer-2) border border-base-muted px-4 py-3 text-sm leading-relaxed text-base-primary shadow-inner shadow-slate-950/10 focus:outline-none"
+            className="h-full flex-1 w-full resize-none rounded-xl bg-(bg-layer-2) border border-base-muted px-4 py-3 text-sm leading-relaxed text-base-primary shadow-inner shadow-slate-950/10 focus:outline-none"
           />
         </div>
-        <TestcaseResultPanel progress={progress} testcaseResults={testcaseResults} />
         <EditorFooter
           statusText={statusText}
           progressLabel={progressLabel}
@@ -334,6 +333,7 @@ function CodeEditor() {
           onDryRun={handleDryRun}
           onSubmit={handleSubmit}
         />
+        <TestcaseResultPanel progress={progress} testcaseResults={testcaseResults} />
       </section>
     </>
   );
