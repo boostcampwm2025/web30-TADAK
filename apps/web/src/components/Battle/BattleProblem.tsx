@@ -73,23 +73,54 @@ function BattleProblem() {
               </a>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-base-secondary">
-            <span>{problem?.source}</span>
-            <span className="text-base-muted">·</span>
-            <span>{problem?.difficulty}</span>
-            <span className="text-base-muted">·</span>
-            <span>{problem?.timeLimit}s</span>
-            <span className="text-base-muted">/</span>
-            <span>{problem?.memoryLimit}MB</span>
+          <div className="grid gap-2 text-[11px] text-base-secondary sm:grid-cols-2">
+            {problem?.source && (
+              <div className="rounded-md border border-border-soft bg-base-primary/5 px-3 py-2">
+                <span className="block text-[9px] uppercase tracking-[0.2em] text-base-secondary">
+                  Source
+                </span>
+                <span className="text-xs font-semibold text-base-primary">{problem.source}</span>
+              </div>
+            )}
+            {problem?.difficulty && (
+              <div className="rounded-md border border-border-soft bg-base-primary/5 px-3 py-2">
+                <span className="block text-[9px] uppercase tracking-[0.2em] text-base-secondary">
+                  Difficulty
+                </span>
+                <span className="text-xs font-semibold text-base-primary">
+                  {problem.difficulty}
+                </span>
+              </div>
+            )}
+            {problem?.timeLimit !== undefined && (
+              <div className="rounded-md border border-border-soft bg-base-primary/5 px-3 py-2">
+                <span className="block text-[9px] uppercase tracking-[0.2em] text-base-secondary">
+                  Time Limit
+                </span>
+                <span className="text-xs font-semibold text-base-primary">
+                  {problem.timeLimit}s
+                </span>
+              </div>
+            )}
+            {problem?.memoryLimit !== undefined && (
+              <div className="rounded-md border border-border-soft bg-base-primary/5 px-3 py-2">
+                <span className="block text-[9px] uppercase tracking-[0.2em] text-base-secondary">
+                  Memory Limit
+                </span>
+                <span className="text-xs font-semibold text-base-primary">
+                  {problem.memoryLimit}MB
+                </span>
+              </div>
+            )}
           </div>
           {tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 text-xs">
+            <div className="flex flex-wrap gap-2 text-[11px] text-base-secondary">
               {tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full bg-base-primary/10 px-2 py-1 text-base-secondary"
+                  className="items-center gap-2 rounded-full border border-border-soft bg-base-faint px-3 py-1 font-medium text-base-secondary"
                 >
-                  {tag}
+                  #{tag}
                 </span>
               ))}
             </div>
@@ -112,7 +143,7 @@ function BattleProblem() {
           <BookOpen className="h-5 w-5 text-green-05" strokeWidth={3} />
           <p className="font-bold text-green-05">입출력</p>
         </div>
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-2">
           <div className="space-y-2 rounded-md bg-base-primary/5 p-3 text-sm">
             <p className="text-sm font-bold text-base-secondary">입력</p>
             <p className="whitespace-pre-wrap">{problem?.input}</p>
