@@ -18,7 +18,7 @@ export class JudgeService {
   ) {}
 
   // 전체 채점 흐름 관리
-  async judgeSubmission(submissionId: number): Promise<void> {
+  async judgeSubmission(submissionId: string): Promise<void> {
     try {
       const metadata = this.reader.readMetadata(submissionId);
       const testcases = this.reader.loadTestcases(metadata.problemId, metadata.type);

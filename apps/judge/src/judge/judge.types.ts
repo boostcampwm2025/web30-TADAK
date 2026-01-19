@@ -3,7 +3,7 @@ import type { TestcaseStatus } from '@packages/types/pubsub';
 export type SubmissionJobType = 'TEST' | 'SUBMISSION';
 
 export interface Metadata {
-  problemId: number;
+  problemId: string;
   timeLimit: number;
   memoryLimit: number;
   type: SubmissionJobType;

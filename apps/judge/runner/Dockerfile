@@ -19,7 +19,7 @@ COPY run.js wrapper.js ./
 # 6. 소유권 변경 및 사용자 전환
 RUN chown -R coder:coder /runner
 
-USER coder
+# USER coder
 
 # 7. 기본 실행 명령어
 CMD ["node", "run.js"]
