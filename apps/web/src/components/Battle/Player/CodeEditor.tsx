@@ -295,11 +295,10 @@ function CodeEditor() {
         },
         socket.id,
       );
-      if (response?.submissionId && executionRef.current) {
-        // submissionId를 execution에 설정
-        executionRef.current.submissionId = String(response.submissionId);
+      if (response?.submissionId) {
+        initSubmission('SUBMISSION', String(response.submissionId));
+        setStatusText('채점 대기 중');
       }
-      setStatusText('채점 대기 중');
     } catch (error) {
       resetOnError('SUBMISSION');
       console.error(error);
