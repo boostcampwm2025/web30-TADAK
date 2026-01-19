@@ -1,5 +1,4 @@
 import { spawn } from 'node:child_process';
-import os from 'node:os';
 import path from 'node:path';
 
 import { Injectable, Logger } from '@nestjs/common';
@@ -77,44 +76,15 @@ export class DockerRunnerService {
   //   ];
   // }
 
-  toDockerPath(hostPath: string): string {
-    // 1. Windows 계열 플랫폼이 아니면 그대로 반환
-    if (os.platform() !== 'win32' && os.platform() !== 'cygwin') {
-      return hostPath;
-    }
-
-    // 2. 백슬래시를 슬래시로 통일하고 중복 슬래시 제거
-    const normalized = hostPath.replace(/\\/g, '/');
-
-    // 3. 드라이브 문자 변환 (C:/path -> /c/path)
-    // [A-Za-z]: 부분만 캡처하여 소문자로 바꾸고 나머지를 붙입니다.
-    const driveLetterRegex = /^([a-zA-Z]):/;
-    const match = normalized.match(driveLetterRegex);
-
-    if (match) {
-      const drive = match[1].toLowerCase();
-      const rest = normalized.substring(2); // 'C:' 이후의 문자열
-
-      // '/'로 시작하지 않는 경우(예: C:abc)를 대비해 경로 구분자 보정
-      const separator = rest.startsWith('/') ? '' : '/';
-      return `/${drive}${separator}${rest}`;
-    }
-
-    return normalized;
-  }
-
   private buildRunArgs(options: DockerRunOptions): string[] {
     const image = this.getString('JUDGE_RUNNER_IMAGE', DOCKER_RUNNER_IMAGE);
 
     // 1. 호스트 경로 가져오기
-    let hostBasePath = process.env.JUDGE_HOST_PATH || 'judge-data';
-
-    if (!path.isAbsolute(hostBasePath)) {
-      hostBasePath = path.resolve(hostBasePath);
-    }
-
-    // 2. Windows/WSL 호환 경로로 변환
-    const dockerHostBasePath = this.toDockerPath(hostBasePath);
+    const rawHostPath = this.getString('JUDGE_HOST_PATH', '');
+    const normalizedHostPath = rawHostPath ? this.normalizeHostPath(rawHostPath) : 'judge-data';
+    const dockerHostBasePath = path.isAbsolute(normalizedHostPath)
+      ? normalizedHostPath
+      : path.resolve(normalizedHostPath);
 
     this.logger.log(`Docker Host Base Path: ${dockerHostBasePath}`);
 
@@ -152,6 +122,39 @@ export class DockerRunnerService {
       '/runner/run.js',
       options.submissionId,
     ];
+  }
+
+  private normalizeHostPath(value: string): string {
+    let hostPath = value.trim();
+    if (!hostPath) {
+      return hostPath;
+    }
+
+    // docker run 형태로 들어온 경우(host:container) container 부분 제거
+    const mappingIndex = this.findMountSeparator(hostPath);
+    if (mappingIndex !== -1) {
+      hostPath = hostPath.slice(0, mappingIndex);
+    }
+
+    const normalized = hostPath.replace(/\\/g, '/');
+    if (normalized.startsWith('/')) {
+      return normalized;
+    }
+
+    const match = normalized.match(/^([a-zA-Z]):\/(.*)$/);
+    if (match) {
+      const drive = match[1].toLowerCase();
+      const rest = match[2];
+      return `/host_mnt/${drive}/${rest}`;
+    }
+
+    return normalized;
+  }
+
+  private findMountSeparator(value: string): number {
+    const normalized = value.replace(/\\/g, '/');
+    const index = normalized.lastIndexOf(':/');
+    return index > 2 ? index : -1;
   }
 
   // 외부 명령어를 새 프로세스로 실행하는 함수
