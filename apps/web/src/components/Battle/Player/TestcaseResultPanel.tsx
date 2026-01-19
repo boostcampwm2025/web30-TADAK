@@ -1,4 +1,5 @@
 import type { TestcaseStatus, TestcaseUpdateMessage } from '@shared/types/pubsub';
+import { useEffect, useRef } from 'react';
 
 type SubmissionProgress = TestcaseUpdateMessage['progress'];
 type TestcaseResult = TestcaseUpdateMessage['testcase'];
@@ -27,6 +28,13 @@ function getStatusColor(status: TestcaseStatus) {
 
 function TestcaseResultPanel({ progress, testcaseResults }: TestcaseResultPanelProps) {
   const progressLabel = progress ? `${progress.passed}/${progress.total}` : '0/0';
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [testcaseResults]);
 
   return (
     <div className="border-t border-base-muted bg-(bg-layer-2) px-4 py-3 text-xs">
@@ -46,11 +54,11 @@ function TestcaseResultPanel({ progress, testcaseResults }: TestcaseResultPanelP
             <span className="text-right">시간</span>
             <span className="text-right">메모리</span>
           </div>
-          <div className="max-h-36 space-y-1 overflow-y-auto pr-1">
+          <div ref={scrollRef} className="max-h-36 space-y-1 overflow-y-auto pr-1">
             {testcaseResults.map((testcase) => (
               <div
                 key={testcase.index}
-                className="grid grid-cols-[64px_1fr_72px_72px] items-center gap-2 rounded-md bg-base-primary/5 px-2 py-1 text-[11px]"
+                className="grid grid-cols-[64px_1fr_72px_72px] items-center gap-2 rounded-md bg-base-primary/5 px-2 py-1.5 text-[11px]"
               >
                 <span>TC {testcase.index}</span>
                 <span className={getStatusColor(testcase.status)}>{testcase.status}</span>
