@@ -87,10 +87,8 @@ export class SubmissionService {
       type,
       ...(socketId ? { socketId } : {}),
     };
-    const metaPath = path.join(submissionDir, 'meta.json');
-    const legacyMetadataPath = path.join(submissionDir, 'metadata.json');
-    fs.writeFileSync(metaPath, JSON.stringify(metadata, null, 2));
-    fs.writeFileSync(legacyMetadataPath, JSON.stringify(metadata, null, 2));
+    const metadataPath = path.join(submissionDir, 'meta.json');
+    fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
 
     const solutionPath = path.join(submissionDir, 'solution.js');
     fs.writeFileSync(solutionPath, code);

@@ -8,9 +8,7 @@ import {
   DOCKER_CONTAINER_NAME,
   DOCKER_CPU_LIMIT,
   DOCKER_DEFAULT_MEMORY_LIMIT_MB,
-  DOCKER_PROBLEMS_PATH,
   DOCKER_RUNNER_IMAGE,
-  DOCKER_SUBMISSIONS_PATH,
   DOCKER_TMPFS_SIZE_MB,
 } from './docker.constants';
 
@@ -34,27 +32,66 @@ export class DockerRunnerService {
 
   async runSubmission(options: DockerRunOptions): Promise<DockerRunResult> {
     const args = this.buildRunArgs(options);
+    this.logger.debug(`ARGS: ${args.join(' ')}`);
     return this.spawnDocker(args);
+  }
+
+  private normalizeHostPath(value: string): string {
+    let hostPath = value.trim();
+    if (!hostPath) {
+      return hostPath;
+    }
+
+    // docker run 형태로 들어온 경우(host:container) container 부분 제거
+    const mappingIndex = this.findMountSeparator(hostPath);
+    if (mappingIndex !== -1) {
+      hostPath = hostPath.slice(0, mappingIndex);
+    }
+
+    const normalized = hostPath.replace(/\\/g, '/');
+    if (normalized.startsWith('/')) {
+      return normalized;
+    }
+
+    const match = normalized.match(/^([a-zA-Z]):\/(.*)$/);
+    if (match) {
+      const drive = match[1].toLowerCase();
+      const rest = match[2];
+      return `/host_mnt/${drive}/${rest}`;
+    }
+
+    return normalized;
   }
 
   private buildRunArgs(options: DockerRunOptions): string[] {
     const image = this.getString('JUDGE_RUNNER_IMAGE', DOCKER_RUNNER_IMAGE);
-    const problemsPath = path.resolve(this.getString('JUDGE_PROBLEMS_PATH', DOCKER_PROBLEMS_PATH));
-    const submissionsPath = path.resolve(
-      this.getString('JUDGE_SUBMISSIONS_PATH', DOCKER_SUBMISSIONS_PATH),
-    );
+
+    // 1. 호스트 경로 가져오기
+    const rawHostPath = this.getString('JUDGE_HOST_PATH', '');
+    const normalizedHostPath = rawHostPath ? this.normalizeHostPath(rawHostPath) : 'judge-data';
+    const dockerHostBasePath = path.isAbsolute(normalizedHostPath)
+      ? normalizedHostPath
+      : path.resolve(normalizedHostPath);
+
+    this.logger.log(`Docker Host Base Path: ${dockerHostBasePath}`);
+
+    // 3. submissions 경로
+    const submissionsPath = path.join(dockerHostBasePath, 'submissions');
     const submissionOutputPath = path.join(submissionsPath, options.submissionId);
+
     const memoryLimitMb =
       options.memoryLimitMb ??
       this.getNumber('JUDGE_DEFAULT_MEMORY_LIMIT_MB', DOCKER_DEFAULT_MEMORY_LIMIT_MB);
+
     const containerName = `${DOCKER_CONTAINER_NAME}-${options.submissionId}`;
+
     return [
       'run',
       '--rm',
       '--name',
       containerName,
       '-v',
-      `${problemsPath}:/app/data:ro`,
+      `${dockerHostBasePath}:/app/data:ro`,
       '-v',
       `${submissionOutputPath}:/app/output:rw`,
       '-e',
@@ -72,6 +109,12 @@ export class DockerRunnerService {
       '/runner/run.js',
       options.submissionId,
     ];
+  }
+
+  private findMountSeparator(value: string): number {
+    const normalized = value.replace(/\\/g, '/');
+    const index = normalized.lastIndexOf(':/');
+    return index > 2 ? index : -1;
   }
 
   // 외부 명령어를 새 프로세스로 실행하는 함수

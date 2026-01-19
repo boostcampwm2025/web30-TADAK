@@ -109,13 +109,7 @@ export class PubsubSubscriberService implements OnModuleInit {
     }
   }
 
-  private async getSubmissionType(
-    submissionId: number | string,
-  ): Promise<'TEST' | 'SUBMISSION' | null> {
-    const numericId = this.toNumericSubmissionId(submissionId);
-    if (numericId === null) {
-      return null;
-    }
+  private async getSubmissionType(submissionId: string): Promise<'TEST' | 'SUBMISSION' | null> {
     const fs = await import('fs');
     const path = await import('path');
 
@@ -137,12 +131,8 @@ export class PubsubSubscriberService implements OnModuleInit {
     }
   }
 
-  private async getSocketIdBySubmissionId(submissionId: number | string): Promise<string | null> {
-    const numericId = this.toNumericSubmissionId(submissionId);
-    if (numericId === null) {
-      return null;
-    }
-    const submission = await this.submissionRepository.findOne({ where: { id: numericId } });
+  private async getSocketIdBySubmissionId(submissionId: string): Promise<string | null> {
+    const submission = await this.submissionRepository.findOne({ where: { id: submissionId } });
     if (!submission) {
       this.logger.warn(`Submission ${submissionId} not found`);
       return null;
@@ -162,7 +152,7 @@ export class PubsubSubscriberService implements OnModuleInit {
 
   // submissionId로 유저 정보 조회 (roomId, username)
   private async getUserInfoBySubmissionId(
-    submissionId: number | string,
+    submissionId: string,
   ): Promise<{ roomId: string; userId: string; username: string } | null> {
     const numericId = this.toNumericSubmissionId(submissionId);
     if (numericId === null) {

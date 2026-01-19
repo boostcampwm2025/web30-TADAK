@@ -11,8 +11,7 @@ export type TestcaseStatus =
 // 각 테스트케이스 결과 전송 (실시간)
 export interface TestcaseUpdateMessage {
   type: 'TESTCASE_UPDATE';
-  submissionId: number | string;
-  socketId?: string;
+  submissionId: string;
   testcase: {
     index: number;
     status: TestcaseStatus;
@@ -29,8 +28,7 @@ export interface TestcaseUpdateMessage {
 // 최종 결과
 export interface FinalResultMessage {
   type: 'FINAL_RESULT';
-  submissionId: number | string;
-  socketId?: string;
+  submissionId: string;
   status: TestcaseStatus;
   result: {
     passed: number;

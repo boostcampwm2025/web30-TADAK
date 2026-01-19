@@ -17,7 +17,6 @@ export class JudgeContext {
 
   constructor(
     public readonly submissionId: string,
-    private readonly socketId: string | undefined,
     private readonly testcases: Testcase[],
     private readonly reader: JudgeReader,
     private readonly checker: JudgeChecker,
@@ -64,10 +63,10 @@ export class JudgeContext {
   }
 
   async reportFinalResult(): Promise<void> {
+    const submissionId = this.submissionId as unknown as string;
     await this.pubsub.publishFinalResult({
       type: 'FINAL_RESULT',
-      submissionId: this.submissionIdValue,
-      socketId: this.socketId,
+      submissionId,
       status: this.finalStatus,
       result: {
         passed: this.passed,
@@ -86,10 +85,10 @@ export class JudgeContext {
   }
 
   private async publishUpdate(index: number, status: TestcaseStatus, time: number, memory: number) {
+    const submissionId = this.submissionId as unknown as string;
     await this.pubsub.publishTestcaseUpdate({
       type: 'TESTCASE_UPDATE',
-      submissionId: this.submissionIdValue,
-      socketId: this.socketId,
+      submissionId,
       testcase: { index: index + 1, status, time, memory },
       progress: {
         completed: index + 1,

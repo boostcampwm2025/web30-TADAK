@@ -80,14 +80,9 @@ async function main() {
 
   console.log(`[Runner] Loading cases from: ${casesFileName}`);
 
-  const rawCases = JSON.parse(fs.readFileSync(casesPath, 'utf8'));
-  const testCases = Array.isArray(rawCases) ? rawCases : rawCases.testcases || rawCases.testCases;
-
-  if (!Array.isArray(testCases)) {
-    console.error(`[Error] Invalid testcase format: ${casesPath}`);
-    process.exit(1);
-  }
+  const testCasesParent = JSON.parse(fs.readFileSync(casesPath, 'utf8'));
   const solutionFile = path.join(OUTPUT_DIR, 'solution.js');
+  const testCases = testCasesParent.testCases || testCasesParent; // 구조에 따라 적절히 선택
 
   if (!fs.existsSync(solutionFile)) {
     console.error(`[Error] Solution file not found: ${solutionFile}`);

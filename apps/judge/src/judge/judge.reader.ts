@@ -10,9 +10,7 @@ export class JudgeReader {
 
   readMetadata(submissionId: string): Metadata {
     const submissionDir = this.getSubmissionDir(submissionId);
-    const metaPath = path.join(submissionDir, 'meta.json');
-    const legacyMetadataPath = path.join(submissionDir, 'metadata.json');
-    const metadataPath = fs.existsSync(metaPath) ? metaPath : legacyMetadataPath;
+    const metadataPath = path.join(submissionDir, 'meta.json');
 
     if (!fs.existsSync(metadataPath)) {
       throw new Error(`Metadata file not found for submission ${submissionId}`);
@@ -33,12 +31,13 @@ export class JudgeReader {
     const data = JSON.parse(fs.readFileSync(testcasePath, 'utf8')) as
       | Testcase[]
       | { testcases?: Testcase[]; testCases?: Testcase[] };
-    const testcases = Array.isArray(data) ? data : (data.testcases ?? data.testCases);
-
-    if (!Array.isArray(testcases)) {
-      throw new Error(`Invalid testcase format for problem ${problemId}`);
+    if (Array.isArray(data)) {
+      return data;
     }
-
+    const testcases = data.testcases ?? data.testCases;
+    if (!testcases) {
+      throw new Error(`Testcase format invalid for problem ${problemId}`);
+    }
     return testcases;
   }
 

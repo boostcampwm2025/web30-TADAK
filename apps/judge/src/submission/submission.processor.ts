@@ -44,24 +44,12 @@ export class SubmissionProcessor extends WorkerHost {
         payload.socketId,
       );
 
-      const judgePromise = this.judgeService
-        .judgeSubmission(executionId)
-        .catch((error: unknown) => {
-          if (error instanceof Error) {
-            this.logger.error(`Judge failed for submission ${executionId}`, error.stack);
-          } else {
-            this.logger.error(`Judge failed for submission ${executionId}`, String(error));
-          }
-        });
-
+      const judgePromise = this.judgeService.judgeSubmission(executionId);
       const result = await this.dockerRunnerService.runSubmission({ submissionId: executionId });
 
       this.logger.log(
         `Docker run completed: exitCode=${result.exitCode ?? 'null'}, signal=${result.signal ?? 'null'}`,
       );
-      if (result.stderr && result.stderr.trim().length > 0) {
-        this.logger.warn(`Docker stderr: ${result.stderr.trim()}`);
-      }
 
       await judgePromise;
     } finally {

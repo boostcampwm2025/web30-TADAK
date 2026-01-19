@@ -5,15 +5,16 @@
 ```bash
 # 1. 환경 변수 설정
 cp .env.dev.example .env.dev
+# Windows(WSL): .env.dev의 JUDGE_HOST_PATH를 /mnt/c/.../judge-data로 설정
 
 # 2. Docker 실행 (빌드 + 백그라운드)
 docker compose --env-file .env.dev -f docker-compose.dev.yml up --build -d
 
 # 3. 로그 확인
-docker compose -f docker-compose.dev.yml logs -f
+docker compose --env-file .env.dev -f docker-compose.dev.yml logs -f
 
 # 4. 종료
-docker compose -f docker-compose.dev.yml down
+docker compose --env-file .env.dev -f docker-compose.dev.yml down
 ```
 
 ### 서비스 접속
