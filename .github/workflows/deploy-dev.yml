@@ -44,7 +44,7 @@ jobs:
           script: |
             cd /root/web30-boostcamp
             git pull origin dev
-            pnpm install
+            pnpm install --frozen-lockfile
             # 프론트엔드 빌드 및 동기화
             pnpm --filter ./apps/web... build
             sudo rsync -av --delete /root/web30-boostcamp/apps/web/dist/ /var/www/port30/web/
