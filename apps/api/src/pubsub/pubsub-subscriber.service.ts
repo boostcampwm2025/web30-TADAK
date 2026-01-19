@@ -65,11 +65,20 @@ export class PubsubSubscriberService implements OnModuleInit {
       `[FINAL_RESULT] Submission ${message.submissionId}: ${message.status} (${message.result.passed}/${message.result.total})`,
     );
 
-    // submissionId로 type 확인
-    const submissionType = await this.getSubmissionType(message.submissionId);
+    // DB에서 submission 조회하여 타입 판별 (DB에 있으면 SUBMISSION, 없으면 TEST)
+    const submission = await this.submissionRepository.findOne({
+      where: { id: message.submissionId },
+    });
 
-    // SUBMISSION 타입만 DB 업데이트
-    if (submissionType === 'SUBMISSION') {
+    // TEST 타입 (DryRun)
+    if (!submission && message.socketId) {
+      this.logger.log(`[FINAL_RESULT] Sending to socket ${message.socketId} (TEST type)`);
+      this.pubsubGateway.emitFinalResult(message.socketId, message);
+      return;
+    }
+
+    // SUBMISSION 타입: DB 업데이트
+    if (submission) {
       try {
         await this.submissionRepository.update(message.submissionId, {
           status: message.status,
@@ -85,25 +94,18 @@ export class PubsubSubscriberService implements OnModuleInit {
           error,
         );
       }
-    } else {
-      this.logger.debug(`[FINAL_RESULT] Skipping DB update for TEST type: ${message.submissionId}`);
-    }
 
-    if (submissionType === 'TEST' && message.socketId) {
-      this.pubsubGateway.emitFinalResult(message.socketId, message);
-      return;
-    }
+      // SUBMISSION 타입: roomId로 브로드캐스트
+      const userInfo = await this.getUserInfoBySubmissionId(message.submissionId);
 
-    // SUBMISSION 타입: roomId로 브로드캐스트
-    const userInfo = await this.getUserInfoBySubmissionId(message.submissionId);
-
-    if (userInfo?.roomId) {
-      this.pubsubGateway.emitFinalResult(userInfo.roomId, message);
-      this.battleGateway.handleUserFinished({
-        roomId: userInfo.roomId,
-        userId: userInfo.userId,
-        username: userInfo.username,
-      });
+      if (userInfo?.roomId) {
+        this.pubsubGateway.emitFinalResult(userInfo.roomId, message);
+        this.battleGateway.handleUserFinished({
+          roomId: userInfo.roomId,
+          userId: userInfo.userId,
+          username: userInfo.username,
+        });
+      }
     }
   }
 

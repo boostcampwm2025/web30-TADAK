@@ -17,7 +17,7 @@ export class SubmissionService {
     private submissionQueue: Queue,
   ) {}
 
-  async submit(dto: CreateSubmissionDto, userId: string) {
+  async submit(dto: CreateSubmissionDto, userId: string, socketId: string) {
     // DB에 저장
     const submission = this.submissionRepository.create({
       problemId: dto.problemId,
@@ -38,6 +38,7 @@ export class SubmissionService {
         code: dto.code,
         language: dto.language,
         userId,
+        socketId,
       });
     } catch (error) {
       await this.submissionRepository.update(savedSubmission.id, {

@@ -21,6 +21,16 @@ type SubmissionResultPayload = Omit<FinalResultMessage, 'type'> & {
   result?: FinalResultMessage['result'];
 };
 
+// 실행 상태 타입
+type ExecutionState = {
+  type: 'TEST' | 'SUBMISSION';
+  submissionId: string | null;
+  isCompleted: boolean;
+};
+
+// 실행 타임아웃 (60초)
+const EXECUTION_TIMEOUT = 60000;
+
 function CodeEditor() {
   const { roomId: roomIdParam } = useParams<{ roomId?: string }>();
   const [searchParams] = useSearchParams();
@@ -37,26 +47,32 @@ function CodeEditor() {
   const [problemId, setProblemId] = useState<string | null>(null);
   const [statusText, setStatusText] = useState('대기 중');
   const [progress, setProgress] = useState<SubmissionProgress | null>(null);
-  const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
-  const [pendingType, setPendingType] = useState<'TEST' | 'SUBMISSION' | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [testcaseResults, setTestcaseResults] = useState<TestcaseResult[]>([]);
 
-  const pendingTypeRef = useRef(pendingType);
-  const submissionIdRef = useRef(activeSubmissionId);
+  // 실행 상태를 ref로 관리 (이벤트 핸들러에서 최신 값 참조)
+  const executionRef = useRef<ExecutionState | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    pendingTypeRef.current = pendingType;
-  }, [pendingType]);
-
-  useEffect(() => {
-    submissionIdRef.current = activeSubmissionId;
-  }, [activeSubmissionId]);
+  // 타임아웃 정리 함수 (useEffect 내에서 사용하므로 먼저 정의)
+  const clearExecutionTimeout = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  };
 
   useEffect(() => {
     connect();
   }, [connect]);
+
+  // 컴포넌트 언마운트 시 타임아웃 정리
+  useEffect(() => {
+    return () => {
+      clearExecutionTimeout();
+    };
+  }, []);
 
   useEffect(() => {
     if (!socket) return;
@@ -92,20 +108,28 @@ function CodeEditor() {
     };
 
     const handleTestcaseUpdate = (payload: TestcaseUpdatePayload) => {
-      const currentType = pendingTypeRef.current;
-      if (!currentType) return;
+      const execution = executionRef.current;
+      // 실행 중이 아니거나 이미 완료된 경우 무시
+      if (!execution || execution.isCompleted) return;
 
       const incomingId = String(payload.submissionId);
-      const currentId = submissionIdRef.current;
-      if (currentId && String(currentId) !== incomingId) return;
 
-      if (!currentId) {
-        submissionIdRef.current = String(payload.submissionId);
-        setActiveSubmissionId(String(payload.submissionId));
+      // submissionId가 설정되어 있고 일치하지 않으면 무시
+      if (!execution.submissionId) {
+        execution.submissionId = incomingId;
+      } else if (execution.submissionId !== incomingId) {
+        return;
       }
+
+      // 첫 번째 이벤트에서 submissionId 설정
+      if (!execution.submissionId) {
+        execution.submissionId = incomingId;
+      }
+
       if (payload.progress) {
         setProgress(payload.progress);
       }
+
       setTestcaseResults((prev) => {
         const next = prev.filter((item) => item.index !== payload.testcase.index);
         next.push(payload.testcase);
@@ -113,19 +137,29 @@ function CodeEditor() {
         return next;
       });
 
-      setStatusText(currentType === 'TEST' ? '테스트 진행 중' : '채점 진행 중');
+      setStatusText(execution.type === 'TEST' ? '테스트 진행 중' : '채점 진행 중');
     };
 
     const handleSubmissionResult = (payload: SubmissionResultPayload) => {
-      const currentType = pendingTypeRef.current;
-      if (!currentType) return;
+      const execution = executionRef.current;
+      // 실행 중이 아니면 무시
+      if (!execution) return;
 
       const incomingId = String(payload.submissionId);
-      const currentId = submissionIdRef.current;
-      if (currentId && String(currentId) !== incomingId) return;
 
-      submissionIdRef.current = String(payload.submissionId);
-      setActiveSubmissionId(String(payload.submissionId));
+      // submissionId가 설정되어 있고 일치하지 않으면 무시
+      if (!execution.submissionId) {
+        execution.submissionId = incomingId;
+      } else if (execution.submissionId !== incomingId) {
+        return;
+      }
+
+      // 타임아웃 정리
+      clearExecutionTimeout();
+
+      // 완료 표시
+      execution.isCompleted = true;
+
       if (payload.result) {
         setProgress({
           passed: payload.result.passed,
@@ -134,12 +168,16 @@ function CodeEditor() {
         });
       }
 
-      const label = currentType === 'TEST' ? '테스트 완료' : '채점 완료';
+      const label = execution.type === 'TEST' ? '테스트 완료' : '채점 완료';
       setStatusText(`${label} (${payload.status})`);
-      pendingTypeRef.current = null;
-      setPendingType(null);
-      setIsTesting(false);
-      setIsSubmitting(false);
+
+      // 상태 초기화
+      executionRef.current = null;
+      if (execution.type === 'TEST') {
+        setIsTesting(false);
+      } else {
+        setIsSubmitting(false);
+      }
     };
 
     socket.on(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
@@ -166,11 +204,27 @@ function CodeEditor() {
     });
   };
 
-  const initSubmission = (type: 'TEST' | 'SUBMISSION') => {
-    pendingTypeRef.current = type;
-    submissionIdRef.current = null;
-    setPendingType(type);
-    setActiveSubmissionId(null);
+  const resetExecution = (type: 'TEST' | 'SUBMISSION', statusMessage: string) => {
+    clearExecutionTimeout();
+    executionRef.current = null;
+
+    if (type === 'TEST') {
+      setIsTesting(false);
+    } else {
+      setIsSubmitting(false);
+    }
+    setStatusText(statusMessage);
+  };
+
+  const initSubmission = (type: 'TEST' | 'SUBMISSION', submissionId?: string) => {
+    // 이전 타임아웃 정리
+    clearExecutionTimeout();
+
+    executionRef.current = {
+      type,
+      submissionId: submissionId ?? null,
+      isCompleted: false,
+    };
     setProgress(null);
     setTestcaseResults([]);
 
@@ -181,24 +235,23 @@ function CodeEditor() {
       setIsSubmitting(true);
       setStatusText('제출 요청 중');
     }
+
+    // 타임아웃 설정
+    timeoutRef.current = setTimeout(() => {
+      const execution = executionRef.current;
+      if (execution && !execution.isCompleted) {
+        resetExecution(execution.type, '시간 초과 - 결과를 받지 못했습니다');
+      }
+    }, EXECUTION_TIMEOUT);
   };
 
   const resetOnError = (type: 'TEST' | 'SUBMISSION') => {
-    pendingTypeRef.current = null;
-    submissionIdRef.current = null;
-    setPendingType(null);
-
-    if (type === 'TEST') {
-      setIsTesting(false);
-      setStatusText('테스트 요청 실패');
-    } else {
-      setIsSubmitting(false);
-      setStatusText('제출 요청 실패');
-    }
+    resetExecution(type, type === 'TEST' ? '테스트 요청 실패' : '제출 요청 실패');
   };
 
   const handleDryRun = async () => {
-    if (pendingType) return;
+    // 이미 실행 중이면 무시
+    if (executionRef.current) return;
     if (!socket?.connected || !socket.id) {
       setStatusText('소켓 연결이 필요합니다');
       return;
@@ -220,7 +273,12 @@ function CodeEditor() {
   };
 
   const handleSubmit = async () => {
-    if (pendingType) return;
+    // 이미 실행 중이면 무시
+    if (executionRef.current) return;
+    if (!socket?.connected || !socket.id) {
+      setStatusText('소켓 연결이 필요합니다');
+      return;
+    }
     if (!problemId) {
       setStatusText('문제 정보를 불러오는 중입니다');
       return;
@@ -229,14 +287,17 @@ function CodeEditor() {
     initSubmission('SUBMISSION');
 
     try {
-      const response = await createSubmission({
-        problemId,
-        code,
-        language: BATTLE_CONFIG.DEFAULT_LANGUAGE,
-      });
-      if (response?.submissionId) {
-        submissionIdRef.current = String(response.submissionId);
-        setActiveSubmissionId(String(response.submissionId));
+      const response = await createSubmission(
+        {
+          problemId,
+          code,
+          language: BATTLE_CONFIG.DEFAULT_LANGUAGE,
+        },
+        socket.id,
+      );
+      if (response?.submissionId && executionRef.current) {
+        // submissionId를 execution에 설정
+        executionRef.current.submissionId = String(response.submissionId);
       }
       setStatusText('채점 대기 중');
     } catch (error) {
