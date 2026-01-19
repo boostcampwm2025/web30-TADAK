@@ -15,11 +15,13 @@ import EditorFooter from './EditorFooter';
 import TestcaseResultPanel from './TestcaseResultPanel';
 
 type SubmissionProgress = TestcaseUpdateMessage['progress'];
-type TestcaseResult = TestcaseUpdateMessage['testcase'];
-type TestcaseUpdatePayload = Omit<TestcaseUpdateMessage, 'type'>;
-type SubmissionResultPayload = Omit<FinalResultMessage, 'type'> & {
-  result?: FinalResultMessage['result'];
+type TestcaseResult = TestcaseUpdateMessage['testcase'] & {
+  results?: TestcaseUpdateMessage['results'];
 };
+type TestcaseUpdatePayload = Omit<TestcaseUpdateMessage, 'type'> & {
+  results?: TestcaseUpdateMessage['results'];
+};
+type SubmissionResultPayload = Omit<FinalResultMessage, 'type'>;
 
 // 실행 상태 타입
 type ExecutionState = {
@@ -50,12 +52,11 @@ function CodeEditor() {
   const [isTesting, setIsTesting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [testcaseResults, setTestcaseResults] = useState<TestcaseResult[]>([]);
+  const [mode, setMode] = useState<'TEST' | 'SUBMISSION' | null>(null);
 
-  // 실행 상태를 ref로 관리 (이벤트 핸들러에서 최신 값 참조)
   const executionRef = useRef<ExecutionState | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 타임아웃 정리 함수 (useEffect 내에서 사용하므로 먼저 정의)
   const clearExecutionTimeout = () => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -67,7 +68,6 @@ function CodeEditor() {
     connect();
   }, [connect]);
 
-  // 컴포넌트 언마운트 시 타임아웃 정리
   useEffect(() => {
     return () => {
       clearExecutionTimeout();
@@ -114,14 +114,12 @@ function CodeEditor() {
 
       const incomingId = String(payload.submissionId);
 
-      // submissionId가 설정되어 있고 일치하지 않으면 무시
       if (!execution.submissionId) {
         execution.submissionId = incomingId;
       } else if (execution.submissionId !== incomingId) {
         return;
       }
 
-      // 첫 번째 이벤트에서 submissionId 설정
       if (!execution.submissionId) {
         execution.submissionId = incomingId;
       }
@@ -132,7 +130,7 @@ function CodeEditor() {
 
       setTestcaseResults((prev) => {
         const next = prev.filter((item) => item.index !== payload.testcase.index);
-        next.push(payload.testcase);
+        next.push({ ...payload.testcase, results: payload.results });
         next.sort((a, b) => a.index - b.index);
         return next;
       });
@@ -147,7 +145,6 @@ function CodeEditor() {
 
       const incomingId = String(payload.submissionId);
 
-      // submissionId가 설정되어 있고 일치하지 않으면 무시
       if (!execution.submissionId) {
         execution.submissionId = incomingId;
       } else if (execution.submissionId !== incomingId) {
@@ -157,7 +154,6 @@ function CodeEditor() {
       // 타임아웃 정리
       clearExecutionTimeout();
 
-      // 완료 표시
       execution.isCompleted = true;
 
       if (payload.result) {
@@ -171,7 +167,6 @@ function CodeEditor() {
       const label = execution.type === 'TEST' ? '테스트 완료' : '채점 완료';
       setStatusText(`${label} (${payload.status})`);
 
-      // 상태 초기화
       executionRef.current = null;
       if (execution.type === 'TEST') {
         setIsTesting(false);
@@ -230,9 +225,11 @@ function CodeEditor() {
 
     if (type === 'TEST') {
       setIsTesting(true);
+      setMode('TEST');
       setStatusText('테스트 요청 중');
     } else {
       setIsSubmitting(true);
+      setMode('SUBMISSION');
       setStatusText('제출 요청 중');
     }
 
@@ -247,6 +244,7 @@ function CodeEditor() {
 
   const resetOnError = (type: 'TEST' | 'SUBMISSION') => {
     resetExecution(type, type === 'TEST' ? '테스트 요청 실패' : '제출 요청 실패');
+    setMode(null);
   };
 
   const handleDryRun = async () => {
@@ -333,7 +331,7 @@ function CodeEditor() {
           onDryRun={handleDryRun}
           onSubmit={handleSubmit}
         />
-        <TestcaseResultPanel progress={progress} testcaseResults={testcaseResults} />
+        <TestcaseResultPanel progress={progress} testcaseResults={testcaseResults} mode={mode} />
       </section>
     </>
   );

@@ -2,11 +2,14 @@ import type { TestcaseStatus, TestcaseUpdateMessage } from '@shared/types/pubsub
 import { useEffect, useRef } from 'react';
 
 type SubmissionProgress = TestcaseUpdateMessage['progress'];
-type TestcaseResult = TestcaseUpdateMessage['testcase'];
+type TestcaseResult = TestcaseUpdateMessage['testcase'] & {
+  results?: TestcaseUpdateMessage['results'];
+};
 
 type TestcaseResultPanelProps = {
   progress: SubmissionProgress | null;
   testcaseResults: TestcaseResult[];
+  mode?: 'TEST' | 'SUBMISSION' | null;
 };
 
 function getStatusColor(status: TestcaseStatus) {
@@ -26,7 +29,7 @@ function getStatusColor(status: TestcaseStatus) {
   }
 }
 
-function TestcaseResultPanel({ progress, testcaseResults }: TestcaseResultPanelProps) {
+function TestcaseResultPanel({ progress, testcaseResults, mode }: TestcaseResultPanelProps) {
   const progressLabel = progress ? `${progress.passed}/${progress.total}` : '0/0';
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -58,12 +61,39 @@ function TestcaseResultPanel({ progress, testcaseResults }: TestcaseResultPanelP
             {testcaseResults.map((testcase) => (
               <div
                 key={testcase.index}
-                className="grid grid-cols-[64px_1fr_72px_72px] items-center gap-2 rounded-md bg-base-primary/5 px-2 py-1.5 text-[11px]"
+                className="space-y-1 rounded-md bg-base-primary/5 px-2 py-1.5 text-[11px]"
               >
-                <span>TC {testcase.index}</span>
-                <span className={getStatusColor(testcase.status)}>{testcase.status}</span>
-                <span className="text-right">{testcase.time}ms</span>
-                <span className="text-right">{testcase.memory}MB</span>
+                <div className="grid grid-cols-[64px_1fr_72px_72px] items-center gap-2">
+                  <span>TC {testcase.index}</span>
+                  <span className={getStatusColor(testcase.status)}>{testcase.status}</span>
+                  <span className="text-right">{testcase.time}ms</span>
+                  <span className="text-right">{testcase.memory}MB</span>
+                </div>
+
+                {mode === 'TEST' && testcase.results && (
+                  <div className="mt-2 space-y-1.5 text-[11px]">
+                    <div className="grid grid-cols-[64px_1fr] items-start gap-2">
+                      <div className="text-base-secondary">입력</div>
+                      <div className="rounded-md bg-base-primary/5 px-2 py-1 font-mono text-base-primary whitespace-pre-wrap break-all">
+                        {testcase.results.input}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-[64px_1fr] items-start gap-2">
+                      <div className="text-base-secondary">예상 출력</div>
+                      <div className="rounded-md bg-base-primary/5 px-2 py-1 font-mono text-base-primary whitespace-pre-wrap break-all">
+                        {testcase.results.expectedOutput}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-[64px_1fr] items-start gap-2">
+                      <div className="text-base-secondary">실제 출력</div>
+                      <div className="rounded-md bg-base-primary/5 px-2 py-1 font-mono text-base-primary whitespace-pre-wrap break-all">
+                        {testcase.results.output}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
