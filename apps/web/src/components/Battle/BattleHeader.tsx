@@ -9,9 +9,10 @@ import { useBattleSocketStore } from '@/stores/battleSocketStore';
 interface BattleHeaderProps {
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
+  showLeaveConfirm?: boolean;
 }
 
-function BattleHeader({ theme, onToggleTheme }: BattleHeaderProps) {
+function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleHeaderProps) {
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId: string }>();
   const leaveRoom = useBattleSocketStore((state) => state.leaveRoom);
@@ -19,7 +20,11 @@ function BattleHeader({ theme, onToggleTheme }: BattleHeaderProps) {
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 
   const handleLeaveClick = () => {
-    setIsLeaveModalOpen(true);
+    if (showLeaveConfirm) {
+      setIsLeaveModalOpen(true);
+    } else {
+      handleConfirmLeave();
+    }
   };
 
   const handleConfirmLeave = () => {
@@ -68,28 +73,30 @@ function BattleHeader({ theme, onToggleTheme }: BattleHeaderProps) {
         </button>
       </div>
 
-      <Modal
-        isOpen={isLeaveModalOpen}
-        onClose={handleCancelLeave}
-        icon={AlertCircle}
-        iconColor="text-error-01"
-        iconBgColor="bg-error-01/20"
-        title="대결에서 나가시겠습니까?"
-        description="진행 중인 문제 풀이가 모두 사라집니다."
-        buttons={[
-          {
-            label: '취소',
-            onClick: handleCancelLeave,
-            variant: 'muted',
-          },
-          {
-            label: '나가기',
-            onClick: handleConfirmLeave,
-            variant: 'black',
-          },
-        ]}
-        closeOnBackdrop={false}
-      />
+      {showLeaveConfirm && (
+        <Modal
+          isOpen={isLeaveModalOpen}
+          onClose={handleCancelLeave}
+          icon={AlertCircle}
+          iconColor="text-error-01"
+          iconBgColor="bg-error-01/20"
+          title="대결에서 나가시겠습니까?"
+          description="진행 중인 문제 풀이가 모두 사라집니다."
+          buttons={[
+            {
+              label: '취소',
+              onClick: handleCancelLeave,
+              variant: 'muted',
+            },
+            {
+              label: '나가기',
+              onClick: handleConfirmLeave,
+              variant: 'black',
+            },
+          ]}
+          closeOnBackdrop={false}
+        />
+      )}
     </header>
   );
 }
