@@ -10,12 +10,24 @@ export class PubsubGateway {
   private readonly logger = new Logger(PubsubGateway.name);
 
   // 특정 소켓에 테스트케이스 결과 전달
-  emitTestcaseUpdate(socketId: string, message: TestcaseUpdateMessage): void {
-    this.server.to(socketId).emit('testcase-update', {
+  emitTestcaseUpdate(
+    socketId: string,
+    message: TestcaseUpdateMessage,
+    test: boolean = false,
+  ): void {
+    const payload: Partial<TestcaseUpdateMessage> = {
       submissionId: message.submissionId,
       testcase: message.testcase,
       progress: message.progress,
-    });
+    };
+
+    // 테스트일 때만 입출력 결과 포함
+    if (test && message.results) {
+      payload.results = message.results;
+    }
+
+    this.server.to(socketId).emit('testcase-update', payload);
+
     this.logger.debug(`Sent testcase-update to socket ${socketId}`);
   }
 

@@ -5,6 +5,12 @@ import { JudgeChecker } from './judge.checker';
 import { JudgeReader } from './judge.reader';
 import { Testcase } from './judge.types';
 
+interface OutputResults {
+  input: string;
+  output: string;
+  expectedOutput: string;
+}
+
 export class JudgeContext {
   private lastProcessedIndex = -1;
   private passed = 0;
@@ -34,7 +40,7 @@ export class JudgeContext {
 
       const outputResult = this.reader.readOutputFile(this.submissionId, i);
       const testcase = this.testcases[i];
-      const { time, memory, status: runnerStatus } = outputResult;
+      const { time, memory, status: runnerStatus, input } = outputResult;
 
       // ACCEPTED인 경우에만 output 비교하여 WRONG_ANSWER 판정
       let tcStatus: TestcaseStatus = runnerStatus;
@@ -43,7 +49,13 @@ export class JudgeContext {
         tcStatus = isCorrect ? 'ACCEPTED' : 'WRONG_ANSWER';
       }
 
-      await this.publishUpdate(i, tcStatus, time, memory);
+      const results = {
+        input,
+        output: this.checker.normalize(outputResult.output),
+        expectedOutput: testcase.output,
+      } as OutputResults;
+
+      await this.publishUpdate(i, tcStatus, time, memory, results);
       this.updateStatistics(tcStatus, time, memory);
 
       this.lastProcessedIndex = i;
@@ -77,7 +89,13 @@ export class JudgeContext {
     };
   }
 
-  private async publishUpdate(index: number, status: TestcaseStatus, time: number, memory: number) {
+  private async publishUpdate(
+    index: number,
+    status: TestcaseStatus,
+    time: number,
+    memory: number,
+    results: OutputResults,
+  ) {
     const submissionId = this.submissionId as unknown as string;
     await this.pubsub.publishTestcaseUpdate({
       type: 'TESTCASE_UPDATE',
@@ -89,6 +107,7 @@ export class JudgeContext {
         passed: status === 'ACCEPTED' ? this.passed + 1 : this.passed,
         total: this.testcases.length,
       },
+      results,
     });
   }
 

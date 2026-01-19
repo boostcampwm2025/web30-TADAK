@@ -55,7 +55,19 @@ export class PubsubSubscriberService implements OnModuleInit {
 
     const socketId =
       (message.socketId as string) ?? (await this.getSocketIdBySubmissionId(message.submissionId));
-    if (socketId) {
+
+    // DB에서 submission 조회하여 타입 판별 (DB에 있으면 SUBMISSION, 없으면 TEST)
+    const submission = await this.submissionRepository.findOne({
+      where: { id: message.submissionId },
+    });
+    if (socketId && !submission) {
+      // TEST 타입 : 입출력 결과 전송
+      this.pubsubGateway.emitTestcaseUpdate(socketId, message, true);
+      return;
+    }
+
+    if (socketId && submission) {
+      // SUBMISSION 타입 : 입출력 결과 미전송
       this.pubsubGateway.emitTestcaseUpdate(socketId, message);
     }
   }
