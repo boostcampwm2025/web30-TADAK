@@ -29,6 +29,7 @@ export class JudgeService {
         this.reader,
         this.checker,
         this.pubsub,
+        metadata.socketId,
       );
 
       await this.poller.poll(

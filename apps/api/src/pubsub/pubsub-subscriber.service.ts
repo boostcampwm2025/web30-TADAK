@@ -53,7 +53,8 @@ export class PubsubSubscriberService implements OnModuleInit {
       `[TESTCASE_UPDATE] Submission ${message.submissionId} - TC ${message.testcase.index}: ${message.testcase.status}`,
     );
 
-    const socketId = await this.getSocketIdBySubmissionId(message.submissionId);
+    const socketId =
+      (message.socketId as string) ?? (await this.getSocketIdBySubmissionId(message.submissionId));
     if (socketId) {
       this.pubsubGateway.emitTestcaseUpdate(socketId, message);
     }
@@ -88,7 +89,12 @@ export class PubsubSubscriberService implements OnModuleInit {
       this.logger.debug(`[FINAL_RESULT] Skipping DB update for TEST type: ${message.submissionId}`);
     }
 
-    // WebSocket 전송
+    if (submissionType === 'TEST' && message.socketId) {
+      this.pubsubGateway.emitFinalResult(message.socketId, message);
+      return;
+    }
+
+    // SUBMISSION 타입: roomId로 브로드캐스트
     const userInfo = await this.getUserInfoBySubmissionId(message.submissionId);
 
     if (userInfo?.roomId) {
