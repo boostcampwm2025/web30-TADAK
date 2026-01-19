@@ -1,4 +1,9 @@
+import { SOCKET_EVENT } from '@shared/constants/socket-event';
+import type { ProblemDataPayload } from '@shared/types/problem';
 import { AlertTriangle, BookOpen, FileText } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+import { useBattleSocketStore } from '@/stores/battleSocketStore';
 
 const constraints = [
   { category: '배열 길이', text: '2 ≤ nums.length ≤ 10⁴' },
@@ -13,6 +18,23 @@ const examples = [
 ];
 
 function BattleProblem() {
+  const connect = useBattleSocketStore((state) => state.connect);
+  const [, setProblemId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const socket = connect();
+    const handleProblemInfo = (payload: ProblemDataPayload) => {
+      if (payload?.id) {
+        setProblemId(payload.id);
+      }
+    };
+
+    socket.on(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
+    return () => {
+      socket.off(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
+    };
+  }, [connect]);
+
   return (
     <section className="flex flex-col gap-5 rounded-2xl bg-(--bg-layer-2) border border-border-soft p-5 text-base-primary xl:h-full xl:min-h-0 xl:overflow-y-auto">
       <div className="flex items-start justify-between">
