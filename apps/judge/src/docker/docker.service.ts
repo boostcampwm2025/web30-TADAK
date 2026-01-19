@@ -36,94 +36,6 @@ export class DockerRunnerService {
     return this.spawnDocker(args);
   }
 
-  // private buildRunArgs(options: DockerRunOptions): string[] {
-  //   const image = this.getString('JUDGE_RUNNER_IMAGE', DOCKER_RUNNER_IMAGE);
-  //   const hostBasePath = this.getString('JUDGE_HOST_PATH', '');
-  //   const problemsPath = hostBasePath
-  //     ? path.resolve(hostBasePath)
-  //     : path.resolve(this.getString('JUDGE_PROBLEMS_PATH', DOCKER_PROBLEMS_PATH));
-  //   const submissionsPath = hostBasePath
-  //     ? path.resolve(hostBasePath, 'submissions')
-  //     : path.resolve(this.getString('JUDGE_SUBMISSIONS_PATH', DOCKER_SUBMISSIONS_PATH));
-  //   const submissionOutputPath = path.join(submissionsPath, options.submissionId);
-  //   const memoryLimitMb =
-  //     options.memoryLimitMb ??
-  //     this.getNumber('JUDGE_DEFAULT_MEMORY_LIMIT_MB', DOCKER_DEFAULT_MEMORY_LIMIT_MB);
-  //   const containerName = `${DOCKER_CONTAINER_NAME}-${options.submissionId}`;
-  //   return [
-  //     'run',
-  //     // '--rm',
-  //     '--name',
-  //     containerName,
-  //     '-v',
-  //     `${problemsPath}:/app/data:ro`,
-  //     '-v',
-  //     `${submissionOutputPath}:/app/output:rw`,
-  //     '-e',
-  //     'IS_DOCKER=true',
-  //     '--network',
-  //     'none',
-  //     '--memory',
-  //     `${memoryLimitMb}m`,
-  //     '--cpus',
-  //     `${DOCKER_CPU_LIMIT}`,
-  //     '--tmpfs',
-  //     `/tmp:size=${DOCKER_TMPFS_SIZE_MB}m`,
-  //     image,
-  //     'node',
-  //     '/runner/run.js',
-  //     options.submissionId,
-  //   ];
-  // }
-
-  private buildRunArgs(options: DockerRunOptions): string[] {
-    const image = this.getString('JUDGE_RUNNER_IMAGE', DOCKER_RUNNER_IMAGE);
-
-    // 1. 호스트 경로 가져오기
-    const rawHostPath = this.getString('JUDGE_HOST_PATH', '');
-    const normalizedHostPath = rawHostPath ? this.normalizeHostPath(rawHostPath) : 'judge-data';
-    const dockerHostBasePath = path.isAbsolute(normalizedHostPath)
-      ? normalizedHostPath
-      : path.resolve(normalizedHostPath);
-
-    this.logger.log(`Docker Host Base Path: ${dockerHostBasePath}`);
-
-    // 3. submissions 경로
-    const submissionsPath = path.join(dockerHostBasePath, 'submissions');
-    const submissionOutputPath = path.join(submissionsPath, options.submissionId);
-
-    const memoryLimitMb =
-      options.memoryLimitMb ??
-      this.getNumber('JUDGE_DEFAULT_MEMORY_LIMIT_MB', DOCKER_DEFAULT_MEMORY_LIMIT_MB);
-
-    const containerName = `${DOCKER_CONTAINER_NAME}-${options.submissionId}`;
-
-    return [
-      'run',
-      // '--rm',
-      '--name',
-      containerName,
-      '-v',
-      `${dockerHostBasePath}:/app/data:ro`,
-      '-v',
-      `${submissionOutputPath}:/app/output:rw`,
-      '-e',
-      'IS_DOCKER=true',
-      '--network',
-      'none',
-      '--memory',
-      `${memoryLimitMb}m`,
-      '--cpus',
-      `${DOCKER_CPU_LIMIT}`,
-      '--tmpfs',
-      `/tmp:size=${DOCKER_TMPFS_SIZE_MB}m`,
-      image,
-      'node',
-      '/runner/run.js',
-      options.submissionId,
-    ];
-  }
-
   private normalizeHostPath(value: string): string {
     let hostPath = value.trim();
     if (!hostPath) {
@@ -149,6 +61,54 @@ export class DockerRunnerService {
     }
 
     return normalized;
+  }
+
+  private buildRunArgs(options: DockerRunOptions): string[] {
+    const image = this.getString('JUDGE_RUNNER_IMAGE', DOCKER_RUNNER_IMAGE);
+
+    // 1. 호스트 경로 가져오기
+    const rawHostPath = this.getString('JUDGE_HOST_PATH', '');
+    const normalizedHostPath = rawHostPath ? this.normalizeHostPath(rawHostPath) : 'judge-data';
+    const dockerHostBasePath = path.isAbsolute(normalizedHostPath)
+      ? normalizedHostPath
+      : path.resolve(normalizedHostPath);
+
+    this.logger.log(`Docker Host Base Path: ${dockerHostBasePath}`);
+
+    // 3. submissions 경로
+    const submissionsPath = path.join(dockerHostBasePath, 'submissions');
+    const submissionOutputPath = path.join(submissionsPath, options.submissionId);
+
+    const memoryLimitMb =
+      options.memoryLimitMb ??
+      this.getNumber('JUDGE_DEFAULT_MEMORY_LIMIT_MB', DOCKER_DEFAULT_MEMORY_LIMIT_MB);
+
+    const containerName = `${DOCKER_CONTAINER_NAME}-${options.submissionId}`;
+
+    return [
+      'run',
+      '--rm',
+      '--name',
+      containerName,
+      '-v',
+      `${dockerHostBasePath}:/app/data:ro`,
+      '-v',
+      `${submissionOutputPath}:/app/output:rw`,
+      '-e',
+      'IS_DOCKER=true',
+      '--network',
+      'none',
+      '--memory',
+      `${memoryLimitMb}m`,
+      '--cpus',
+      `${DOCKER_CPU_LIMIT}`,
+      '--tmpfs',
+      `/tmp:size=${DOCKER_TMPFS_SIZE_MB}m`,
+      image,
+      'node',
+      '/runner/run.js',
+      options.submissionId,
+    ];
   }
 
   private findMountSeparator(value: string): number {

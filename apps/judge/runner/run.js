@@ -78,8 +78,9 @@ async function main() {
 
   console.log(`[Runner] Loading cases from: ${casesFileName}`);
 
-  const testCases = JSON.parse(fs.readFileSync(casesPath, 'utf8'));
+  const testCasesParent = JSON.parse(fs.readFileSync(casesPath, 'utf8'));
   const solutionFile = path.join(OUTPUT_DIR, 'solution.js');
+  const testCases = testCasesParent.testCases || testCasesParent; // 구조에 따라 적절히 선택
 
   if (!fs.existsSync(solutionFile)) {
     console.error(`[Error] Solution file not found: ${solutionFile}`);

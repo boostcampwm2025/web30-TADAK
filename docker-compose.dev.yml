@@ -87,13 +87,14 @@ services:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
       - JUDGE_VOLUME=/judge-data
-      - JUDGE_HOST_PATH=${JUDGE_HOST_PATH:-${PWD}/judge-data}
+      # - JUDGE_HOST_PATH=${JUDGE_HOST_PATH:-${PWD}/judge-data}
+      - JUDGE_HOST_PATH=${JUDGE_HOST_PATH}:/judge-data
       - JUDGE_DISABLE_CLEANUP=${JUDGE_DISABLE_CLEANUP}
     ports:
       - "4000:4000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock # 도커 소켓 마운트 (코드 실행용 컨테이너 생성을 위해 필수)
-      - ${JUDGE_HOST_PATH:-${PWD}/judge-data}:/judge-data
+      - ${JUDGE_HOST_PATH}:/judge-data
       - ./apps/judge:/app/apps/judge
       - ./packages:/app/packages
       - /app/apps/judge/node_modules
