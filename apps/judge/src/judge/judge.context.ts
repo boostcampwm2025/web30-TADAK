@@ -28,7 +28,6 @@ export class JudgeContext {
     private readonly reader: JudgeReader,
     private readonly checker: JudgeChecker,
     private readonly pubsub: PubsubService,
-    private readonly socketId?: string,
   ) {}
 
   hasNewOutput(): boolean {
