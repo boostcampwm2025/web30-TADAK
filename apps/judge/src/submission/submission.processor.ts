@@ -41,6 +41,7 @@ export class SubmissionProcessor extends WorkerHost {
         payload.type,
         payload.problemId,
         payload.code,
+        payload.socketId,
       );
 
       const judgePromise = this.judgeService.judgeSubmission(executionId);

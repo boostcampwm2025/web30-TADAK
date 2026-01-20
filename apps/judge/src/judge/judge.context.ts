@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { TestcaseStatus } from '@packages/types/pubsub';
 
 import { PubsubService } from '../pubsub/pubsub.service';
@@ -11,6 +12,8 @@ export class JudgeContext {
   private maxTime = 0;
   private maxMemory = 0;
   private finalStatus: TestcaseStatus = 'ACCEPTED';
+  private readonly submissionIdValue: number | string;
+  private readonly logger = new Logger(JudgeContext.name);
 
   constructor(
     public readonly submissionId: string,
@@ -18,7 +21,11 @@ export class JudgeContext {
     private readonly reader: JudgeReader,
     private readonly checker: JudgeChecker,
     private readonly pubsub: PubsubService,
-  ) {}
+  ) {
+    const parsed = Number(submissionId);
+    this.submissionIdValue =
+      Number.isFinite(parsed) && String(parsed) === submissionId ? parsed : submissionId;
+  }
 
   hasNewOutput(): boolean {
     const nextIndex = this.lastProcessedIndex + 1;
@@ -41,6 +48,8 @@ export class JudgeContext {
         const isCorrect = this.checker.compare(outputResult.output, testcase.output);
         tcStatus = isCorrect ? 'ACCEPTED' : 'WRONG_ANSWER';
       }
+
+      this.logger.log(outputResult, testcase, tcStatus);
 
       await this.publishUpdate(i, tcStatus, time, memory);
       this.updateStatistics(tcStatus, time, memory);
