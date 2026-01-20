@@ -51,4 +51,26 @@ export class PubsubGateway {
     });
     this.logger.log(`Sent final-result to socket ${socketId}`);
   }
+
+  // 방 전체에 테스트 실행 결과 브로드캐스트
+  emitTestResult(roomId: string, message: FinalResultMessage, userId: string): void {
+    this.server.to(roomId).emit('test-result', {
+      submissionId: message.submissionId,
+      status: message.status,
+      result: message.result,
+      userId,
+    });
+    this.logger.log(`Broadcast test-result to room ${roomId} for user ${userId}`);
+  }
+
+  // 방 전체에 시스템 채팅 메시지 전송
+  emitSystemChat(roomId: string, message: string): void {
+    this.server.to(roomId).emit('receive-chat', {
+      type: 'SYSTEM',
+      nickname: '시스템',
+      message,
+      timestamp: new Date().toISOString(),
+    });
+    this.logger.log(`Broadcast system chat to room ${roomId}: ${message}`);
+  }
 }

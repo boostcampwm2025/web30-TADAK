@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type SubmitLog = {
+export type ActivityLog = {
+  type: 'TEST' | 'SUBMIT';
   passed: number;
   total: number;
   timestamp: number;
@@ -10,7 +11,7 @@ export type SubmitLog = {
 export type PlayerProgress = {
   passed: number;
   total: number;
-  submitLogs: SubmitLog[];
+  activityLogs: ActivityLog[];
 };
 
 type ProgressMap = Record<string, PlayerProgress>;
@@ -18,6 +19,10 @@ type ProgressMap = Record<string, PlayerProgress>;
 type State = {
   progresses: ProgressMap;
   upsertProgress: (userId: string, progress: { passed: number; total: number }) => void;
+  addActivityLog: (
+    userId: string,
+    log: { type: 'TEST' | 'SUBMIT'; passed: number; total: number },
+  ) => void;
   resetProgresses: () => void;
 };
 
@@ -28,7 +33,8 @@ export const useBattleProgressStore = create<State>()(
       upsertProgress: (userId, progress) =>
         set((s) => {
           const current = s.progresses[userId];
-          const newLog: SubmitLog = {
+          const newLog: ActivityLog = {
+            type: 'SUBMIT',
             passed: progress.passed,
             total: progress.total,
             timestamp: Date.now(),
@@ -38,7 +44,25 @@ export const useBattleProgressStore = create<State>()(
               ...s.progresses,
               [userId]: {
                 ...progress,
-                submitLogs: [...(current?.submitLogs ?? []), newLog],
+                activityLogs: [...(current?.activityLogs ?? []), newLog],
+              },
+            },
+          };
+        }),
+      addActivityLog: (userId, log) =>
+        set((s) => {
+          const current = s.progresses[userId];
+          const newLog: ActivityLog = {
+            ...log,
+            timestamp: Date.now(),
+          };
+          return {
+            progresses: {
+              ...s.progresses,
+              [userId]: {
+                passed: current?.passed ?? 0,
+                total: current?.total ?? 0,
+                activityLogs: [...(current?.activityLogs ?? []), newLog],
               },
             },
           };

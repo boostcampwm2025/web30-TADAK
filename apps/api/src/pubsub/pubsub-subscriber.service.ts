@@ -85,7 +85,18 @@ export class PubsubSubscriberService implements OnModuleInit {
     // TEST 타입 (DryRun)
     if (!submission && message.socketId) {
       this.logger.log(`[FINAL_RESULT] Sending to socket ${message.socketId} (TEST type)`);
-      this.pubsubGateway.emitFinalResult(message.socketId, message);
+      // 본인에게 결과 전송
+      this.pubsubGateway.emitFinalResultToSocket(message.socketId, message);
+
+      // 방에 테스트 결과 브로드캐스트
+      const userInfo = await this.getUserInfoBySocketId(message.socketId);
+      if (userInfo?.roomId) {
+        this.pubsubGateway.emitTestResult(userInfo.roomId, message, userInfo.userId);
+        this.pubsubGateway.emitSystemChat(
+          userInfo.roomId,
+          `${userInfo.username}님이 테스트를 실행했습니다. (${message.result.passed}/${message.result.total})`,
+        );
+      }
       return;
     }
 
@@ -199,6 +210,29 @@ export class PubsubSubscriberService implements OnModuleInit {
       const parsed = Number(value);
       return Number.isFinite(parsed) ? parsed : null;
     }
+    return null;
+  }
+
+  // socketId로 유저 정보 조회
+  private async getUserInfoBySocketId(
+    socketId: string,
+  ): Promise<{ roomId: string; userId: string; username: string } | null> {
+    // Redis에서 socketId로 userId 찾기 (모든 matching:user:* 키 순회)
+    const keys = await this.redisClient.keys('matching:user:*');
+
+    for (const key of keys) {
+      const userData = await this.redisClient.hgetall(key);
+      if (userData?.socketId === socketId && userData?.roomId) {
+        const userId = key.replace('matching:user:', '');
+        return {
+          roomId: userData.roomId,
+          userId,
+          username: userData.username ?? '플레이어',
+        };
+      }
+    }
+
+    this.logger.warn(`User info not found for socketId ${socketId}`);
     return null;
   }
 }

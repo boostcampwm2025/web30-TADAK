@@ -6,12 +6,18 @@ import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useRoomStore } from '@/stores/roomStore';
 
+type TestResultPayload = {
+  userId: string;
+  result: { passed: number; total: number };
+};
+
 function BattleSituation() {
   const me = useRoomStore((state) => state.me);
   const players = useRoomStore((state) => state.players);
   const codes = useRoomStore((state) => state.codes);
   const upsertCode = useRoomStore((state) => state.upsertCode);
   const progresses = useBattleProgressStore((state) => state.progresses);
+  const addActivityLog = useBattleProgressStore((state) => state.addActivityLog);
   const socket = useBattleSocketStore((state) => state.socket);
 
   const opponent = useMemo(
@@ -28,11 +34,25 @@ function BattleSituation() {
       }
     };
 
+    // 상대방 테스트 결과 수신 (활동 기록용)
+    const handleTestResult = (payload: TestResultPayload) => {
+      if (payload.userId !== me?.userId && payload.result) {
+        addActivityLog(payload.userId, {
+          type: 'TEST',
+          passed: payload.result.passed,
+          total: payload.result.total,
+        });
+      }
+    };
+
     socket.on(BATTLE_EVENTS.CODE_UPDATED, handleCodeUpdate);
+    socket.on('test-result', handleTestResult);
+
     return () => {
       socket.off(BATTLE_EVENTS.CODE_UPDATED, handleCodeUpdate);
+      socket.off('test-result', handleTestResult);
     };
-  }, [socket, me?.userId, upsertCode]);
+  }, [socket, me?.userId, upsertCode, addActivityLog]);
 
   const codeLines = useMemo(() => {
     if (!opponent?.userId) return 0;
@@ -40,7 +60,7 @@ function BattleSituation() {
     return code.split('\n').filter((line) => line.trim().length > 0).length;
   }, [codes, opponent?.userId]);
 
-  const submitLogs = opponent?.userId ? (progresses[opponent.userId]?.submitLogs ?? []) : [];
+  const activityLogs = opponent?.userId ? (progresses[opponent.userId]?.activityLogs ?? []) : [];
 
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp);
@@ -106,8 +126,8 @@ function BattleSituation() {
                 <p className="text-lg text-base-primary">{codeLines}</p>
               </div>
               <div className="rounded-lg  bg-base-primary/5 px-3 py-2">
-                <p className="text-base-secondary">제출 횟수</p>
-                <p className="text-lg text-base-primary">{submitLogs.length}</p>
+                <p className="text-base-secondary">실행 횟수</p>
+                <p className="text-lg text-base-primary">{activityLogs.length}</p>
               </div>
             </div>
           </div>
@@ -119,16 +139,16 @@ function BattleSituation() {
             <p className="font-semibold text-green-05">활동 기록</p>
           </div>
           <div className="flex-1 space-y-2 overflow-y-auto rounded-md bg-base-primary/5 p-3 text-xs text-base-primary">
-            {submitLogs.length === 0 ? (
+            {activityLogs.length === 0 ? (
               <p className="text-center text-base-secondary py-2">아직 활동 기록이 없습니다</p>
             ) : (
-              [...submitLogs].reverse().map((log, idx) => (
+              [...activityLogs].reverse().map((log, idx) => (
                 <div
                   key={log.timestamp}
                   className="flex items-center justify-between rounded-lg bg-(--bg-layer-2) px-3 py-2"
                 >
                   <span>
-                    코드 제출 #{submitLogs.length - idx}{' '}
+                    {log.type === 'TEST' ? '테스트' : '제출'} #{activityLogs.length - idx}{' '}
                     <span className={log.passed === log.total ? 'text-green-05' : 'text-pink-05'}>
                       ({log.passed}/{log.total})
                     </span>

@@ -149,6 +149,7 @@ export class RoomGateway {
           joinedAt: new Date().toISOString(),
           roomId: roomId,
           username: resolvedUsername,
+          socketId: client.id,
         });
       } catch {
         // ignore
@@ -157,7 +158,6 @@ export class RoomGateway {
 
     // 방 전체에 최신 참여자 목록 브로드캐스트 (통계 포함)
     const playersWithStats = await this.getPlayersWithStats(room.currentPlayers);
-    console.warn('Players : ', playersWithStats);
     this.server.to(roomId).emit(SOCKET_EVENT.ROOM_PLAYERS, {
       roomId: room.roomId,
       players: playersWithStats,
