@@ -41,8 +41,8 @@ function BattlePage() {
   }, [connect, setProblem]);
 
   useEffect(() => {
-    if (me) return;
     const desiredRole = isSpectator ? 'spectator' : 'player';
+    if (me && me.roomId === roomId && me.role === desiredRole) return;
     const attempt = async () => {
       await resumeSession({ roomId, roleHint: desiredRole }).catch(() => {});
       if (!useRoomStore.getState().me) {
