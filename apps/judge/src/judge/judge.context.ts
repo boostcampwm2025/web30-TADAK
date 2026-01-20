@@ -40,7 +40,7 @@ export class JudgeContext {
 
       const outputResult = this.reader.readOutputFile(this.submissionId, i);
       const testcase = this.testcases[i];
-      const { time, memory, status: runnerStatus, input } = outputResult;
+      const { time, memory, status: runnerStatus } = outputResult;
 
       // ACCEPTED인 경우에만 output 비교하여 WRONG_ANSWER 판정
       let tcStatus: TestcaseStatus = runnerStatus;
@@ -50,7 +50,7 @@ export class JudgeContext {
       }
 
       const results = {
-        input,
+        input: testcase.input,
         output: this.checker.normalize(outputResult.output),
         expectedOutput: testcase.output,
       } as OutputResults;

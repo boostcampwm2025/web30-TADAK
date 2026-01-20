@@ -103,7 +103,6 @@ async function main() {
 
     const caseResult = {
       status: result.status, // 추가: 개별 케이스의 상태 (ACCEPTED, OUTPUT_LIMIT_EXCEEDED 등)
-      input: testCase.input,
       output: rawOutput,
       time: result.time,
       memory: Math.round((usedMemory / 1024 / 1024) * 100) / 100, // Byte -> MB 변환 (소수점 2자리)
@@ -184,7 +183,6 @@ function runTestCase(solutionFile, input, timeLimit, memoryLimit) {
 
     // stdin(표준 입력)에 테스트 케이스 주입
     child.stdin.write(input);
-    child.stdin.write('\n');
     child.stdin.end(); // 입력 끝 알림
 
     // 프로세스 종료 처리
