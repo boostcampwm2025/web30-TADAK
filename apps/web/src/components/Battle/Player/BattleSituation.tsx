@@ -14,9 +14,8 @@ type TestResultPayload = {
 function BattleSituation() {
   const me = useRoomStore((state) => state.me);
   const players = useRoomStore((state) => state.players);
-  const codes = useRoomStore((state) => state.codes);
-  const upsertCode = useRoomStore((state) => state.upsertCode);
   const progresses = useBattleProgressStore((state) => state.progresses);
+  const updateCodeLines = useBattleProgressStore((state) => state.updateCodeLines);
   const addActivityLog = useBattleProgressStore((state) => state.addActivityLog);
   const socket = useBattleSocketStore((state) => state.socket);
 
@@ -28,9 +27,10 @@ function BattleSituation() {
   useEffect(() => {
     if (!socket) return;
 
-    const handleCodeUpdate = (payload: { userId: string; code: string }) => {
+    const handleCodeMetadata = (payload: { userId: string; codeLines: number }) => {
       if (payload.userId !== me?.userId) {
-        upsertCode(payload.userId, payload.code);
+        // upsertCode(payload.userId, payload.code);
+        updateCodeLines(payload.userId, payload.codeLines);
       }
     };
 
@@ -45,20 +45,16 @@ function BattleSituation() {
       }
     };
 
-    socket.on(BATTLE_EVENTS.CODE_UPDATED, handleCodeUpdate);
+    socket.on(BATTLE_EVENTS.CODE_METADATA, handleCodeMetadata);
     socket.on('test-result', handleTestResult);
 
     return () => {
-      socket.off(BATTLE_EVENTS.CODE_UPDATED, handleCodeUpdate);
+      socket.off(BATTLE_EVENTS.CODE_METADATA, handleCodeMetadata);
       socket.off('test-result', handleTestResult);
     };
-  }, [socket, me?.userId, upsertCode, addActivityLog]);
+  }, [socket, me?.userId, updateCodeLines, addActivityLog]);
 
-  const codeLines = useMemo(() => {
-    if (!opponent?.userId) return 0;
-    const code = codes[opponent.userId] ?? '';
-    return code.split('\n').filter((line) => line.trim().length > 0).length;
-  }, [codes, opponent?.userId]);
+  const codeLines = opponent?.userId ? (progresses[opponent.userId]?.codeLines ?? 0) : 0;
 
   const activityLogs = opponent?.userId ? (progresses[opponent.userId]?.activityLogs ?? []) : [];
 

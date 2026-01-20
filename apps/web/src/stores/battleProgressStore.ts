@@ -11,6 +11,7 @@ export type ActivityLog = {
 export type PlayerProgress = {
   passed: number;
   total: number;
+  codeLines?: number;
   activityLogs: ActivityLog[];
 };
 
@@ -23,6 +24,7 @@ type State = {
     userId: string,
     log: { type: 'TEST' | 'SUBMIT'; passed: number; total: number },
   ) => void;
+  updateCodeLines: (userId: string, codeLines: number) => void;
   resetProgresses: () => void;
 };
 
@@ -44,6 +46,7 @@ export const useBattleProgressStore = create<State>()(
               ...s.progresses,
               [userId]: {
                 ...progress,
+                codeLines: current?.codeLines ?? 0,
                 activityLogs: [...(current?.activityLogs ?? []), newLog],
               },
             },
@@ -62,7 +65,23 @@ export const useBattleProgressStore = create<State>()(
               [userId]: {
                 passed: current?.passed ?? 0,
                 total: current?.total ?? 0,
+                codeLines: current?.codeLines ?? 0,
                 activityLogs: [...(current?.activityLogs ?? []), newLog],
+              },
+            },
+          };
+        }),
+      updateCodeLines: (userId, codeLines) =>
+        set((s) => {
+          const current = s.progresses[userId];
+          return {
+            progresses: {
+              ...s.progresses,
+              [userId]: {
+                passed: current?.passed ?? 0,
+                total: current?.total ?? 0,
+                codeLines,
+                activityLogs: current?.activityLogs ?? [],
               },
             },
           };
