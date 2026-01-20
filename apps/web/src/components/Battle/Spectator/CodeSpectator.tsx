@@ -1,4 +1,4 @@
-import { BATTLE_EVENTS } from '@shared/constants/battle';
+import { BATTLE_EVENTS, DEFAULT_CODE_TEMPLATE } from '@shared/constants/battle';
 import { Code, Trophy } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
@@ -73,7 +73,9 @@ function CodeSpectator() {
   }, [firstParticipantId, participants, selectedId]);
 
   const activeSelectedId = selectedId ?? firstParticipantId;
-  const selectedCode = activeSelectedId ? (codes[activeSelectedId] ?? '') : '';
+  const rawSelectedCode = activeSelectedId ? codes[activeSelectedId] : undefined;
+  const selectedCode =
+    rawSelectedCode && rawSelectedCode.trim().length > 0 ? rawSelectedCode : DEFAULT_CODE_TEMPLATE;
 
   const participantCards = useMemo(
     () =>
