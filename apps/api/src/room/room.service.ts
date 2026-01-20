@@ -107,14 +107,6 @@ export class RoomService {
         throw new Error('Problem not found for the battle.');
       }
 
-      // 방 생성
-      const room = await this.createRoom({
-        roomId,
-        title: problemEntity.title,
-        status: 'in-battle',
-        currentPlayers: [player1, player2],
-      });
-
       const problem: ProblemDataPayload = {
         id: problemEntity.id,
         source: problemEntity.source,
