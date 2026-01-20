@@ -331,7 +331,7 @@ function CodeEditor() {
           onDryRun={handleDryRun}
           onSubmit={handleSubmit}
         />
-        <TestcaseResultPanel progress={progress} testcaseResults={testcaseResults} mode={mode} />
+        <TestcaseResultPanel testcaseResults={testcaseResults} mode={mode} />
       </section>
     </>
   );
