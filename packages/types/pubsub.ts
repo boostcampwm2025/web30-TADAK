@@ -12,6 +12,7 @@ export type TestcaseStatus =
 export interface TestcaseUpdateMessage {
   type: 'TESTCASE_UPDATE';
   submissionId: string;
+  socketId?: string;
   testcase: {
     index: number;
     status: TestcaseStatus;
@@ -29,6 +30,7 @@ export interface TestcaseUpdateMessage {
 export interface FinalResultMessage {
   type: 'FINAL_RESULT';
   submissionId: string;
+  socketId?: string;
   status: TestcaseStatus;
   result: {
     passed: number;

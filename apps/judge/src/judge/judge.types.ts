@@ -7,6 +7,7 @@ export interface Metadata {
   timeLimit: number;
   memoryLimit: number;
   type: SubmissionJobType;
+  socketId?: string;
 }
 
 export interface Testcase {

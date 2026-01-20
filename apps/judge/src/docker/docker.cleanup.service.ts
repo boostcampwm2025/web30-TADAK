@@ -14,6 +14,10 @@ export class DockerCleanupService {
   constructor(private readonly configService: ConfigService) {}
 
   async cleanupExecution(executionId: string): Promise<void> {
+    if (this.isCleanupDisabled()) {
+      this.logger.debug(`Cleanup disabled. Skipping cleanup for ${executionId}.`);
+      return;
+    }
     await Promise.all([this.removeSubmissionFiles(executionId), this.removeContainer(executionId)]);
   }
 
@@ -67,6 +71,12 @@ export class DockerCleanupService {
 
   private isNotFoundMessage(message: string): boolean {
     return message.includes('No such container');
+  }
+
+  private isCleanupDisabled(): boolean {
+    const value = this.configService.get<string>('JUDGE_DISABLE_CLEANUP');
+    if (!value) return false;
+    return ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase());
   }
 
   private getString(key: string, fallback: string): string {

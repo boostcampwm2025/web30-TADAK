@@ -95,17 +95,25 @@ export class RoomService {
 
       // 배틀 생성
       const battle = await this.BattleService.createBattle({
-        roomId: room.roomId,
+        roomId: roomId,
         config: {
           duration: BATTLE_CONFIG.DURATION,
         },
-        users: room.currentPlayers.map((player) => player.userId),
+        users: [user1.userId, user2.userId],
       });
 
       const problemEntity = await this.problemService.findOne(battle.problemId);
       if (!problemEntity) {
         throw new Error('Problem not found for the battle.');
       }
+
+      // 방 생성
+      const room = await this.createRoom({
+        roomId,
+        title: problemEntity.title,
+        status: 'in-battle',
+        currentPlayers: [player1, player2],
+      });
 
       const problem: ProblemDataPayload = {
         id: problemEntity.id,

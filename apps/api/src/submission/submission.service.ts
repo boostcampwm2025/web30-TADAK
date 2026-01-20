@@ -33,7 +33,7 @@ export class SubmissionService {
     try {
       await this.submissionQueue.add('submission-job', {
         type: 'SUBMISSION',
-        submissionId: savedSubmission.id,
+        submissionId: String(savedSubmission.id),
         problemId: dto.problemId,
         code: dto.code,
         language: dto.language,

@@ -53,7 +53,8 @@ export class PubsubSubscriberService implements OnModuleInit {
       `[TESTCASE_UPDATE] Submission ${message.submissionId} - TC ${message.testcase.index}: ${message.testcase.status}`,
     );
 
-    const socketId = await this.getSocketIdBySubmissionId(message.submissionId);
+    const socketId =
+      message.socketId ?? (await this.getSocketIdBySubmissionId(message.submissionId));
     if (socketId) {
       this.pubsubGateway.emitTestcaseUpdate(socketId, message);
     }
@@ -64,13 +65,20 @@ export class PubsubSubscriberService implements OnModuleInit {
       `[FINAL_RESULT] Submission ${message.submissionId}: ${message.status} (${message.result.passed}/${message.result.total})`,
     );
 
+    if (message.socketId) {
+      this.pubsubGateway.emitFinalResultToSocket(message.socketId, message);
+      return;
+    }
+
+    const numericId = this.toNumericSubmissionId(message.submissionId);
+
     // submissionId로 type 확인
     const submissionType = await this.getSubmissionType(message.submissionId);
 
     // SUBMISSION 타입만 DB 업데이트
-    if (submissionType === 'SUBMISSION') {
+    if (submissionType === 'SUBMISSION' && numericId !== null) {
       try {
-        await this.submissionRepository.update(message.submissionId, {
+        await this.submissionRepository.update(numericId, {
           status: message.status,
           passedTestCases: message.result.passed,
           totalTestCases: message.result.total,
@@ -105,7 +113,7 @@ export class PubsubSubscriberService implements OnModuleInit {
     const fs = await import('fs');
     const path = await import('path');
 
-    const metaPath = path.join('/judge-data/submissions', String(submissionId), 'meta.json');
+    const metaPath = path.join('/judge-data/submissions', submissionId, 'meta.json');
 
     try {
       if (!fs.existsSync(metaPath)) {
@@ -146,7 +154,13 @@ export class PubsubSubscriberService implements OnModuleInit {
   private async getUserInfoBySubmissionId(
     submissionId: string,
   ): Promise<{ roomId: string; userId: string; username: string } | null> {
-    const submission = await this.submissionRepository.findOne({ where: { id: submissionId } });
+    const numericId = this.toNumericSubmissionId(submissionId);
+    if (numericId === null) {
+      return null;
+    }
+    const submission = await this.submissionRepository.findOne({
+      where: { id: String(numericId) },
+    });
     if (!submission) {
       this.logger.warn(`Submission ${submissionId} not found`);
       return null;
@@ -163,5 +177,16 @@ export class PubsubSubscriberService implements OnModuleInit {
       userId: submission.userId,
       username: userData.username ?? '플레이어',
     };
+  }
+
+  private toNumericSubmissionId(value: number | string): number | null {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === 'string' && value.trim().length > 0) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
   }
 }

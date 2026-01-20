@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -11,14 +12,24 @@ type SubmissionJobType = 'TEST' | 'SUBMISSION';
 @Injectable()
 export class SubmissionService {
   private readonly logger = new Logger(SubmissionService.name);
-  private readonly baseDir = '/judge-data';
-  private readonly problemsDir = path.join(this.baseDir, 'problems');
-  private readonly submissionsDir = path.join(this.baseDir, 'submissions');
+  private readonly baseDir: string;
+  private readonly problemsDir: string;
+  private readonly submissionsDir: string;
 
   constructor(
     @InjectRepository(Problem)
     private problemRepository: Repository<Problem>,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    this.baseDir = this.getBaseDir();
+    this.problemsDir = path.join(this.baseDir, 'problems');
+    this.submissionsDir = path.join(this.baseDir, 'submissions');
+  }
+
+  private getBaseDir(): string {
+    const value = this.configService.get<string>('JUDGE_VOLUME');
+    return value && value.trim().length > 0 ? value : '/judge-data';
+  }
 
   // 문제 데이터 파일 준비
   async prepareProblemData(problemId: string): Promise<void> {
@@ -42,10 +53,10 @@ export class SubmissionService {
     }
 
     const testJsonPath = path.join(problemDir, 'test.json');
-    fs.writeFileSync(testJsonPath, JSON.stringify({ testCases: problem.examples }, null, 2));
+    fs.writeFileSync(testJsonPath, JSON.stringify(problem.examples, null, 2));
 
     const submissionJsonPath = path.join(problemDir, 'submission.json');
-    fs.writeFileSync(submissionJsonPath, JSON.stringify({ testCases: problem.testcases }, null, 2));
+    fs.writeFileSync(submissionJsonPath, JSON.stringify(problem.testcases, null, 2));
   }
 
   // 제출 데이터 파일 준비
@@ -54,6 +65,7 @@ export class SubmissionService {
     type: SubmissionJobType,
     problemId: string,
     code: string,
+    socketId?: string,
   ): Promise<void> {
     const submissionDir = path.join(this.submissionsDir, submissionId);
 
@@ -73,6 +85,7 @@ export class SubmissionService {
       timeLimit: problem.timeLimit,
       memoryLimit: problem.memoryLimit,
       type,
+      ...(socketId ? { socketId } : {}),
     };
     const metadataPath = path.join(submissionDir, 'meta.json');
     fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));

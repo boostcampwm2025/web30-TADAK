@@ -50,9 +50,37 @@ services:
     networks:
       - app-network
 
+  # 채점 서버 (NestJS)
+  judge:
+    build:
+      context: .
+      dockerfile: apps/judge/Dockerfile
+      target: production
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env.production
+    environment:
+      - NODE_ENV=production
+      - JUDGE_VOLUME=/judge-data
+      - JUDGE_PROBLEMS_PATH=/judge-data
+      - JUDGE_SUBMISSIONS_PATH=/judge-data/submissions
+    ports:
+      - "4000:4000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - judge_data:/judge-data
+    networks:
+      - app-network
+
 volumes:
   mysql_data:
   redis_data:
+  judge_data:
 
 networks:
   app-network:
