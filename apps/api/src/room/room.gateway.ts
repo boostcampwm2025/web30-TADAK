@@ -145,6 +145,7 @@ export class RoomGateway {
           status: 'IN_ROOM',
           joinedAt: new Date().toISOString(),
           roomId: roomId,
+          username: resolvedUsername,
         });
       } catch {
         // ignore
