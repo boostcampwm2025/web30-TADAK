@@ -92,7 +92,7 @@ export class PubsubSubscriberService implements OnModuleInit {
     // SUBMISSION 타입: DB 업데이트
     if (submission) {
       try {
-        await this.submissionRepository.update(numericId, {
+        await this.submissionRepository.update(message.submissionId, {
           status: message.status,
           passedTestCases: message.result.passed,
           totalTestCases: message.result.total,
