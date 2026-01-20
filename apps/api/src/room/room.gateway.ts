@@ -186,12 +186,15 @@ export class RoomGateway {
           url: problemEntity.url,
           title: problemEntity.title,
           timeLimit: problemEntity.timeLimit,
+          battleTimeLimit: problemEntity.battleTimeLimit,
           memoryLimit: problemEntity.memoryLimit,
           statement: problemEntity.statement,
           input: problemEntity.input,
           output: problemEntity.output,
           note: problemEntity.note,
           examples: problemEntity.examples,
+          startedAt: battle.startedAt?.toISOString(),
+          duration: battle.config.duration,
         } as ProblemDataPayload);
       }
     }

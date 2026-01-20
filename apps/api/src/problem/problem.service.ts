@@ -67,6 +67,7 @@ export class ProblemService implements OnModuleInit {
         problem.note = data.note;
         problem.examples = data.examples || [];
         problem.testcases = data.testcases || [];
+        problem.battleTimeLimit = data.battleTimeLimit ?? 1800;
 
         await this.problemRepository.save(problem);
       }
