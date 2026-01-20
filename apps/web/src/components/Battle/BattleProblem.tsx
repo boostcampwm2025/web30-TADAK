@@ -1,32 +1,13 @@
-import { SOCKET_EVENT } from '@shared/constants/socket-event';
-import type { ProblemDataPayload } from '@shared/types/problem';
 import { AlertTriangle, BookOpen, FileText, Link } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
-import { useBattleSocketStore } from '@/stores/battleSocketStore';
 
 const EMPTY_CONSTRAINTS: Array<{ category: string; text: string }> = [];
 const EMPTY_EXAMPLES: Array<{ label: string; input: string; output: string }> = [];
 
 function BattleProblem() {
-  const connect = useBattleSocketStore((state) => state.connect);
   const problem = useBattleProblemStore((state) => state.problem);
-  const setProblem = useBattleProblemStore((state) => state.setProblem);
-
-  useEffect(() => {
-    const socket = connect();
-    const handleProblemInfo = (payload: ProblemDataPayload) => {
-      if (payload.id && payload.title) {
-        setProblem(payload);
-      }
-    };
-
-    socket.on(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
-    return () => {
-      socket.off(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
-    };
-  }, [connect]);
 
   const constraintItems = useMemo(() => {
     if (!problem) return EMPTY_CONSTRAINTS;
