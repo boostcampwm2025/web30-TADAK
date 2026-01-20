@@ -6,6 +6,7 @@ export interface ProblemData {
   url: string;
   title: string;
   timeLimit: number;
+  battleTimeLimit: number;
   memoryLimit: number;
   statement: string;
   input: string;
@@ -15,4 +16,7 @@ export interface ProblemData {
   testcases: { input: string; output: string }[];
 }
 
-export interface ProblemDataPayload extends Omit<ProblemData, 'testcases'> {}
+export interface ProblemDataPayload extends Omit<ProblemData, 'testcases'> {
+  startedAt?: string;
+  duration?: number;
+}
