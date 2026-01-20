@@ -113,7 +113,7 @@ export class PubsubSubscriberService implements OnModuleInit {
     const fs = await import('fs');
     const path = await import('path');
 
-    const metaPath = path.join('/judge-data/submissions', String(numericId), 'meta.json');
+    const metaPath = path.join('/judge-data/submissions', submissionId, 'meta.json');
 
     try {
       if (!fs.existsSync(metaPath)) {
@@ -158,7 +158,9 @@ export class PubsubSubscriberService implements OnModuleInit {
     if (numericId === null) {
       return null;
     }
-    const submission = await this.submissionRepository.findOne({ where: { id: numericId } });
+    const submission = await this.submissionRepository.findOne({
+      where: { id: String(numericId) },
+    });
     if (!submission) {
       this.logger.warn(`Submission ${submissionId} not found`);
       return null;

@@ -17,6 +17,7 @@ export class JudgeContext {
 
   constructor(
     public readonly submissionId: string,
+    private readonly socketId: string | undefined,
     private readonly testcases: Testcase[],
     private readonly reader: JudgeReader,
     private readonly checker: JudgeChecker,
@@ -67,6 +68,7 @@ export class JudgeContext {
     await this.pubsub.publishFinalResult({
       type: 'FINAL_RESULT',
       submissionId,
+      socketId: this.socketId,
       status: this.finalStatus,
       result: {
         passed: this.passed,
@@ -89,6 +91,7 @@ export class JudgeContext {
     await this.pubsub.publishTestcaseUpdate({
       type: 'TESTCASE_UPDATE',
       submissionId,
+      socketId: this.socketId,
       testcase: { index: index + 1, status, time, memory },
       progress: {
         completed: index + 1,
