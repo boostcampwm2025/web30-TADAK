@@ -47,14 +47,16 @@ async function main() {
   // 1. 메타 데이터 로드 (Load Metadata)
   // problemId(문제번호), timeLimit(시간제한), memoryLimit(메모리제한), type(제출타입)
   const metaPath = path.join(OUTPUT_DIR, 'meta.json');
+  const legacyMetaPath = path.join(OUTPUT_DIR, 'metadata.json');
+  const resolvedMetaPath = fs.existsSync(metaPath) ? metaPath : legacyMetaPath;
 
-  if (!fs.existsSync(metaPath)) {
+  if (!fs.existsSync(resolvedMetaPath)) {
     console.error(`[Error] Meta file not found: ${metaPath}`);
     console.error(`[Debug] Looked in: ${OUTPUT_DIR}`);
     process.exit(1); // meta.json 파일 없을 시 즉시 종료
   }
 
-  const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+  const meta = JSON.parse(fs.readFileSync(resolvedMetaPath, 'utf8'));
   const problemId = meta.problemId;
   const timeLimit = meta.timeLimit || 2000; // 기본값 2초
   const memoryLimit = meta.memoryLimit || 256; // 기본값 256MB

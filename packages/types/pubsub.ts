@@ -12,7 +12,7 @@ export type TestcaseStatus =
 export interface TestcaseUpdateMessage {
   type: 'TESTCASE_UPDATE';
   submissionId: string;
-  socketId?: string; // TEST 타입의 경우 직접 소켓 전송에 사용
+  socketId?: string;
   testcase: {
     index: number;
     status: TestcaseStatus;
@@ -35,7 +35,7 @@ export interface TestcaseUpdateMessage {
 export interface FinalResultMessage {
   type: 'FINAL_RESULT';
   submissionId: string;
-  socketId?: string; // TEST 타입의 경우 직접 소켓 전송에 사용
+  socketId?: string;
   status: TestcaseStatus;
   result: {
     passed: number;
