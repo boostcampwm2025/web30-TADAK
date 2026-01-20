@@ -64,7 +64,7 @@ function ResultPage() {
       <main className="mx-auto flex max-w-6xl flex-col gap-4 px-3 pt-4 lg:px-8">
         <ResultHeader />
 
-        <div className="flex flex-1 gap-6">
+        <div className="flex gap-6 h-112">
           <div className="flex w-105 shrink-0 flex-col gap-4">
             {participants.map((participant, index) => (
               <PlayerCard

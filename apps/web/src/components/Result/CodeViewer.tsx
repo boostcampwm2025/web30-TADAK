@@ -21,27 +21,29 @@ function CodeViewer({ username, avatarUrl, code, isWinner }: CodeViewerProps) {
         <span className="ml-auto text-sm font-semibold">{isWinner ? '승리' : '패배'}</span>
       </div>
 
-      <div className="flex flex-1 overflow-y-auto">
-        <div className="shrink-0 w-12 bg-bg-layer-1/30 px-3 py-4">
-          <pre className="text-sm">
-            {code.split('\n').map((_, idx) => (
-              <div key={idx} className="text-right select-none text-base-secondary leading-6">
-                {idx + 1}
-              </div>
-            ))}
-          </pre>
-        </div>
-
-        <div className="flex-1 bg-white px-4 py-4">
-          <pre className="text-sm">
-            <code>
-              {code.split('\n').map((line, idx) => (
-                <div key={idx} className="text-base-primary leading-6">
-                  {line || ' '}
+      <div className="flex-1 overflow-y-auto">
+        <div className="flex min-h-full w-full">
+          <div className="shrink-0 w-12 bg-bg-layer-1/30 px-3 py-4 h-auto min-h-full">
+            <pre className="text-sm">
+              {code.split('\n').map((_, idx) => (
+                <div key={idx} className="text-right select-none text-base-secondary leading-6">
+                  {idx + 1}
                 </div>
               ))}
-            </code>
-          </pre>
+            </pre>
+          </div>
+
+          <div className="flex-1 bg-white px-4 py-4">
+            <pre className="text-sm">
+              <code>
+                {code.split('\n').map((line, idx) => (
+                  <div key={idx} className="text-base-primary leading-6">
+                    {line || ' '}
+                  </div>
+                ))}
+              </code>
+            </pre>
+          </div>
         </div>
       </div>
     </div>
