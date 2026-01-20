@@ -23,11 +23,11 @@ export class JudgeContext {
 
   constructor(
     public readonly submissionId: string,
-    private readonly socketId: string | undefined,
     private readonly testcases: Testcase[],
     private readonly reader: JudgeReader,
     private readonly checker: JudgeChecker,
     private readonly pubsub: PubsubService,
+    private readonly socketId?: string,
   ) {}
 
   hasNewOutput(): boolean {

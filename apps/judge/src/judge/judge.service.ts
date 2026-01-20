@@ -25,7 +25,6 @@ export class JudgeService {
 
       const context = new JudgeContext(
         submissionId,
-        metadata.socketId,
         testcases,
         this.reader,
         this.checker,
