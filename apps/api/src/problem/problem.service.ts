@@ -17,12 +17,8 @@ export class ProblemService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    // 서버 시작 시 자동으로 데이터 시딩을 시도하거나, 별도의 명령으로 실행할 수 있다.
-    // 간단히 데이터가 없을 때만 시딩하도록 구현
-    const count = await this.problemRepository.count();
-    if (count === 0) {
-      await this.importProblemsFromJson();
-    }
+    // 서버 시작 시 항상 최신 데이터로 업데이트 시도
+    await this.importProblemsFromJson();
   }
 
   async importProblemsFromJson() {
@@ -72,7 +68,7 @@ export class ProblemService implements OnModuleInit {
         await this.problemRepository.save(problem);
       }
 
-      this.logger.log(`Successfully imported ${problemsData.length} problems.`);
+      this.logger.log(`Successfully imported or updated ${problemsData.length} problems.`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to import problems: ${errorMessage}`);
