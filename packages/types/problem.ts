@@ -19,4 +19,5 @@ export interface ProblemData {
 export interface ProblemDataPayload extends Omit<ProblemData, 'testcases'> {
   startedAt?: string;
   duration?: number;
+  serverTime?: string;
 }
