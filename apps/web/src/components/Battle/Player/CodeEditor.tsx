@@ -7,7 +7,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 import { createDryRun, createSubmission } from '@/apis/submission';
-import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import type { Player } from '@/stores/roomStore';
 import { useRoomStore } from '@/stores/roomStore';
@@ -31,7 +30,6 @@ function CodeEditor() {
 
   const socket = useBattleSocketStore((state) => state.socket);
   const connect = useBattleSocketStore((state) => state.connect);
-  const setProblem = useBattleProblemStore((state) => state.setProblem);
 
   const [code, setCode] = useState(`function solution() {
   // TODO
@@ -90,7 +88,6 @@ function CodeEditor() {
     const handleProblemInfo = (payload: ProblemDataPayload) => {
       if (payload?.id) {
         setProblemId(payload.id);
-        setProblem(payload);
       }
     };
 
@@ -154,7 +151,7 @@ function CodeEditor() {
       socket.off('testcase-update', handleTestcaseUpdate);
       socket.off('submission-result', handleSubmissionResult);
     };
-  }, [setProblem, socket]);
+  }, [socket]);
 
   const handleChange = (value: string) => {
     setCode(value);
