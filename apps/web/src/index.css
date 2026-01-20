@@ -38,6 +38,7 @@
   --color-red-01: #ff3b5c;
   --color-error-01: #f74f3b;
   --color-neon-01: #00ffcc;
+  --color-gray-light: #f3f4f6;
 
   --color-white-static: #ffffff;
   --color-black-static: #000000;
@@ -51,6 +52,7 @@
   --color-base-tertiary: var(--base-tertiary);
   --color-base-muted: var(--base-muted);
   --color-base-faint: var(--base-faint);
+  --color-base-faint-inverse: var(--base-faint-inverse);
 
   --color-bg-layer-1: var(--bg-layer-1);
   --color-bg-layer-2: var(--bg-layer-2);
@@ -102,9 +104,11 @@
   --base-muted: var(--color-blue-02);
 
   --base-faint: var(--color-white-static);
+  --base-faint-inverse: var(--color-blue-05);
 
   --bg-layer-1: var(--color-blue-02);
   --bg-layer-2: var(--color-white);
+  --background-light: var(--color-gray-light);
 
   --white: var(--color-white-static);
   --black: var(--color-black-static);
@@ -123,9 +127,11 @@
   --base-tertiary: var(--color-blue-03);
   --base-muted: var(--color-blue-04);
   --base-faint: var(--color-blue-05);
+  --base-faint-inverse: var(--color-white-static);
 
   --bg-layer-1: var(--color-blue-07);
   --bg-layer-2: var(--color-blue-06);
+  --background-light: var(--color-blue-05);
 
   --white: var(--color-black-static);
   --black: var(--color-white-static);

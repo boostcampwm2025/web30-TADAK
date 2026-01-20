@@ -24,6 +24,11 @@ export interface TestcaseUpdateMessage {
     passed: number; // 지금까지 통과한 개수
     total: number;
   };
+  results?: {
+    input: string;
+    output: string;
+    expectedOutput: string;
+  };
 }
 
 // 최종 결과

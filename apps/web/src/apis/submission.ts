@@ -12,8 +12,12 @@ export type SubmissionResponse = {
   message?: string;
 };
 
-export const createSubmission = async (payload: SubmissionRequest) => {
-  const response = await axiosInstance.post<SubmissionResponse>('/submissions', payload);
+export const createSubmission = async (payload: SubmissionRequest, socketId: string) => {
+  const response = await axiosInstance.post<SubmissionResponse>('/submissions', payload, {
+    headers: {
+      'x-socket-id': socketId,
+    },
+  });
   return response.data;
 };
 

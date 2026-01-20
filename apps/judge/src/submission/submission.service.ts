@@ -80,13 +80,17 @@ export class SubmissionService {
       this.logger.log(`Created submission directory: ${submissionDir}`);
     }
 
-    const metadata = {
+    const metadata: Record<string, unknown> = {
       problemId,
       timeLimit: problem.timeLimit,
       memoryLimit: problem.memoryLimit,
       type,
       ...(socketId ? { socketId } : {}),
     };
+    // TEST 타입의 경우 socketId 저장
+    if (socketId) {
+      metadata.socketId = socketId;
+    }
     const metadataPath = path.join(submissionDir, 'meta.json');
     fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
 
