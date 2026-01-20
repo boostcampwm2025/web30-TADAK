@@ -1,12 +1,12 @@
 import { BATTLE_CONFIG, BATTLE_EVENTS } from '@shared/constants/battle';
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
-import type { ProblemDataPayload } from '@shared/types/problem';
 import type { FinalResultMessage, TestcaseUpdateMessage } from '@shared/types/pubsub';
 import { Code } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 import { createDryRun, createSubmission } from '@/apis/submission';
+import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import type { Player } from '@/stores/roomStore';
 import { useRoomStore } from '@/stores/roomStore';
@@ -46,7 +46,6 @@ function CodeEditor() {
   const [code, setCode] = useState(`function solution() {
   // TODO
 }`);
-  const [problemId, setProblemId] = useState<string | null>(null);
   const [statusText, setStatusText] = useState('대기 중');
   const [progress, setProgress] = useState<SubmissionProgress | null>(null);
   const [isTesting, setIsTesting] = useState(false);
@@ -56,6 +55,11 @@ function CodeEditor() {
 
   const executionRef = useRef<ExecutionState | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const problemId = useBattleProblemStore((state) => state.problem?.id ?? null);
+
+  useEffect(() => {
+    pendingTypeRef.current = pendingType;
+  }, [pendingType]);
 
   const clearExecutionTimeout = () => {
     if (timeoutRef.current) {
@@ -100,12 +104,6 @@ function CodeEditor() {
 
   useEffect(() => {
     if (!socket) return;
-
-    const handleProblemInfo = (payload: ProblemDataPayload) => {
-      if (payload?.id) {
-        setProblemId(payload.id);
-      }
-    };
 
     const handleTestcaseUpdate = (payload: TestcaseUpdatePayload) => {
       const execution = executionRef.current;
@@ -175,12 +173,10 @@ function CodeEditor() {
       }
     };
 
-    socket.on(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
     socket.on('testcase-update', handleTestcaseUpdate);
     socket.on('submission-result', handleSubmissionResult);
 
     return () => {
-      socket.off(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
       socket.off('testcase-update', handleTestcaseUpdate);
       socket.off('submission-result', handleSubmissionResult);
     };

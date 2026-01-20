@@ -15,6 +15,7 @@ import { ProblemService } from '@/problem/problem.service';
 
 import { CHAT_TYPE } from '../../../../packages/constants/chat';
 import {
+  ROOM_CONFIG,
   SOCKET_ERROR,
   SOCKET_EVENT,
   SOCKET_NAMESPACE,
@@ -198,6 +199,32 @@ export class RoomGateway {
     // 최신 인원 정보를 브로드캐스트
     const availability = await this.roomService.getRoomAvailability(roomId);
     this.server.to(roomId).emit(SOCKET_EVENT.ROOM_AVAILABILITY, availability);
+
+    if (requestedRole === 'player') {
+      await this.updateBattleRoomStatus(roomId);
+    }
+  }
+
+  private async updateBattleRoomStatus(roomId: string): Promise<void> {
+    const room = await this.roomService.getRoom(roomId);
+    if (!room || room.status === 'in-battle') return;
+    if (room.currentPlayers.length < ROOM_CONFIG.MAX_PLAYERS) return;
+
+    const pipeline = this.redis.pipeline();
+    room.currentPlayers.forEach((player) => {
+      pipeline.hget(RedisKeys.matchingUser(player.userId), 'status');
+    });
+
+    const results = (await pipeline.exec()) as [Error | null, string | null][];
+    const allJoined = results.every(([err, status]) => !err && status === 'IN_ROOM');
+    if (!allJoined) return;
+
+    room.status = 'in-battle';
+    await this.roomService.saveRoom(room);
+
+    const rooms = await this.roomService.listRooms();
+    const publicRooms = this.roomService.toPublicRooms(rooms);
+    this.server.emit(SOCKET_EVENT.ROOM_LIST, publicRooms);
   }
 
   @SubscribeMessage(SOCKET_EVENT.LEAVE_ROOM)

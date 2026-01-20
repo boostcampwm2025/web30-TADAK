@@ -29,7 +29,6 @@ function MainPage() {
   const unsubscribeRoomList = useBattleSocketStore((state) => state.unsubscribeRoomList);
   const requestRoomList = useBattleSocketStore((state) => state.requestRoomList);
   const rooms = useBattleSocketStore((state) => state.rooms);
-  const joinRoom = useBattleSocketStore((state) => state.joinRoom);
   const socket = useBattleSocketStore((state) => state.socket);
 
   const startMatching = useMatchingStore((state) => state.startMatching);
@@ -94,13 +93,6 @@ function MainPage() {
     setJoiningRoomId(roomId);
     try {
       await ensureSocketReady();
-      await joinRoom({
-        roomId,
-        requestedRole: 'spectator',
-        userId: user?.id,
-        username: user?.username,
-        avatarUrl: user?.avatarUrl,
-      });
       navigate(`/room/${roomId}?mode=spectator`);
     } catch (error) {
       console.error('관전 입장 실패:', error);
