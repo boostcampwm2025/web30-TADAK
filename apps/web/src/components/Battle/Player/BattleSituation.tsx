@@ -1,22 +1,56 @@
 import { Activity, BarChart3, ListChecks } from 'lucide-react';
+import { useMemo } from 'react';
 
-function BattleProgress() {
+import { useRoomStore } from '@/stores/roomStore';
+
+function BattleSituation() {
+  const me = useRoomStore((state) => state.me);
+  const players = useRoomStore((state) => state.players);
+  const opponent = useMemo(
+    () => players.find((p) => p.userId !== me?.userId),
+    [players, me?.userId],
+  );
+
+  const { stats, totalBattles } = useMemo(() => {
+    const s = opponent?.stats ?? {
+      wins: 0,
+      losses: 0,
+      rating: 1000,
+      tier: { tier: 'BRONZE', division: 4 },
+    };
+    return {
+      stats: s,
+      totalBattles: s.wins + s.losses,
+    };
+  }, [opponent]);
+
   const activityLogs = [
     { label: '코드 작성 시작', time: '00:15' },
     { label: '첫 번째 테스트 실행', time: '02:30' },
     { label: '코드 수정 중', time: '04:45' },
   ];
+
   return (
     <>
       <section className="flex flex-col gap-5 rounded-2xl  bg-(--bg-layer-2) p-5 border border-border-soft text-base-primary xl:h-full xl:min-h-0 xl:overflow-y-auto">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <p className="text-sm font-semibold text-base-secondary">플레이어</p>
-            <p className="text-lg font-semibold text-base-primary">CodeNinja</p>
+            <p className="text-sm font-semibold text-base-secondary">상대방</p>
+            <p className="text-lg font-semibold text-base-primary">
+              {opponent?.username ?? '대기 중'}
+            </p>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-05 text-lg font-bold text-white">
-            C
-          </div>
+          {opponent?.avatarUrl ? (
+            <img
+              src={opponent.avatarUrl}
+              alt={opponent.username}
+              className="h-10 w-10 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-05 text-lg font-bold text-white">
+              {opponent?.username?.charAt(0).toUpperCase() ?? '?'}
+            </div>
+          )}
         </div>
 
         <div className="space-y-3 text-sm leading-relaxed text-base-primary">
@@ -65,13 +99,13 @@ function BattleProgress() {
           <div className="rounded-md bg-base-primary/5 p-3">
             <div className="mt-1 flex items-center justify-center gap-4 text-sm font-bold text-base-primary">
               <div className="text-green-05">
-                156 <span className="text-base-secondary font-semibold">배틀</span>
+                {totalBattles} <span className="text-base-secondary font-semibold">배틀</span>
               </div>
               <div className="text-green-05">
-                112 <span className="text-base-secondary font-semibold">승리</span>
+                {stats.wins} <span className="text-base-secondary font-semibold">승리</span>
               </div>
               <div className="text-pink-05">
-                44 <span className="text-base-secondary font-semibold">패배</span>
+                {stats.losses} <span className="text-base-secondary font-semibold">패배</span>
               </div>
             </div>
           </div>
@@ -81,4 +115,4 @@ function BattleProgress() {
   );
 }
 
-export default BattleProgress;
+export default BattleSituation;
