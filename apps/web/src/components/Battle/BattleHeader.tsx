@@ -19,6 +19,7 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
   const leaveRoom = useBattleSocketStore((state) => state.leaveRoom);
   const spectatorCount = useBattleSocketStore((state) => state.spectatorCount);
   const problem = useBattleProblemStore((state) => state.problem);
+  const timeOffset = useBattleProblemStore((state) => state.timeOffset);
 
   const duration = problem?.duration;
   const startedAt = problem?.startedAt;
@@ -33,7 +34,8 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
     const endTime = startTime + duration * 1000;
 
     const updateTimer = () => {
-      const now = Date.now();
+      // 서버 시간 추정: 클라이언트 시간 + 오프셋
+      const now = Date.now() + timeOffset;
       const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
       setTimeLeft(remaining);
 
@@ -46,7 +48,7 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
     const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [startedAt, duration]);
+  }, [startedAt, duration, timeOffset]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
