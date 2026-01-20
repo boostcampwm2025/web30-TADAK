@@ -27,6 +27,20 @@ function BattlePage() {
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
 
   useEffect(() => {
+    const socket = connect();
+    const handleProblemInfo = (payload: ProblemDataPayload) => {
+      if (payload?.id) {
+        setProblem(payload);
+      }
+    };
+
+    socket.on(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
+    return () => {
+      socket.off(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
+    };
+  }, [connect, setProblem]);
+
+  useEffect(() => {
     if (me) return;
     const desiredRole = isSpectator ? 'spectator' : 'player';
     const attempt = async () => {
@@ -77,20 +91,6 @@ function BattlePage() {
     user?.id,
     user?.username,
   ]);
-
-  useEffect(() => {
-    const socket = connect();
-    const handleProblemInfo = (payload: ProblemDataPayload) => {
-      if (payload?.id) {
-        setProblem(payload);
-      }
-    };
-
-    socket.on(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
-    return () => {
-      socket.off(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
-    };
-  }, [connect, setProblem]);
 
   return (
     <div className="min-h-svh overflow-auto xl:h-screen xl:overflow-hidden">
