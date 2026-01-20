@@ -1,10 +1,16 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
+import type { FinalResultMessage } from '@shared/types/pubsub';
 import { Code, Trophy } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
+import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useRoomStore } from '@/stores/roomStore';
+
+type SubmissionResultPayload = Omit<FinalResultMessage, 'type'> & {
+  userId?: string;
+};
 
 function CodeSpectator() {
   const { roomId: roomIdParam } = useParams<{ roomId?: string }>();
@@ -15,6 +21,8 @@ function CodeSpectator() {
 
   const socket = useBattleSocketStore((state) => state.socket);
   const connect = useBattleSocketStore((state) => state.connect);
+  const progresses = useBattleProgressStore((state) => state.progresses);
+  const upsertProgress = useBattleProgressStore((state) => state.upsertProgress);
 
   useEffect(() => {
     const client = socket ?? connect();
@@ -38,6 +46,25 @@ function CodeSpectator() {
       client.off(BATTLE_EVENTS.CODE_UPDATED, handleCodeUpdate);
     };
   }, [connect, roomId, selectedId, socket]);
+
+  useEffect(() => {
+    const client = socket ?? connect();
+
+    const handleSubmissionResult = (payload: SubmissionResultPayload) => {
+      if (payload.userId && payload.result) {
+        upsertProgress(payload.userId, {
+          passed: payload.result.passed,
+          total: payload.result.total,
+        });
+      }
+    };
+
+    client.on('submission-result', handleSubmissionResult);
+
+    return () => {
+      client.off('submission-result', handleSubmissionResult);
+    };
+  }, [socket, connect, upsertProgress]);
 
   const participants = useMemo(() => {
     if (players.length > 0) return players.slice(0, 2);
@@ -74,16 +101,23 @@ function CodeSpectator() {
 
   const activeSelectedId = selectedId ?? firstParticipantId;
   const selectedCode = activeSelectedId ? (codes[activeSelectedId] ?? '') : '';
+  const selectedProgress = activeSelectedId ? progresses[activeSelectedId] : null;
 
   const participantCards = useMemo(
     () =>
-      participants.map((p, idx) => ({
-        ...p,
-        percent: 75,
-        color: idx === 0 ? 'var(--color-green-05)' : 'var(--color-pink-05)',
-        bg: idx === 0 ? 'bg-[var(--color-green-05)]' : 'bg-[var(--color-pink-05)]',
-      })),
-    [participants],
+      participants.map((p, idx) => {
+        const progress = progresses[p.userId];
+        const percent = progress?.total ? Math.round((progress.passed / progress.total) * 100) : 0;
+        return {
+          ...p,
+          percent,
+          passed: progress?.passed ?? 0,
+          total: progress?.total ?? 0,
+          color: idx === 0 ? 'var(--color-green-05)' : 'var(--color-pink-05)',
+          bg: idx === 0 ? 'bg-[var(--color-green-05)]' : 'bg-[var(--color-pink-05)]',
+        };
+      }),
+    [participants, progresses],
   );
 
   return (
@@ -157,17 +191,13 @@ function CodeSpectator() {
               {selectedCode}
             </pre>
           </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-soft bg-(--bg-layer-2) px-4 py-3 text-xs text-base-secondary">
-            <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1 text-green-05">
-                ● {/* {selected.progress.passedCount} */}개 테스트 통과
-              </span>
-              <span className="flex items-center gap-1 text-pink-05">
-                ● {/* {selected.progress.totalCount - selected.progress.passedCount} */}개 실패
-              </span>
-            </div>
-            <span>마지막 업데이트: 방금 전</span>
+          <div className="flex items-center justify-end gap-4 border-t border-border-soft bg-(--bg-layer-2) px-4 py-3 text-xs text-base-secondary">
+            <span className="flex items-center gap-1 text-green-05">
+              ● {selectedProgress?.passed ?? 0}개 테스트 통과
+            </span>
+            <span className="flex items-center gap-1 text-pink-05">
+              ● {(selectedProgress?.total ?? 0) - (selectedProgress?.passed ?? 0)}개 실패
+            </span>
           </div>
         </div>
       </section>
