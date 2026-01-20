@@ -7,6 +7,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 
 import { createDryRun, createSubmission } from '@/apis/submission';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
+import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import type { Player } from '@/stores/roomStore';
 import { useRoomStore } from '@/stores/roomStore';
@@ -21,7 +22,9 @@ type TestcaseResult = TestcaseUpdateMessage['testcase'] & {
 type TestcaseUpdatePayload = Omit<TestcaseUpdateMessage, 'type'> & {
   results?: TestcaseUpdateMessage['results'];
 };
-type SubmissionResultPayload = Omit<FinalResultMessage, 'type'>;
+type SubmissionResultPayload = Omit<FinalResultMessage, 'type'> & {
+  userId?: string;
+};
 
 // 실행 상태 타입
 type ExecutionState = {
@@ -42,6 +45,7 @@ function CodeEditor() {
 
   const socket = useBattleSocketStore((state) => state.socket);
   const connect = useBattleSocketStore((state) => state.connect);
+  const upsertProgress = useBattleProgressStore((state) => state.upsertProgress);
 
   const [code, setCode] = useState(`function solution() {
   // TODO
@@ -82,6 +86,7 @@ function CodeEditor() {
       role: string;
       userId: string;
       username: string;
+      avatarUrl?: string;
     }) => {
       if (payload.roomId !== roomId) return;
       setMe({
@@ -89,6 +94,7 @@ function CodeEditor() {
         role: payload.role as never,
         userId: payload.userId,
         username: payload.username,
+        avatarUrl: payload.avatarUrl,
       });
     };
 
@@ -133,8 +139,16 @@ function CodeEditor() {
     };
 
     const handleSubmissionResult = (payload: SubmissionResultPayload) => {
+      // 모든 플레이어의 제출 결과를 store에 저장 (ProgressBar용)
+      if (payload.userId && payload.result) {
+        upsertProgress(payload.userId, {
+          passed: payload.result.passed,
+          total: payload.result.total,
+        });
+      }
+
       const execution = executionRef.current;
-      // 실행 중이 아니면 무시
+      // 본인의 실행 중이 아니면 UI 업데이트 스킵
       if (!execution) return;
 
       const incomingId = String(payload.submissionId);
@@ -176,7 +190,7 @@ function CodeEditor() {
       socket.off('testcase-update', handleTestcaseUpdate);
       socket.off('submission-result', handleSubmissionResult);
     };
-  }, [socket]);
+  }, [socket, upsertProgress]);
 
   const handleChange = (value: string) => {
     setCode(value);

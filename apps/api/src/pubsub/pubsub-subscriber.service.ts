@@ -111,7 +111,7 @@ export class PubsubSubscriberService implements OnModuleInit {
       const userInfo = await this.getUserInfoBySubmissionId(message.submissionId);
 
       if (userInfo?.roomId) {
-        this.pubsubGateway.emitFinalResult(userInfo.roomId, message);
+        this.pubsubGateway.emitFinalResult(userInfo.roomId, message, userInfo.userId);
         this.battleGateway.handleUserFinished({
           roomId: userInfo.roomId,
           userId: userInfo.userId,
