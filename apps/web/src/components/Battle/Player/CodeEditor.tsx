@@ -1,4 +1,4 @@
-import { BATTLE_CONFIG, BATTLE_EVENTS } from '@shared/constants/battle';
+import { BATTLE_CONFIG, BATTLE_EVENTS, DEFAULT_CODE_TEMPLATE } from '@shared/constants/battle';
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { FinalResultMessage, TestcaseUpdateMessage } from '@shared/types/pubsub';
 import { Code } from 'lucide-react';
@@ -21,10 +21,6 @@ type SubmissionResultPayload = Omit<FinalResultMessage, 'type'> & {
   result?: FinalResultMessage['result'];
 };
 
-const INITIAL_CODE = `function solution() {
-  // TODO
-}`;
-
 function CodeEditor() {
   const { roomId: roomIdParam } = useParams<{ roomId?: string }>();
   const [searchParams] = useSearchParams();
@@ -35,7 +31,7 @@ function CodeEditor() {
   const socket = useBattleSocketStore((state) => state.socket);
   const connect = useBattleSocketStore((state) => state.connect);
 
-  const [code, setCode] = useState(INITIAL_CODE);
+  const [code, setCode] = useState(DEFAULT_CODE_TEMPLATE);
   const [statusText, setStatusText] = useState('대기 중');
   const [progress, setProgress] = useState<SubmissionProgress | null>(null);
   const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
