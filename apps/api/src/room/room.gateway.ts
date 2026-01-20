@@ -193,6 +193,7 @@ export class RoomGateway {
           output: problemEntity.output,
           note: problemEntity.note,
           examples: problemEntity.examples,
+          battleId: battle.battleId,
           startedAt: battle.startedAt ? new Date(battle.startedAt).toISOString() : undefined,
           duration: battle.config.duration,
           serverTime: new Date().toISOString(),

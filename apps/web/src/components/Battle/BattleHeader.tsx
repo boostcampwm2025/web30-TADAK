@@ -21,6 +21,7 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
   const problem = useBattleProblemStore((state) => state.problem);
   const timeOffset = useBattleProblemStore((state) => state.timeOffset);
 
+  const battleId = problem?.battleId;
   const duration = problem?.duration;
   const startedAt = problem?.startedAt;
 
@@ -40,7 +41,8 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
       setTimeLeft(remaining);
 
       if (remaining <= 0) {
-        // 타이머 종료 처리 (TODO: 결과 페이지 이동)
+        // 타이머 종료 처리
+        navigate(`/result/${battleId}`);
       }
     };
 

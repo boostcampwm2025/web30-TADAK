@@ -81,7 +81,7 @@ export class ProblemService implements OnModuleInit {
 
   async findFirst(): Promise<Problem | null> {
     return this.problemRepository.findOne({
-      where: { difficulty: 'EASY' },
+      where: { difficulty: 'Bronze' },
       order: { id: 'ASC' },
     });
   }
