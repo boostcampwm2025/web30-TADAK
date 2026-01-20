@@ -21,6 +21,10 @@ type SubmissionResultPayload = Omit<FinalResultMessage, 'type'> & {
   result?: FinalResultMessage['result'];
 };
 
+const INITIAL_CODE = `function solution() {
+  // TODO
+}`;
+
 function CodeEditor() {
   const { roomId: roomIdParam } = useParams<{ roomId?: string }>();
   const [searchParams] = useSearchParams();
@@ -31,9 +35,7 @@ function CodeEditor() {
   const socket = useBattleSocketStore((state) => state.socket);
   const connect = useBattleSocketStore((state) => state.connect);
 
-  const [code, setCode] = useState(`function solution() {
-  // TODO
-}`);
+  const [code, setCode] = useState(INITIAL_CODE);
   const [statusText, setStatusText] = useState('대기 중');
   const [progress, setProgress] = useState<SubmissionProgress | null>(null);
   const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
@@ -96,8 +98,11 @@ function CodeEditor() {
       if (payload.roomId !== roomId) return;
       if (!me?.userId || payload.userId !== me.userId) return;
       if (hasEditedRef.current || hasSyncedRef.current) return;
+      const incomingCode = typeof payload.code === 'string' ? payload.code : '';
+      if (incomingCode.trim().length > 0) {
+        setCode(incomingCode);
+      }
       hasSyncedRef.current = true;
-      setCode(payload.code ?? '');
     };
 
     const handleTestcaseUpdate = (payload: TestcaseUpdatePayload) => {
