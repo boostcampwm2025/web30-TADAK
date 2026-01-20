@@ -1,3 +1,5 @@
+import { SOCKET_EVENT } from '@shared/constants/socket-event';
+import type { ProblemDataPayload } from '@shared/types/problem';
 import { useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
@@ -5,6 +7,7 @@ import BattleHeader from '@/components/Battle/BattleHeader';
 import BattlePlayer from '@/components/Battle/Player/BattlePlayer';
 import BattleSpectator from '@/components/Battle/Spectator/BattleSpectator';
 import { useTheme } from '@/hooks/useTheme';
+import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useRoomStore } from '@/stores/roomStore';
 import { useUserStore } from '@/stores/userStore';
@@ -17,14 +20,29 @@ function BattlePage() {
   const resumeSession = useBattleSocketStore((state) => state.resumeSession);
   const connect = useBattleSocketStore((state) => state.connect);
   const joinRoom = useBattleSocketStore((state) => state.joinRoom);
+  const setProblem = useBattleProblemStore((state) => state.setProblem);
   const user = useUserStore((state) => state.user);
   const me = useRoomStore((state) => state.me);
 
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
 
   useEffect(() => {
-    if (me) return;
+    const socket = connect();
+    const handleProblemInfo = (payload: ProblemDataPayload) => {
+      if (payload?.id) {
+        setProblem(payload);
+      }
+    };
+
+    socket.on(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
+    return () => {
+      socket.off(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
+    };
+  }, [connect, setProblem]);
+
+  useEffect(() => {
     const desiredRole = isSpectator ? 'spectator' : 'player';
+    if (me && me.roomId === roomId && me.role === desiredRole) return;
     const attempt = async () => {
       await resumeSession({ roomId, roleHint: desiredRole }).catch(() => {});
       if (!useRoomStore.getState().me) {
