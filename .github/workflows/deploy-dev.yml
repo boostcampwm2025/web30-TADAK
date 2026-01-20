@@ -49,9 +49,9 @@ jobs:
             # 2. 의존성 설치
             pnpm install --frozen-lockfile
             
-            # 3. 프론트엔드 강제 빌드 (캐시 무시 및 상태 확인)
-            echo "Current Directory: $(pwd)"
-            npx turbo run build --filter=web --force
+            # 3. 프론트엔드 강제 빌드 (환경 변수 직접 주입)
+            echo "Building frontend with domain URL..."
+            VITE_API_BASE_URL=https://www.tadak.site npx turbo run build --filter=web --force
             
             # 4. 정적 파일 동기화 및 권한 최적화
             echo "Syncing files to /var/www/port30/web/"
