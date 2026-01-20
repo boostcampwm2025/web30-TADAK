@@ -47,4 +47,4 @@ jobs:
             pnpm --filter ./apps/web... build
             sudo rsync -av --delete /root/web30-boostcamp/apps/web/dist/ /var/www/port30/web/
             # 백엔드 및 기타 서비스 재빌드 및 실행
-            docker-compose -f docker-compose.prod.yml up -d --build
+            docker compose -f docker-compose.prod.yml up -d --build
