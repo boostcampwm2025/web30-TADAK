@@ -86,6 +86,13 @@ export class RoomService {
         joinedAt: now,
       };
 
+      const room = await this.createRoom({
+        roomId,
+        title: `${user1.username} vs ${user2.username}`,
+        status: 'waiting',
+        currentPlayers: [player1, player2],
+      });
+
       // 배틀 생성
       const battle = await this.BattleService.createBattle({
         roomId: roomId,
@@ -99,14 +106,6 @@ export class RoomService {
       if (!problemEntity) {
         throw new Error('Problem not found for the battle.');
       }
-
-      // 방 생성
-      const room = await this.createRoom({
-        roomId,
-        title: problemEntity.title,
-        status: 'in-battle',
-        currentPlayers: [player1, player2],
-      });
 
       const problem: ProblemDataPayload = {
         id: problemEntity.id,
@@ -213,10 +212,12 @@ export class RoomService {
   // 클라이언트에 노출할 때 socketId 등 민감 정보를 제거한 방 데이터
 
   toPublicRooms(rooms: Room[]): PublicRoom[] {
-    return rooms.map((room) => ({
-      ...room,
-      currentPlayers: room.currentPlayers.map(({ socketId: _socketId, ...rest }) => rest),
-      currentSpectators: room.currentSpectators.map(({ socketId: _socketId, ...rest }) => rest),
-    }));
+    return rooms
+      .filter((room) => room.status === 'in-battle')
+      .map((room) => ({
+        ...room,
+        currentPlayers: room.currentPlayers.map(({ socketId: _socketId, ...rest }) => rest),
+        currentSpectators: room.currentSpectators.map(({ socketId: _socketId, ...rest }) => rest),
+      }));
   }
 }
