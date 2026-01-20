@@ -44,6 +44,8 @@ function CodeEditor() {
 
   const pendingTypeRef = useRef(pendingType);
   const submissionIdRef = useRef(activeSubmissionId);
+  const hasEditedRef = useRef(false);
+  const hasSyncedRef = useRef(false);
   const problemId = useBattleProblemStore((state) => state.problem?.id ?? null);
 
   useEffect(() => {
@@ -84,6 +86,19 @@ function CodeEditor() {
 
   useEffect(() => {
     if (!socket) return;
+
+    const handleCodeUpdated = (payload: {
+      roomId: string;
+      userId: string;
+      code: string;
+      language: string;
+    }) => {
+      if (payload.roomId !== roomId) return;
+      if (!me?.userId || payload.userId !== me.userId) return;
+      if (hasEditedRef.current || hasSyncedRef.current) return;
+      hasSyncedRef.current = true;
+      setCode(payload.code ?? '');
+    };
 
     const handleTestcaseUpdate = (payload: TestcaseUpdatePayload) => {
       const currentType = pendingTypeRef.current;
@@ -136,16 +151,19 @@ function CodeEditor() {
       setIsSubmitting(false);
     };
 
+    socket.on(BATTLE_EVENTS.CODE_UPDATED, handleCodeUpdated);
     socket.on('testcase-update', handleTestcaseUpdate);
     socket.on('submission-result', handleSubmissionResult);
 
     return () => {
+      socket.off(BATTLE_EVENTS.CODE_UPDATED, handleCodeUpdated);
       socket.off('testcase-update', handleTestcaseUpdate);
       socket.off('submission-result', handleSubmissionResult);
     };
-  }, [socket]);
+  }, [me?.userId, roomId, socket]);
 
   const handleChange = (value: string) => {
+    hasEditedRef.current = true;
     setCode(value);
     if (!socket?.connected) return;
     if (!me?.userId) return;
