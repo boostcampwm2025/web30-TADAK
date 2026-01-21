@@ -57,10 +57,6 @@ function CodeEditor() {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const problemId = useBattleProblemStore((state) => state.problem?.id ?? null);
 
-  useEffect(() => {
-    pendingTypeRef.current = pendingType;
-  }, [pendingType]);
-
   const clearExecutionTimeout = () => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);

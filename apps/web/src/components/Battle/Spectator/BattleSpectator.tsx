@@ -9,9 +9,8 @@ function BattleSpectator() {
   const [showChat, setShowChat] = useState(true);
   const chatRef = useRef<HTMLDivElement>(null);
 
-  const gridCols = useMemo(() => {
-    return 'grid grid-cols-1 gap-4 xl:flex-1 xl:min-h-0 xl:grid-cols-[minmax(320px,1.1fr)_minmax(520px,1.9fr)_minmax(280px,1fr)]';
-  }, []);
+  const gridCols =
+    'grid grid-cols-1 gap-4 xl:flex-1 xl:min-h-0 xl:grid-cols-[minmax(320px,1.1fr)_minmax(520px,1.9fr)_minmax(280px,1fr)]';
 
   const codeSpanClass = useMemo(() => {
     if (!showProblem && !showChat) return 'xl:col-span-3';
