@@ -32,13 +32,14 @@ export class PubsubGateway {
   }
 
   // 방 전체에 최종 결과 브로드캐스트
-  emitFinalResult(roomId: string, message: FinalResultMessage): void {
+  emitFinalResult(roomId: string, message: FinalResultMessage, userId?: string): void {
     this.server.to(roomId).emit('submission-result', {
       submissionId: message.submissionId,
       status: message.status,
       result: message.result,
+      userId,
     });
-    this.logger.log(`Broadcast final-result to room ${roomId}`);
+    this.logger.log(`Broadcast final-result to room ${roomId} for user ${userId}`);
   }
 
   // 특정 소켓에 최종 결과 전달 (테스트 실행 등)
@@ -49,5 +50,27 @@ export class PubsubGateway {
       result: message.result,
     });
     this.logger.log(`Sent final-result to socket ${socketId}`);
+  }
+
+  // 방 전체에 테스트 실행 결과 브로드캐스트
+  emitTestResult(roomId: string, message: FinalResultMessage, userId: string): void {
+    this.server.to(roomId).emit('test-result', {
+      submissionId: message.submissionId,
+      status: message.status,
+      result: message.result,
+      userId,
+    });
+    this.logger.log(`Broadcast test-result to room ${roomId} for user ${userId}`);
+  }
+
+  // 방 전체에 시스템 채팅 메시지 전송
+  emitSystemChat(roomId: string, message: string): void {
+    this.server.to(roomId).emit('receive-chat', {
+      type: 'SYSTEM',
+      nickname: '시스템',
+      message,
+      timestamp: new Date().toISOString(),
+    });
+    this.logger.log(`Broadcast system chat to room ${roomId}: ${message}`);
   }
 }

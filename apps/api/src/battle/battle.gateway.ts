@@ -44,6 +44,18 @@ export class BattleGateway {
         language,
       });
 
+      // 상대방에게 코드 변경 알림 전송
+      const opponent = battle.users.find((user) => user.userId !== userId);
+      if (opponent) {
+        const opponentSocketId = await this.battleService.getSocketIdByUserId(opponent.userId);
+        if (opponentSocketId) {
+          this.server.to(opponentSocketId).emit(BATTLE_EVENTS.CODE_METADATA, {
+            userId,
+            codeLines: code.split('\n').filter((line) => line.trim().length > 0).length,
+          });
+        }
+      }
+
       return { success: true };
     } catch (error) {
       console.error('Error handling code change:', error);
