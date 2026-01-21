@@ -21,7 +21,7 @@ export class Battle {
   loserSubmissionId: string;
 
   @Column('simple-array')
-  participantIds: string[];
+  playerIds: string[];
 
   @CreateDateColumn()
   createdAt: Date;
