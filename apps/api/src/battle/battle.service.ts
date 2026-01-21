@@ -220,11 +220,20 @@ export class BattleService {
         time = `${minutes}:${seconds.toString().padStart(2, '0')}`;
       }
 
+      const tier = (user?.tier?.tier || 'Bronze') as
+        | 'Bronze'
+        | 'Silver'
+        | 'Gold'
+        | 'Platinum'
+        | 'Diamond'
+        | 'Ruby'
+        | 'Master';
+
       return {
         userId,
         username: user?.username || 'Unknown',
         avatarUrl: user?.avatarUrl || '',
-        tier: user?.tier?.tier || 'Bronze',
+        tier,
         rate: user?.rating || 0,
         score: submission?.passedTestCases || 0,
         totalScore: submission?.totalTestCases || 20,
