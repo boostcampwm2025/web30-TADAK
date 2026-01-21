@@ -1,5 +1,5 @@
 import { LogIn } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import Header from '@/components/Header/Header';
@@ -37,13 +37,13 @@ function MainPage() {
 
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  const ensureSocketReady = async () => {
+  const ensureSocketReady = useCallback(async () => {
     const activeSocket = socket ?? connect();
     if (!activeSocket.connected) {
       await new Promise<void>((resolve) => activeSocket.once('connect', () => resolve()));
     }
     return activeSocket;
-  };
+  }, [socket, connect]);
 
   useEffect(() => {
     let mounted = true;
@@ -59,7 +59,7 @@ function MainPage() {
       mounted = false;
       unsubscribeRoomList();
     };
-  }, [connect, requestRoomList, subscribeRoomList, unsubscribeRoomList, socket]);
+  }, [subscribeRoomList, requestRoomList, ensureSocketReady, unsubscribeRoomList]);
 
   const stats = useMemo(() => {
     const totalBattles = rooms.length;

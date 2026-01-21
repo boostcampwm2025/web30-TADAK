@@ -115,6 +115,7 @@ export class RoomService {
         url: problemEntity.url,
         title: problemEntity.title,
         timeLimit: problemEntity.timeLimit,
+        battleTimeLimit: problemEntity.battleTimeLimit,
         memoryLimit: problemEntity.memoryLimit,
         statement: problemEntity.statement,
         input: problemEntity.input,

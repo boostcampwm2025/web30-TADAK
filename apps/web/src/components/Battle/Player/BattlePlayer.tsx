@@ -12,7 +12,7 @@ function BattlePlayer() {
 
   const gridCols = useMemo(() => {
     return 'grid grid-cols-1 gap-4 xl:flex-1 xl:min-h-0 xl:grid-cols-[minmax(320px,1.2fr)_minmax(520px,2fr)_minmax(280px,1fr)]';
-  }, [showProblem, showProgress]);
+  }, []);
 
   const codeSpanClass = useMemo(() => {
     if (!showProblem && !showProgress) return 'xl:col-span-3';
