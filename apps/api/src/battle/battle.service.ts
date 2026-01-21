@@ -46,7 +46,7 @@ export class BattleService {
       problemId: problem.id,
       status: 'running',
       config: {
-        duration: dto.config.duration || BATTLE_CONFIG.DURATION,
+        duration: problem.battleTimeLimit || BATTLE_CONFIG.DURATION,
       },
       startedAt: new Date(),
       users,

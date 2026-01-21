@@ -21,6 +21,7 @@ function BattlePage() {
   const connect = useBattleSocketStore((state) => state.connect);
   const joinRoom = useBattleSocketStore((state) => state.joinRoom);
   const setProblem = useBattleProblemStore((state) => state.setProblem);
+  const setTimeOffset = useBattleProblemStore((state) => state.setTimeOffset);
   const user = useUserStore((state) => state.user);
   const me = useRoomStore((state) => state.me);
 
@@ -31,6 +32,13 @@ function BattlePage() {
     const handleProblemInfo = (payload: ProblemDataPayload) => {
       if (payload?.id) {
         setProblem(payload);
+
+        if (payload.serverTime) {
+          const serverTime = new Date(payload.serverTime).getTime();
+          const clientTime = Date.now();
+          const offset = serverTime - clientTime;
+          setTimeOffset(offset);
+        }
       }
     };
 

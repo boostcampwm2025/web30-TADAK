@@ -1,9 +1,10 @@
 import { AlertCircle, Eye, Moon, Sun, Timer } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import logo from '@/assets/logo.png';
 import Modal from '@/components/ui/Modal';
+import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 
 interface BattleHeaderProps {
@@ -17,7 +18,45 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
   const { roomId } = useParams<{ roomId: string }>();
   const leaveRoom = useBattleSocketStore((state) => state.leaveRoom);
   const spectatorCount = useBattleSocketStore((state) => state.spectatorCount);
+  const problem = useBattleProblemStore((state) => state.problem);
+  const timeOffset = useBattleProblemStore((state) => state.timeOffset);
+
+  const battleId = problem?.battleId;
+  const duration = problem?.duration;
+  const startedAt = problem?.startedAt;
+
+  const [timeLeft, setTimeLeft] = useState<number>(0);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (!startedAt || !duration) return;
+
+    const startTime = new Date(startedAt).getTime();
+    const endTime = startTime + duration * 1000;
+
+    const updateTimer = () => {
+      // 서버 시간 추정: 클라이언트 시간 + 오프셋
+      const now = Date.now() + timeOffset;
+      const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
+      setTimeLeft(remaining);
+
+      if (remaining <= 0) {
+        // 타이머 종료 처리
+        navigate(`/result/${battleId}`);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [startedAt, duration, timeOffset]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const handleLeaveClick = () => {
     if (showLeaveConfirm) {
@@ -48,7 +87,7 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 rounded-3xl bg-green-01 px-4 py-1 text-lg font-bold text-green-06 shadow-[1px_1px_4px_rgba(0,0,0,0.05)]">
           <Timer className="h-5 w-5" strokeWidth={2.5} />
-          <span className="font-bold leading-7">27:16</span>
+          <span className="font-bold leading-7">{formatTime(timeLeft)}</span>
         </div>
       </div>
 
