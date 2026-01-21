@@ -31,6 +31,7 @@ export class RoomGateway {
   @WebSocketServer() server: Server;
   private rateLimitMap: Map<string, { count: number; windowStart: number; blockedUntil: number }> =
     new Map();
+  private readonly chatAuthErrorMessage = '로그인 후 채팅을 이용할 수 있습니다.';
 
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
@@ -298,20 +299,10 @@ export class RoomGateway {
       room.currentSpectators.find((user) => user.socketId === client.id);
 
     // 방에 참가하지 않은 유저는 채팅 불가
-    if (!participant) {
+    if (!participant || participant.userId === client.id) {
       client.emit(SOCKET_EVENT.ERROR, {
         code: SOCKET_ERROR.UNKNOWN,
-        message: '로그인 후 채팅을 이용할 수 있습니다.',
-      });
-      return;
-    }
-
-    // 익명 유저는 채팅 불가
-    const isAnonymous = participant.userId === client.id;
-    if (isAnonymous) {
-      client.emit(SOCKET_EVENT.ERROR, {
-        code: SOCKET_ERROR.UNKNOWN,
-        message: '로그인 후 채팅을 이용할 수 있습니다.',
+        message: this.chatAuthErrorMessage,
       });
       return;
     }
