@@ -4,8 +4,8 @@ import { Code } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
-import BaseCodeEditor from '@/components/Common/BaseCodeEditor';
 import ProgressBarSpectator from '@/components/Battle/Spectator/ProgressBarSpectator';
+import BaseCodeEditor from '@/components/Common/BaseCodeEditor';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useRoomStore } from '@/stores/roomStore';
