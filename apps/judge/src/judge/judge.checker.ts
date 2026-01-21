@@ -7,7 +7,7 @@ export class JudgeChecker {
   }
 
   // 문자열 정규화
-  private normalize(str: string): string {
+  normalize(str: string): string {
     return str
       .trim()
       .replace(/\r\n/g, '\n') // Windows 개행 → Unix 개행

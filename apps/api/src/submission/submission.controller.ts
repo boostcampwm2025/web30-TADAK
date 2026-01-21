@@ -11,9 +11,13 @@ export class SubmissionController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
-  async submit(@Req() req: { user: User }, @Body() dto: CreateSubmissionDto) {
+  async submit(
+    @Req() req: { user: User },
+    @Body() dto: CreateSubmissionDto,
+    @Headers('x-socket-id') socketId: string,
+  ) {
     const userId = req.user.id;
-    return this.submissionService.submit(dto, userId);
+    return this.submissionService.submit(dto, userId, socketId);
   }
 
   @Post('dry-run')

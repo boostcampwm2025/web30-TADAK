@@ -1,5 +1,12 @@
 export type UserRole = 'player' | 'spectator';
 
+export interface UserStats {
+  wins: number;
+  losses: number;
+  rating: number;
+  tier: { tier: string; division: number };
+}
+
 // 방에 들어가지 않은 사용자
 export interface User {
   userId: string;
@@ -13,4 +20,5 @@ export interface RoomUser extends User {
   socketId: string;
   role: UserRole;
   joinedAt: Date;
+  stats?: UserStats;
 }

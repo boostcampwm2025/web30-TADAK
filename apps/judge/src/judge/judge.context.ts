@@ -6,6 +6,12 @@ import { JudgeChecker } from './judge.checker';
 import { JudgeReader } from './judge.reader';
 import { Testcase } from './judge.types';
 
+interface OutputResults {
+  input: string;
+  output: string;
+  expectedOutput: string;
+}
+
 export class JudgeContext {
   private lastProcessedIndex = -1;
   private passed = 0;
@@ -17,16 +23,12 @@ export class JudgeContext {
 
   constructor(
     public readonly submissionId: string,
-    private readonly socketId: string | undefined,
     private readonly testcases: Testcase[],
     private readonly reader: JudgeReader,
     private readonly checker: JudgeChecker,
     private readonly pubsub: PubsubService,
-  ) {
-    const parsed = Number(submissionId);
-    this.submissionIdValue =
-      Number.isFinite(parsed) && String(parsed) === submissionId ? parsed : submissionId;
-  }
+    private readonly socketId?: string,
+  ) {}
 
   hasNewOutput(): boolean {
     const nextIndex = this.lastProcessedIndex + 1;
@@ -50,9 +52,13 @@ export class JudgeContext {
         tcStatus = isCorrect ? 'ACCEPTED' : 'WRONG_ANSWER';
       }
 
-      this.logger.log(outputResult, testcase, tcStatus);
+      const results = {
+        input: testcase.input,
+        output: this.checker.normalize(outputResult.output),
+        expectedOutput: testcase.output,
+      } as OutputResults;
 
-      await this.publishUpdate(i, tcStatus, time, memory);
+      await this.publishUpdate(i, tcStatus, time, memory, results);
       this.updateStatistics(tcStatus, time, memory);
 
       this.lastProcessedIndex = i;
@@ -86,7 +92,13 @@ export class JudgeContext {
     };
   }
 
-  private async publishUpdate(index: number, status: TestcaseStatus, time: number, memory: number) {
+  private async publishUpdate(
+    index: number,
+    status: TestcaseStatus,
+    time: number,
+    memory: number,
+    results: OutputResults,
+  ) {
     const submissionId = this.submissionId as unknown as string;
     await this.pubsub.publishTestcaseUpdate({
       type: 'TESTCASE_UPDATE',
@@ -98,6 +110,7 @@ export class JudgeContext {
         passed: status === 'ACCEPTED' ? this.passed + 1 : this.passed,
         total: this.testcases.length,
       },
+      results,
     });
   }
 

@@ -25,11 +25,11 @@ export class JudgeService {
 
       const context = new JudgeContext(
         submissionId,
-        metadata.socketId,
         testcases,
         this.reader,
         this.checker,
         this.pubsub,
+        metadata.socketId,
       );
 
       await this.poller.poll(

@@ -12,6 +12,7 @@ export const BATTLE_EVENTS = {
   // 코드 변경
   CODE_CHANGE: 'code-change',
   CODE_UPDATED: 'code-updated',
+  CODE_METADATA: 'code-metadata', // 상대방에게 코드 변경 알림
 
   // 유저 상태 변경
   USER_CONNECTED: 'user-connected',
@@ -20,6 +21,7 @@ export const BATTLE_EVENTS = {
 
   // 진행 상황 업데이트
   PROGRESS_UPDATE: 'progress-update',
+  TEST_RESULT: 'test-result',
 
   // 유저 진행률
   USER_TEST_RESULT: 'user-test-result',

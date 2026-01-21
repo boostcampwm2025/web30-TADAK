@@ -166,6 +166,7 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
             userId: p.userId,
             username: p.username,
             avatarUrl: p.avatarUrl,
+            stats: p.stats,
           })),
         );
       };
