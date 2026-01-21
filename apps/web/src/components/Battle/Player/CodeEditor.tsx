@@ -1,4 +1,3 @@
-import Editor from '@monaco-editor/react';
 import { BATTLE_CONFIG, BATTLE_EVENTS } from '@shared/constants/battle';
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { FinalResultMessage, TestcaseUpdateMessage } from '@shared/types/pubsub';
@@ -7,7 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 import { createDryRun, createSubmission } from '@/apis/submission';
-import { useTheme } from '@/hooks/useTheme';
+import BaseCodeEditor from '@/components/Common/BaseCodeEditor';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import type { Player } from '@/stores/roomStore';
@@ -36,7 +35,6 @@ type ExecutionState = {
 const EXECUTION_TIMEOUT = 60000;
 
 function CodeEditor() {
-  const { theme } = useTheme();
   const { roomId: roomIdParam } = useParams<{ roomId?: string }>();
   const [searchParams] = useSearchParams();
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? 'room-unknown';
@@ -311,37 +309,10 @@ function CodeEditor() {
           </div>
         </div>
         <div className="min-h-0 bg-(bg-layer-2) px-5 py-4 font-mono text-sm text-base-primary xl:flex-1">
-          <Editor
-            height="100%"
-            defaultLanguage={BATTLE_CONFIG.DEFAULT_LANGUAGE}
+          <BaseCodeEditor
             value={code}
-            theme={theme === 'dark' ? 'tadak-dark' : 'tadak-light'}
-            beforeMount={(monaco) => {
-              monaco.editor.defineTheme('tadak-dark', {
-                base: 'vs-dark',
-                inherit: true,
-                rules: [],
-                colors: {
-                  'editor.background': '#161a32', // --bg-layer-2 in dark mode
-                },
-              });
-              monaco.editor.defineTheme('tadak-light', {
-                base: 'vs',
-                inherit: true,
-                rules: [],
-                colors: {
-                  'editor.background': '#ffffff', // --bg-layer-2 in light mode
-                },
-              });
-            }}
             onChange={(value) => handleChange(value || '')}
             options={{
-              minimap: { enabled: false }, // 미니맵 활성화 여부
-              fontSize: 14, // 폰트 크기
-              scrollBeyondLastLine: false, // 마지막 줄 이후로 스크롤 가능
-              automaticLayout: true, // 에디터 컨테이너 크기 변경 시 자동 조정
-              padding: { top: 16, bottom: 16 }, // 상하 여백
-              fontFamily: 'Fira Code', // 폰트 종류
               quickSuggestions: false, // 자동 완성 비활성화
               suggestOnTriggerCharacters: false, // 트리거 문자 입력 시 자동 완성 비활성화
               snippetSuggestions: 'none', // 스니펫 비활성화

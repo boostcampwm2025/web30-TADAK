@@ -2,11 +2,11 @@ import { Home } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import Button from '@/components/Common/Button';
 import Header from '@/components/Header/Header';
 import CodeViewer from '@/components/Result/CodeViewer';
 import PlayerCard from '@/components/Result/PlayerCard';
 import ResultHeader from '@/components/Result/ResultHeader';
-import Button from '@/components/ui/Button';
 
 function ResultPage() {
   const navigate = useNavigate();
@@ -28,7 +28,8 @@ function ResultPage() {
         score: 10,
         totalScore: 10,
         time: '8:30',
-        code: `test1
+        code: `function test() {
+        console.log('test');
         test1
         test1
         test1
@@ -37,9 +38,10 @@ function ResultPage() {
         test1
         test1
         test1
+        test1 
         test1
-        test1
-        test1`,
+        test1 
+        }`,
       },
       {
         userId: 'user2',
