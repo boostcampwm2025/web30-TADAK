@@ -315,7 +315,25 @@ function CodeEditor() {
             height="100%"
             defaultLanguage={BATTLE_CONFIG.DEFAULT_LANGUAGE}
             value={code}
-            theme={theme === 'dark' ? 'vs-dark' : 'light'}
+            theme={theme === 'dark' ? 'tadak-dark' : 'tadak-light'}
+            beforeMount={(monaco) => {
+              monaco.editor.defineTheme('tadak-dark', {
+                base: 'vs-dark',
+                inherit: true,
+                rules: [],
+                colors: {
+                  'editor.background': '#161a32', // --bg-layer-2 in dark mode
+                },
+              });
+              monaco.editor.defineTheme('tadak-light', {
+                base: 'vs',
+                inherit: true,
+                rules: [],
+                colors: {
+                  'editor.background': '#ffffff', // --bg-layer-2 in light mode
+                },
+              });
+            }}
             onChange={(value) => handleChange(value || '')}
             options={{
               minimap: { enabled: false }, // 미니맵 활성화 여부
