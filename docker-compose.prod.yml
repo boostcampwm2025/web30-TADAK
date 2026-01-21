@@ -77,6 +77,17 @@ services:
     networks:
       - app-network
 
+  # 채점 러너 이미지 빌드
+  judge-runner:
+    build:
+      context: apps/judge/runner
+      dockerfile: Dockerfile
+    image: judge-javascript
+    restart: "no"
+    command: ["sh", "-c", "exit 0"]
+    networks:
+      - app-network
+
 volumes:
   mysql_data:
   redis_data:
