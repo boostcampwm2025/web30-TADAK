@@ -273,7 +273,7 @@ export class RoomGateway {
   }
 
   @SubscribeMessage(SOCKET_EVENT.SEND_CHAT)
-  handleSendChat(
+  async handleSendChat(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId: string; message: string; nickname?: string; avatarUrl?: string },
   ) {
@@ -281,6 +281,38 @@ export class RoomGateway {
     const trimmedMessage = message?.trim();
 
     if (!roomId || !trimmedMessage) {
+      return;
+    }
+
+    const room = await this.roomService.getRoom(roomId);
+    if (!room) {
+      client.emit(SOCKET_EVENT.ERROR, {
+        code: SOCKET_ERROR.ROOM_NOT_FOUND,
+        message: '방을 찾을 수 없습니다.',
+      });
+      return;
+    }
+
+    const participant =
+      room.currentPlayers.find((user) => user.socketId === client.id) ??
+      room.currentSpectators.find((user) => user.socketId === client.id);
+
+    // 방에 참가하지 않은 유저는 채팅 불가
+    if (!participant) {
+      client.emit(SOCKET_EVENT.ERROR, {
+        code: SOCKET_ERROR.UNKNOWN,
+        message: '로그인 후 채팅을 이용할 수 있습니다.',
+      });
+      return;
+    }
+
+    // 익명 유저는 채팅 불가
+    const isAnonymous = participant.userId === client.id;
+    if (isAnonymous) {
+      client.emit(SOCKET_EVENT.ERROR, {
+        code: SOCKET_ERROR.UNKNOWN,
+        message: '로그인 후 채팅을 이용할 수 있습니다.',
+      });
       return;
     }
 
