@@ -27,7 +27,9 @@ function PlayerCard({ player, isWinner, isSelected, onClick }: PlayerCardProps) 
       type="button"
       onClick={onClick}
       className={`w-full rounded-2xl bg-bg-layer-2 py-5 px-8 shadow-lg transition pointer hover:shadow-xl cursor-pointer ${
-        isSelected ? 'border-2 border-green-05' : 'border border-border-soft'
+        isSelected
+          ? `border-2 ${isWinner ? 'border-green-05' : 'border-pink-05'}`
+          : 'border border-border-soft'
       }`}
     >
       <div className="mb-2 flex items-center gap-3">
