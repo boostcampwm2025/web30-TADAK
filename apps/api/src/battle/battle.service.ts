@@ -1,13 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { BATTLE_CONFIG } from '@packages/constants/battle';
 import { Battle, BattleUser, CreateBattleDTO, UpdateUserCodeDTO } from '@packages/types/battle';
 import { RoomUser } from '@packages/types/user';
 import Redis from 'ioredis';
+import { Repository } from 'typeorm';
 
+import { Battle as BattleEntity } from '@/battle/battle.entity';
 import { BattleRedisService } from '@/battle/battle-redis.service';
 import { ProblemService } from '@/problem/problem.service';
 import { REDIS_CLIENT } from '@/redis/redis.module';
 import { RedisKeys } from '@/redis/redis-key.constant';
+import { Submission } from '@/submission/submission.entity';
+import { User } from '@/user/user.entity';
 
 @Injectable()
 export class BattleService {
@@ -15,6 +20,12 @@ export class BattleService {
     @Inject(REDIS_CLIENT) private readonly redisClient: Redis,
     private readonly battleRedisService: BattleRedisService,
     private readonly problemService: ProblemService,
+    @InjectRepository(BattleEntity)
+    private readonly battleRepository: Repository<BattleEntity>,
+    @InjectRepository(Submission)
+    private readonly submissionRepository: Repository<Submission>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   async createBattle(dto: CreateBattleDTO): Promise<Battle> {
