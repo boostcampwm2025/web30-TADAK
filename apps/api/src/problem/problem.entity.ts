@@ -23,6 +23,9 @@ export class Problem {
   @Column({ name: 'time_limit' })
   timeLimit: number;
 
+  @Column({ name: 'battle_time_limit' })
+  battleTimeLimit: number;
+
   @Column({ name: 'memory_limit' })
   memoryLimit: number;
 

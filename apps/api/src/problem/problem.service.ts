@@ -27,7 +27,7 @@ export class ProblemService implements OnModuleInit {
 
   async importProblemsFromJson() {
     try {
-      const filePath = path.join(__dirname, '../data/problem_sample.json');
+      const filePath = path.join(__dirname, '../data/problems.json');
       if (!fs.existsSync(filePath)) {
         this.logger.error(`File not found: ${filePath}`);
         return;
