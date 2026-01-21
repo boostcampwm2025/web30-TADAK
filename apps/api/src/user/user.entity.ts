@@ -21,7 +21,7 @@ export class User {
   rating: number = 1000;
 
   @Column({ type: 'json' })
-  tier: { tier: string; division: number } = { tier: 'BRONZE', division: 4 };
+  tier: { tier: string; division: number } = { tier: 'Bronze', division: 4 };
 
   @Column({ type: 'int', default: 0 })
   wins: number;

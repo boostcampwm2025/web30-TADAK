@@ -85,7 +85,7 @@ export interface BattleResultResponse {
     userId: string;
     username: string;
     avatarUrl: string;
-    tier: string;
+    tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Ruby' | 'Master';
     rate: number;
     score: number;
     totalScore: number;
