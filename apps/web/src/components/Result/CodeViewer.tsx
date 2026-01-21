@@ -22,7 +22,7 @@ function CodeViewer({ username, avatarUrl, code, isWinner }: CodeViewerProps) {
       </div>
 
       <div className="flex-1 overflow-auto [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar]:h-2.5 [&::-webkit-scrollbar-button]:hidden [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-base-secondary/30 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-clip-padding hover:[&::-webkit-scrollbar-thumb]:bg-base-secondary/50 active:[&::-webkit-scrollbar-thumb]:bg-base-secondary/60">
-        <div className="flex min-h-full w-full">
+        <div className="inline-flex min-w-full min-h-full">
           <div className="shrink-0 w-12 bg-bg-layer-1/30 px-3 py-4 h-auto min-h-full">
             <pre className="text-sm">
               {code.split('\n').map((_, idx) => (
@@ -33,7 +33,7 @@ function CodeViewer({ username, avatarUrl, code, isWinner }: CodeViewerProps) {
             </pre>
           </div>
 
-          <div className="flex-1 bg-white px-4 py-4 w-145.5">
+          <div className="flex-1 bg-white px-4 py-4">
             <pre className="text-sm">
               <code>
                 {code.split('\n').map((line, idx) => (

@@ -78,7 +78,7 @@ function ResultPage() {
             ))}
           </div>
 
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <CodeViewer
               username={selectedPlayer.username}
               avatarUrl={selectedPlayer.avatarUrl}
