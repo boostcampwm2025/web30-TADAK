@@ -101,7 +101,6 @@ function CodeSpectator() {
   }, [firstParticipantId, participants, selectedId]);
 
   const activeSelectedId = selectedId ?? firstParticipantId;
-
   const selectedProgress = activeSelectedId ? progresses[activeSelectedId] : null;
   const rawSelectedCode = activeSelectedId ? codes[activeSelectedId] : undefined;
   const isCodeEmpty = !rawSelectedCode || rawSelectedCode.trim().length === 0;
