@@ -64,7 +64,7 @@ function BattleProblem() {
                   </a>
                 )}
               </div>
-              <div className="grid gap-2 text-[11px] text-base-secondary sm:grid-cols-2">
+              <div className="grid grid-cols-4 gap-2 text-[11px] text-base-secondary xl:grid-cols-2">
                 {problem.source && (
                   <div className="rounded-md border border-border-soft bg-base-primary/5 px-3 py-2">
                     <span className="block text-[9px] uppercase tracking-[0.2em] text-base-secondary">

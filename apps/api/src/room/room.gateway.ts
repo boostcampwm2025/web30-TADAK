@@ -33,6 +33,7 @@ export class RoomGateway {
   @WebSocketServer() server: Server;
   private rateLimitMap: Map<string, { count: number; windowStart: number; blockedUntil: number }> =
     new Map();
+  private readonly chatAuthErrorMessage = '로그인 후 채팅을 이용할 수 있습니다.';
 
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
@@ -293,7 +294,7 @@ export class RoomGateway {
   }
 
   @SubscribeMessage(SOCKET_EVENT.SEND_CHAT)
-  handleSendChat(
+  async handleSendChat(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId: string; message: string; nickname?: string; avatarUrl?: string },
   ) {
@@ -301,6 +302,28 @@ export class RoomGateway {
     const trimmedMessage = message?.trim();
 
     if (!roomId || !trimmedMessage) {
+      return;
+    }
+
+    const room = await this.roomService.getRoom(roomId);
+    if (!room) {
+      client.emit(SOCKET_EVENT.ERROR, {
+        code: SOCKET_ERROR.ROOM_NOT_FOUND,
+        message: '방을 찾을 수 없습니다.',
+      });
+      return;
+    }
+
+    const participant =
+      room.currentPlayers.find((user) => user.socketId === client.id) ??
+      room.currentSpectators.find((user) => user.socketId === client.id);
+
+    // 방에 참가하지 않은 유저는 채팅 불가
+    if (!participant || participant.userId === client.id) {
+      client.emit(SOCKET_EVENT.ERROR, {
+        code: SOCKET_ERROR.UNKNOWN,
+        message: this.chatAuthErrorMessage,
+      });
       return;
     }
 
