@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp } from 'lucide-react';
 
-import TierBadge from '@/components/ui/TierBadge';
+import TierBadge from '@/components/Common/TierBadge';
 
 interface PlayerCardProps {
   player: {

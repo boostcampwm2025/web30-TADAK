@@ -1,4 +1,4 @@
-import { BATTLE_CONFIG, BATTLE_EVENTS } from '@shared/constants/battle';
+import { BATTLE_CONFIG, BATTLE_EVENTS, DEFAULT_CODE_TEMPLATE } from '@shared/constants/battle';
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { FinalResultMessage, TestcaseUpdateMessage } from '@shared/types/pubsub';
 import { Code } from 'lucide-react';
@@ -8,6 +8,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { createDryRun, createSubmission } from '@/apis/submission';
 import EditorFooter from '@/components/Battle/Player/EditorFooter';
 import TestcaseResultPanel from '@/components/Battle/Player/TestcaseResultPanel';
+import BaseCodeEditor from '@/components/Common/BaseCodeEditor';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
@@ -46,9 +47,7 @@ function CodeEditor() {
   const connect = useBattleSocketStore((state) => state.connect);
   const upsertProgress = useBattleProgressStore((state) => state.upsertProgress);
 
-  const [code, setCode] = useState(`function solution() {
-  // TODO
-}`);
+  const [code, setCode] = useState(DEFAULT_CODE_TEMPLATE);
   const [statusText, setStatusText] = useState('대기 중');
   const [progress, setProgress] = useState<SubmissionProgress | null>(null);
   const [isTesting, setIsTesting] = useState(false);
@@ -58,6 +57,8 @@ function CodeEditor() {
 
   const executionRef = useRef<ExecutionState | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasEditedRef = useRef(false);
+  const hasSyncedRef = useRef(false);
   const problemId = useBattleProblemStore((state) => state.problem?.id ?? null);
 
   const clearExecutionTimeout = () => {
@@ -105,6 +106,22 @@ function CodeEditor() {
 
   useEffect(() => {
     if (!socket) return;
+
+    const handleCodeUpdated = (payload: {
+      roomId: string;
+      userId: string;
+      code: string;
+      language: string;
+    }) => {
+      if (payload.roomId !== roomId) return;
+      if (!me?.userId || payload.userId !== me.userId) return;
+      if (hasEditedRef.current || hasSyncedRef.current) return;
+      const incomingCode = typeof payload.code === 'string' ? payload.code : '';
+      if (incomingCode.trim().length > 0) {
+        setCode(incomingCode);
+      }
+      hasSyncedRef.current = true;
+    };
 
     const handleTestcaseUpdate = (payload: TestcaseUpdatePayload) => {
       const execution = executionRef.current;
@@ -182,16 +199,19 @@ function CodeEditor() {
       }
     };
 
+    socket.on(BATTLE_EVENTS.CODE_UPDATED, handleCodeUpdated);
     socket.on('testcase-update', handleTestcaseUpdate);
     socket.on('submission-result', handleSubmissionResult);
 
     return () => {
+      socket.off(BATTLE_EVENTS.CODE_UPDATED, handleCodeUpdated);
       socket.off('testcase-update', handleTestcaseUpdate);
       socket.off('submission-result', handleSubmissionResult);
     };
-  }, [socket, upsertProgress]);
+  }, [me?.userId, roomId, socket, upsertProgress]);
 
   const handleChange = (value: string) => {
+    hasEditedRef.current = true;
     setCode(value);
     if (!socket?.connected) return;
     if (!me?.userId) return;
@@ -321,11 +341,15 @@ function CodeEditor() {
           </div>
         </div>
         <div className="min-h-0 bg-(bg-layer-2) px-5 py-4 font-mono text-sm text-base-primary xl:flex-1">
-          <textarea
+          <BaseCodeEditor
             value={code}
-            onChange={(e) => handleChange(e.target.value)}
-            spellCheck={false}
-            className="h-full min-h-60 flex-1 w-full resize-none rounded-xl bg-(bg-layer-2) border border-base-muted px-4 py-3 text-sm leading-relaxed text-base-primary shadow-inner shadow-slate-950/10 focus:outline-none"
+            onChange={(value) => handleChange(value || '')}
+            options={{
+              quickSuggestions: false, // 자동 완성 비활성화
+              suggestOnTriggerCharacters: false, // 트리거 문자 입력 시 자동 완성 비활성화
+              snippetSuggestions: 'none', // 스니펫 비활성화
+              wordBasedSuggestions: 'off', // 단어 기반 제안 비활성화
+            }}
           />
         </div>
         <EditorFooter

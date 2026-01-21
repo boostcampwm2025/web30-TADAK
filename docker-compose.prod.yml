@@ -67,20 +67,31 @@ services:
     environment:
       - NODE_ENV=production
       - JUDGE_VOLUME=/judge-data
+      - JUDGE_HOST_PATH=/srv/judge-data
       - JUDGE_PROBLEMS_PATH=/judge-data
       - JUDGE_SUBMISSIONS_PATH=/judge-data/submissions
     ports:
       - "4000:4000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - judge_data:/judge-data
+      - /srv/judge-data:/judge-data
+    networks:
+      - app-network
+
+  # 채점 러너 이미지 빌드
+  judge-runner:
+    build:
+      context: apps/judge/runner
+      dockerfile: Dockerfile
+    image: judge-javascript
+    restart: "no"
+    command: ["sh", "-c", "exit 0"]
     networks:
       - app-network
 
 volumes:
   mysql_data:
   redis_data:
-  judge_data:
 
 networks:
   app-network:

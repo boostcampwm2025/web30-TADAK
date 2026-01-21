@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 
+import Toast from '@/components/Common/Toast';
 import Header from '@/components/Header/Header';
 import { MatchingCancelButton } from '@/components/Matching/MatchingCancelButton';
 import MatchingSuccess from '@/components/Matching/MatchingSuccess';
 import MatchingWait from '@/components/Matching/MatchingWait';
-import Toast from '@/components/ui/Toast';
 import { useMatchingStore } from '@/stores/matchingStore';
 
 function MatchingPage() {

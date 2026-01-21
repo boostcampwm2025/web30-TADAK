@@ -2,9 +2,9 @@ import { LogIn } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import Modal from '@/components/Common/Modal';
 import Header from '@/components/Header/Header';
 import RoomCardList from '@/components/Main/RoomCardList';
-import Modal from '@/components/ui/Modal';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useMatchingStore } from '@/stores/matchingStore';
 import { useUserStore } from '@/stores/userStore';
