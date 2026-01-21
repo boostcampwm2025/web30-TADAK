@@ -101,8 +101,10 @@ function CodeSpectator() {
   }, [firstParticipantId, participants, selectedId]);
 
   const activeSelectedId = selectedId ?? firstParticipantId;
-  const selectedCode = activeSelectedId ? (codes[activeSelectedId] ?? '') : '';
   const selectedProgress = activeSelectedId ? progresses[activeSelectedId] : null;
+  const rawSelectedCode = activeSelectedId ? codes[activeSelectedId] : undefined;
+  const isCodeEmpty = !rawSelectedCode || rawSelectedCode.trim().length === 0;
+  const selectedCode = isCodeEmpty ? '아직 입력된 코드가 없어요 🙂' : rawSelectedCode;
 
   return (
     <>
@@ -131,7 +133,11 @@ function CodeSpectator() {
 
           <div className="flex-1 min-h-0 bg-(--bg-layer-2) px-4 py-3 font-mono text-sm leading-relaxed text-base-primary">
             <pre className="chat-scroll h-full min-h-[clamp(260px,50vh,520px)] whitespace-pre-wrap overflow-y-auto">
-              {selectedCode}
+              {isCodeEmpty ? (
+                <span className="text-base-secondary">{selectedCode}</span>
+              ) : (
+                selectedCode
+              )}
             </pre>
           </div>
           <div className="flex items-center justify-end gap-4 border-t border-border-soft bg-(--bg-layer-2) px-4 py-3 text-xs text-base-secondary">

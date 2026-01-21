@@ -6,6 +6,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
+import { BATTLE_EVENTS } from '@packages/constants/battle';
 import { ProblemDataPayload } from '@packages/types/problem';
 import Redis from 'ioredis';
 import { Server, Socket } from 'socket.io';
@@ -203,6 +204,16 @@ export class RoomGateway {
           serverTime: new Date().toISOString(),
         } as ProblemDataPayload);
       }
+
+      // 현재 코드 스냅샷 전송 (관전자/플레이어 재접속 대비)
+      battle.users.forEach((user) => {
+        client.emit(BATTLE_EVENTS.CODE_UPDATED, {
+          roomId,
+          userId: user.userId,
+          code: user.code,
+          language: user.language,
+        });
+      });
     }
 
     // 최신 인원 정보를 브로드캐스트

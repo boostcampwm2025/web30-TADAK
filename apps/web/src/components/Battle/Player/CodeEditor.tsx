@@ -1,4 +1,4 @@
-import { BATTLE_CONFIG, BATTLE_EVENTS } from '@shared/constants/battle';
+import { BATTLE_CONFIG, BATTLE_EVENTS, DEFAULT_CODE_TEMPLATE } from '@shared/constants/battle';
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { FinalResultMessage, TestcaseUpdateMessage } from '@shared/types/pubsub';
 import { Code } from 'lucide-react';
@@ -46,9 +46,7 @@ function CodeEditor() {
   const connect = useBattleSocketStore((state) => state.connect);
   const upsertProgress = useBattleProgressStore((state) => state.upsertProgress);
 
-  const [code, setCode] = useState(`function solution() {
-  // TODO
-}`);
+  const [code, setCode] = useState(DEFAULT_CODE_TEMPLATE);
   const [statusText, setStatusText] = useState('대기 중');
   const [progress, setProgress] = useState<SubmissionProgress | null>(null);
   const [isTesting, setIsTesting] = useState(false);
@@ -58,6 +56,8 @@ function CodeEditor() {
 
   const executionRef = useRef<ExecutionState | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasEditedRef = useRef(false);
+  const hasSyncedRef = useRef(false);
   const problemId = useBattleProblemStore((state) => state.problem?.id ?? null);
 
   const clearExecutionTimeout = () => {
@@ -105,6 +105,22 @@ function CodeEditor() {
 
   useEffect(() => {
     if (!socket) return;
+
+    const handleCodeUpdated = (payload: {
+      roomId: string;
+      userId: string;
+      code: string;
+      language: string;
+    }) => {
+      if (payload.roomId !== roomId) return;
+      if (!me?.userId || payload.userId !== me.userId) return;
+      if (hasEditedRef.current || hasSyncedRef.current) return;
+      const incomingCode = typeof payload.code === 'string' ? payload.code : '';
+      if (incomingCode.trim().length > 0) {
+        setCode(incomingCode);
+      }
+      hasSyncedRef.current = true;
+    };
 
     const handleTestcaseUpdate = (payload: TestcaseUpdatePayload) => {
       const execution = executionRef.current;
@@ -182,16 +198,19 @@ function CodeEditor() {
       }
     };
 
+    socket.on(BATTLE_EVENTS.CODE_UPDATED, handleCodeUpdated);
     socket.on('testcase-update', handleTestcaseUpdate);
     socket.on('submission-result', handleSubmissionResult);
 
     return () => {
+      socket.off(BATTLE_EVENTS.CODE_UPDATED, handleCodeUpdated);
       socket.off('testcase-update', handleTestcaseUpdate);
       socket.off('submission-result', handleSubmissionResult);
     };
-  }, [socket, upsertProgress]);
+  }, [me?.userId, roomId, socket, upsertProgress]);
 
   const handleChange = (value: string) => {
+    hasEditedRef.current = true;
     setCode(value);
     if (!socket?.connected) return;
     if (!me?.userId) return;
