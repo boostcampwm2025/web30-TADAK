@@ -169,3 +169,31 @@ body {
   scrollbar-width: thin;
   scrollbar-color: #475569 transparent; /* firefox */
 }
+
+.code-scroll::-webkit-scrollbar {
+  width: 0.625rem;
+  height: 0.625rem;
+}
+
+.code-scroll::-webkit-scrollbar-button {
+  display: none;
+}
+
+.code-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.code-scroll::-webkit-scrollbar-thumb {
+  background: rgba(85, 87, 117, 0.3);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.code-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(85, 87, 117, 0.5);
+}
+
+.code-scroll::-webkit-scrollbar-thumb:active {
+  background: rgba(85, 87, 117, 0.6);
+}
