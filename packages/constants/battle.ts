@@ -3,6 +3,10 @@ export const BATTLE_CONFIG = {
   DEFAULT_LANGUAGE: 'javascript',
 } as const;
 
+export const DEFAULT_CODE_TEMPLATE = `function solution() {
+  // TODO
+}`;
+
 export const BATTLE_EVENTS = {
   // 배틀 생성 및 시작
   BATTLE_CREATED: 'battle-created',

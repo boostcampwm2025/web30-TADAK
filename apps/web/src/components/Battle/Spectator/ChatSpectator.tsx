@@ -3,16 +3,19 @@ import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { ChatMessage } from '@shared/types/chat';
 import { MessagesSquare } from 'lucide-react';
 import { type KeyboardEventHandler, useEffect, useMemo, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useRoomStore } from '@/stores/roomStore';
+import { useUserStore } from '@/stores/userStore';
 
 const initialMessages: ChatMessage[] = [];
 
 function ChatSpectator() {
   const { roomId = '1' } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
   const me = useRoomStore((state) => state.me);
+  const user = useUserStore((state) => state.user);
   const socket = useBattleSocketStore((state) => state.socket);
   const connectSocket = useBattleSocketStore((state) => state.connect);
   const listRef = useRef<HTMLDivElement>(null);
@@ -25,6 +28,7 @@ function ChatSpectator() {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
+  const isLoggedIn = Boolean(user?.id);
 
   useEffect(() => {
     // 새 메시지가 추가되면 리스트 하단으로 스크롤
@@ -65,6 +69,7 @@ function ChatSpectator() {
   };
 
   const handleSend = () => {
+    if (!isLoggedIn) return;
     const trimmed = input.trim();
     if (!trimmed) return;
 
@@ -80,6 +85,7 @@ function ChatSpectator() {
 
   const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (event) => {
     if (event.nativeEvent.isComposing) return; // IME 조합 중일 때는 전송하지 않음
+    if (!isLoggedIn) return;
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       handleSend();
@@ -184,14 +190,26 @@ function ChatSpectator() {
             value={input}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="메시지를 입력하세요..."
-            className="chat-scroll h-10 max-h-32 min-h-10 flex-1 resize-none overflow-y-auto bg-transparent text-sm text-base-primary placeholder:text-base-secondary focus:outline-none"
+            placeholder={
+              isLoggedIn ? '메시지를 입력하세요...' : '로그인 후 채팅을 이용할 수 있어요.'
+            }
+            className="chat-scroll h-10 max-h-32 min-h-10 flex-1 resize-none overflow-y-auto bg-transparent text-sm text-base-primary placeholder:text-base-secondary focus:outline-none disabled:cursor-not-allowed"
+            disabled={!isLoggedIn}
           />
+          {!isLoggedIn && (
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="rounded-lg border border-border-soft px-3 py-2 text-xs font-bold text-base-primary transition hover:bg-base-muted"
+            >
+              로그인
+            </button>
+          )}
           <button
             type="button"
             onClick={handleSend}
             className="rounded-lg bg-green-05 px-3 py-2 text-xs font-bold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={!input.trim()}
+            disabled={!isLoggedIn || !input.trim()}
           >
             전송
           </button>

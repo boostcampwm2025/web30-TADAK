@@ -102,8 +102,10 @@ function CodeSpectator() {
   }, [firstParticipantId, participants, selectedId]);
 
   const activeSelectedId = selectedId ?? firstParticipantId;
-  const selectedCode = activeSelectedId ? (codes[activeSelectedId] ?? '') : '';
   const selectedProgress = activeSelectedId ? progresses[activeSelectedId] : null;
+  const rawSelectedCode = activeSelectedId ? codes[activeSelectedId] : undefined;
+  const isCodeEmpty = !rawSelectedCode || rawSelectedCode.trim().length === 0;
+  const selectedCode = isCodeEmpty ? '아직 입력된 코드가 없어요 🙂' : rawSelectedCode;
 
   return (
     <>
