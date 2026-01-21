@@ -12,6 +12,7 @@ import { Server, Socket } from 'socket.io';
 
 import { BattleService } from '@/battle/battle.service';
 import { ProblemService } from '@/problem/problem.service';
+import { UserService } from '@/user/user.service';
 
 import { CHAT_TYPE } from '../../../../packages/constants/chat';
 import {
@@ -37,6 +38,7 @@ export class RoomGateway {
     private readonly roomService: RoomService,
     private readonly battleService: BattleService,
     private readonly problemService: ProblemService,
+    private readonly userService: UserService,
   ) {}
 
   @SubscribeMessage(SOCKET_EVENT.ROOM_LIST_REQUEST)
@@ -146,17 +148,19 @@ export class RoomGateway {
           status: 'IN_ROOM',
           joinedAt: new Date().toISOString(),
           roomId: roomId,
+          username: resolvedUsername,
+          socketId: client.id,
         });
       } catch {
         // ignore
       }
     }
 
-    // 방 전체에 최신 참여자 목록 브로드캐스트
-    const players = [...room.currentPlayers];
+    // 방 전체에 최신 참여자 목록 브로드캐스트 (통계 포함)
+    const playersWithStats = await this.getPlayersWithStats(room.currentPlayers);
     this.server.to(roomId).emit(SOCKET_EVENT.ROOM_PLAYERS, {
       roomId: room.roomId,
-      players,
+      players: playersWithStats,
     });
 
     client.emit(SOCKET_EVENT.ROOM_STATE_ROLE, {
@@ -348,5 +352,26 @@ export class RoomGateway {
       .replace(/'/g, '&#39;');
 
     return escaped.replace(/javascript:/gi, '').replace(/on\w+="[^"]*"/gi, '');
+  }
+
+  private async getPlayersWithStats(players: RoomUser[]): Promise<RoomUser[]> {
+    const playersWithStats = await Promise.all(
+      players.map(async (player) => {
+        const user = await this.userService.findOne(player.userId);
+        if (user) {
+          return {
+            ...player,
+            stats: {
+              wins: user.wins,
+              losses: user.losses,
+              rating: user.rating,
+              tier: user.tier,
+            },
+          };
+        }
+        return player;
+      }),
+    );
+    return playersWithStats;
   }
 }

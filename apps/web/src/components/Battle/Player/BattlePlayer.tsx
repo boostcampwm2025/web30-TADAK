@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import BattleProblem from '@/components/Battle/BattleProblem';
-import BattleProgress from '@/components/Battle/Player/BattleSituation';
+import BattleSituation from '@/components/Battle/Player/BattleSituation';
 import CodeEditor from '@/components/Battle/Player/CodeEditor';
 import ProgressBar from '@/components/Battle/Player/ProgressBar';
 
@@ -57,7 +57,7 @@ function BattlePlayer() {
           </div>
           {showProgress && (
             <div ref={progressRef} className="fade-slide-in xl:h-full xl:min-h-0">
-              <BattleProgress />
+              <BattleSituation />
             </div>
           )}
         </div>
