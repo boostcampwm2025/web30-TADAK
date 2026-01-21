@@ -21,6 +21,7 @@ export const BATTLE_EVENTS = {
 
   // 진행 상황 업데이트
   PROGRESS_UPDATE: 'progress-update',
+  TEST_RESULT: 'test-result',
 
   // 유저 진행률
   USER_TEST_RESULT: 'user-test-result',

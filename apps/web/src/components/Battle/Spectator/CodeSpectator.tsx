@@ -4,11 +4,10 @@ import { Code } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
+import ProgressBarSpectator from '@/components/Battle/Spectator/ProgressBarSpectator';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useRoomStore } from '@/stores/roomStore';
-
-import ProgressBarSpectator from './ProgressBarSpectator';
 
 type SubmissionResultPayload = Omit<FinalResultMessage, 'type'> & {
   userId?: string;

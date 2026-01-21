@@ -46,11 +46,11 @@ function BattleSituation() {
     };
 
     socket.on(BATTLE_EVENTS.CODE_METADATA, handleCodeMetadata);
-    socket.on('test-result', handleTestResult);
+    socket.on(BATTLE_EVENTS.TEST_RESULT, handleTestResult);
 
     return () => {
       socket.off(BATTLE_EVENTS.CODE_METADATA, handleCodeMetadata);
-      socket.off('test-result', handleTestResult);
+      socket.off(BATTLE_EVENTS.TEST_RESULT, handleTestResult);
     };
   }, [socket, me?.userId, updateCodeLines, addActivityLog]);
 

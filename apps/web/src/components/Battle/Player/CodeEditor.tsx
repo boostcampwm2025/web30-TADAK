@@ -6,14 +6,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 import { createDryRun, createSubmission } from '@/apis/submission';
+import EditorFooter from '@/components/Battle/Player/EditorFooter';
+import TestcaseResultPanel from '@/components/Battle/Player/TestcaseResultPanel';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import type { Player } from '@/stores/roomStore';
 import { useRoomStore } from '@/stores/roomStore';
-
-import EditorFooter from './EditorFooter';
-import TestcaseResultPanel from './TestcaseResultPanel';
 
 type SubmissionProgress = TestcaseUpdateMessage['progress'];
 type TestcaseResult = TestcaseUpdateMessage['testcase'] & {
