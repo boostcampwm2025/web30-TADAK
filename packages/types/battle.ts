@@ -75,3 +75,21 @@ export interface UserFinishedPayload {
   userId: string;
   username?: string;
 }
+
+export interface BattleResultResponse {
+  battle: {
+    id: string;
+    winnerId: string;
+  };
+  players: Array<{
+    userId: string;
+    username: string;
+    avatarUrl: string;
+    tier: string;
+    rate: number;
+    score: number;
+    totalScore: number;
+    time: string;
+    code: string;
+  }>;
+}
