@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 import ProgressBarSpectator from '@/components/Battle/Spectator/ProgressBarSpectator';
+import BaseCodeEditor from '@/components/Common/BaseCodeEditor';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useRoomStore } from '@/stores/roomStore';
@@ -131,14 +132,17 @@ function CodeSpectator() {
             </div>
           </div>
 
-          <div className="flex-1 min-h-0 bg-(--bg-layer-2) px-4 py-3 font-mono text-sm leading-relaxed text-base-primary">
-            <pre className="chat-scroll h-full min-h-[clamp(260px,50vh,520px)] whitespace-pre-wrap overflow-y-auto">
-              {isCodeEmpty ? (
-                <span className="text-base-secondary">{selectedCode}</span>
-              ) : (
-                selectedCode
-              )}
-            </pre>
+          <div className="flex-1 min-h-0 bg-(--bg-layer-2) px-4 py-3 font-mono text-sm leading-relaxed text-base-primary overflow-hidden">
+            <BaseCodeEditor
+              value={selectedCode}
+              options={{
+                readOnly: true,
+                renderLineHighlight: 'none',
+                contextmenu: false,
+                folding: false,
+                hideCursorInOverviewRuler: true,
+              }}
+            />
           </div>
           <div className="flex items-center justify-end gap-4 border-t border-border-soft bg-(--bg-layer-2) px-4 py-3 text-xs text-base-secondary">
             <span className="flex items-center gap-1 text-green-05">

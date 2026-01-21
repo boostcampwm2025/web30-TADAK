@@ -1,7 +1,7 @@
 import type { ElementType, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
-import Button from '@/components/ui/Button';
+import Button from '@/components/Common/Button';
 
 interface ModalProps {
   isOpen: boolean;

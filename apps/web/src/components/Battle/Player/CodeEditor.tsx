@@ -8,6 +8,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { createDryRun, createSubmission } from '@/apis/submission';
 import EditorFooter from '@/components/Battle/Player/EditorFooter';
 import TestcaseResultPanel from '@/components/Battle/Player/TestcaseResultPanel';
+import BaseCodeEditor from '@/components/Common/BaseCodeEditor';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
@@ -340,11 +341,15 @@ function CodeEditor() {
           </div>
         </div>
         <div className="min-h-0 bg-(bg-layer-2) px-5 py-4 font-mono text-sm text-base-primary xl:flex-1">
-          <textarea
+          <BaseCodeEditor
             value={code}
-            onChange={(e) => handleChange(e.target.value)}
-            spellCheck={false}
-            className="h-full min-h-60 flex-1 w-full resize-none rounded-xl bg-(bg-layer-2) border border-base-muted px-4 py-3 text-sm leading-relaxed text-base-primary shadow-inner shadow-slate-950/10 focus:outline-none"
+            onChange={(value) => handleChange(value || '')}
+            options={{
+              quickSuggestions: false, // 자동 완성 비활성화
+              suggestOnTriggerCharacters: false, // 트리거 문자 입력 시 자동 완성 비활성화
+              snippetSuggestions: 'none', // 스니펫 비활성화
+              wordBasedSuggestions: 'off', // 단어 기반 제안 비활성화
+            }}
           />
         </div>
         <EditorFooter
