@@ -10,6 +10,7 @@ import LoginErrorPage from '@/pages/Error/LoginErrorPage';
 import LoginPage from '@/pages/LoginPage.tsx';
 import MainPage from '@/pages/MainPage.tsx';
 import MatchingPage from '@/pages/MatchingPage.tsx';
+import ResultPage from '@/pages/ResultPage.tsx';
 
 const router = createBrowserRouter([
   {
@@ -35,6 +36,10 @@ const router = createBrowserRouter([
       {
         path: '/error',
         element: <LoginErrorPage />,
+      },
+      {
+        path: '/result/:battleId',
+        element: <ResultPage />,
       },
     ],
   },
