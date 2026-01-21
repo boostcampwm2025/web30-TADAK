@@ -1,3 +1,4 @@
+import Editor from '@monaco-editor/react';
 import { BATTLE_CONFIG, BATTLE_EVENTS } from '@shared/constants/battle';
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { FinalResultMessage, TestcaseUpdateMessage } from '@shared/types/pubsub';
@@ -6,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 import { createDryRun, createSubmission } from '@/apis/submission';
+import { useTheme } from '@/hooks/useTheme';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import type { Player } from '@/stores/roomStore';
@@ -34,6 +36,7 @@ type ExecutionState = {
 const EXECUTION_TIMEOUT = 60000;
 
 function CodeEditor() {
+  const { theme } = useTheme();
   const { roomId: roomIdParam } = useParams<{ roomId?: string }>();
   const [searchParams] = useSearchParams();
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? 'room-unknown';
@@ -308,11 +311,24 @@ function CodeEditor() {
           </div>
         </div>
         <div className="min-h-0 bg-(bg-layer-2) px-5 py-4 font-mono text-sm text-base-primary xl:flex-1">
-          <textarea
+          <Editor
+            height="100%"
+            defaultLanguage={BATTLE_CONFIG.DEFAULT_LANGUAGE}
             value={code}
-            onChange={(e) => handleChange(e.target.value)}
-            spellCheck={false}
-            className="h-full min-h-60 flex-1 w-full resize-none rounded-xl bg-(bg-layer-2) border border-base-muted px-4 py-3 text-sm leading-relaxed text-base-primary shadow-inner shadow-slate-950/10 focus:outline-none"
+            theme={theme === 'dark' ? 'vs-dark' : 'light'}
+            onChange={(value) => handleChange(value || '')}
+            options={{
+              minimap: { enabled: false }, // 미니맵 활성화 여부
+              fontSize: 14, // 폰트 크기
+              scrollBeyondLastLine: false, // 마지막 줄 이후로 스크롤 가능
+              automaticLayout: true, // 에디터 컨테이너 크기 변경 시 자동 조정
+              padding: { top: 16, bottom: 16 }, // 상하 여백
+              fontFamily: 'Fira Code', // 폰트 종류
+              quickSuggestions: false, // 자동 완성 비활성화
+              suggestOnTriggerCharacters: false, // 트리거 문자 입력 시 자동 완성 비활성화
+              snippetSuggestions: 'none', // 스니펫 비활성화
+              wordBasedSuggestions: 'off', // 단어 기반 제안 비활성화
+            }}
           />
         </div>
         <EditorFooter
