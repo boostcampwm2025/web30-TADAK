@@ -1,10 +1,28 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class Battle {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn()
   id: string;
+
+  @Column()
+  problemId: string;
+
+  @Column()
+  startedAt: Date;
 
   @Column({ nullable: true })
   winnerId: string;
+
+  @Column({ nullable: true })
+  winnerSubmissionId: string;
+
+  @Column({ nullable: true })
+  loserSubmissionId: string;
+
+  @Column('simple-array')
+  participantIds: string[];
+
+  @CreateDateColumn()
+  createdAt: Date;
 }
