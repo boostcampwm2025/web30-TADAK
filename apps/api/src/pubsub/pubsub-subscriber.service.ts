@@ -54,8 +54,20 @@ export class PubsubSubscriberService implements OnModuleInit {
     );
 
     const socketId =
-      message.socketId ?? (await this.getSocketIdBySubmissionId(message.submissionId));
-    if (socketId) {
+      (message.socketId as string) ?? (await this.getSocketIdBySubmissionId(message.submissionId));
+
+    // DB에서 submission 조회하여 타입 판별 (DB에 있으면 SUBMISSION, 없으면 TEST)
+    const submission = await this.submissionRepository.findOne({
+      where: { id: message.submissionId },
+    });
+    if (socketId && !submission) {
+      // TEST 타입 : 입출력 결과 전송
+      this.pubsubGateway.emitTestcaseUpdate(socketId, message, true);
+      return;
+    }
+
+    if (socketId && submission) {
+      // SUBMISSION 타입 : 입출력 결과 미전송
       this.pubsubGateway.emitTestcaseUpdate(socketId, message);
     }
   }
@@ -65,20 +77,33 @@ export class PubsubSubscriberService implements OnModuleInit {
       `[FINAL_RESULT] Submission ${message.submissionId}: ${message.status} (${message.result.passed}/${message.result.total})`,
     );
 
-    if (message.socketId) {
+    // DB에서 submission 조회하여 타입 판별 (DB에 있으면 SUBMISSION, 없으면 TEST)
+    const submission = await this.submissionRepository.findOne({
+      where: { id: message.submissionId },
+    });
+
+    // TEST 타입 (DryRun)
+    if (!submission && message.socketId) {
+      this.logger.log(`[FINAL_RESULT] Sending to socket ${message.socketId} (TEST type)`);
+      // 본인에게 결과 전송
       this.pubsubGateway.emitFinalResultToSocket(message.socketId, message);
+
+      // 방에 테스트 결과 브로드캐스트
+      const userInfo = await this.getUserInfoBySocketId(message.socketId);
+      if (userInfo?.roomId) {
+        this.pubsubGateway.emitTestResult(userInfo.roomId, message, userInfo.userId);
+        this.pubsubGateway.emitSystemChat(
+          userInfo.roomId,
+          `${userInfo.username}님이 테스트를 실행했습니다. (${message.result.passed}/${message.result.total})`,
+        );
+      }
       return;
     }
 
-    const numericId = this.toNumericSubmissionId(message.submissionId);
-
-    // submissionId로 type 확인
-    const submissionType = await this.getSubmissionType(message.submissionId);
-
-    // SUBMISSION 타입만 DB 업데이트
-    if (submissionType === 'SUBMISSION' && numericId !== null) {
+    // SUBMISSION 타입: DB 업데이트
+    if (submission) {
       try {
-        await this.submissionRepository.update(numericId, {
+        await this.submissionRepository.update(message.submissionId, {
           status: message.status,
           passedTestCases: message.result.passed,
           totalTestCases: message.result.total,
@@ -92,20 +117,18 @@ export class PubsubSubscriberService implements OnModuleInit {
           error,
         );
       }
-    } else {
-      this.logger.debug(`[FINAL_RESULT] Skipping DB update for TEST type: ${message.submissionId}`);
-    }
 
-    // WebSocket 전송
-    const userInfo = await this.getUserInfoBySubmissionId(message.submissionId);
+      // SUBMISSION 타입: roomId로 브로드캐스트
+      const userInfo = await this.getUserInfoBySubmissionId(message.submissionId);
 
-    if (userInfo?.roomId) {
-      this.pubsubGateway.emitFinalResult(userInfo.roomId, message);
-      this.battleGateway.handleUserFinished({
-        roomId: userInfo.roomId,
-        userId: userInfo.userId,
-        username: userInfo.username,
-      });
+      if (userInfo?.roomId) {
+        this.pubsubGateway.emitFinalResult(userInfo.roomId, message, userInfo.userId);
+        this.battleGateway.handleUserFinished({
+          roomId: userInfo.roomId,
+          userId: userInfo.userId,
+          username: userInfo.username,
+        });
+      }
     }
   }
 
@@ -187,6 +210,29 @@ export class PubsubSubscriberService implements OnModuleInit {
       const parsed = Number(value);
       return Number.isFinite(parsed) ? parsed : null;
     }
+    return null;
+  }
+
+  // socketId로 유저 정보 조회
+  private async getUserInfoBySocketId(
+    socketId: string,
+  ): Promise<{ roomId: string; userId: string; username: string } | null> {
+    // Redis에서 socketId로 userId 찾기 (모든 matching:user:* 키 순회)
+    const keys = await this.redisClient.keys('matching:user:*');
+
+    for (const key of keys) {
+      const userData = await this.redisClient.hgetall(key);
+      if (userData?.socketId === socketId && userData?.roomId) {
+        const userId = key.replace('matching:user:', '');
+        return {
+          roomId: userData.roomId,
+          userId,
+          username: userData.username ?? '플레이어',
+        };
+      }
+    }
+
+    this.logger.warn(`User info not found for socketId ${socketId}`);
     return null;
   }
 }

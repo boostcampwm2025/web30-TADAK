@@ -1,4 +1,4 @@
-import type { UserRole } from '@shared/types/user';
+import type { UserRole, UserStats } from '@shared/types/user';
 import { create } from 'zustand';
 
 export type Player = {
@@ -7,6 +7,7 @@ export type Player = {
   userId: string;
   username: string;
   avatarUrl?: string;
+  stats?: UserStats;
 };
 type CodeMap = Record<string, string>;
 

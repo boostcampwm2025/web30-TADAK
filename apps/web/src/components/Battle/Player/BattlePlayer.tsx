@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import BattleProblem from '@/components/Battle/BattleProblem';
-import BattleProgress from '@/components/Battle/Player/BattleSituation';
+import BattleSituation from '@/components/Battle/Player/BattleSituation';
 import CodeEditor from '@/components/Battle/Player/CodeEditor';
 import ProgressBar from '@/components/Battle/Player/ProgressBar';
 
@@ -12,7 +12,7 @@ function BattlePlayer() {
 
   const gridCols = useMemo(() => {
     return 'grid grid-cols-1 gap-4 xl:flex-1 xl:min-h-0 xl:grid-cols-[minmax(320px,1.2fr)_minmax(520px,2fr)_minmax(280px,1fr)]';
-  }, [showProblem, showProgress]);
+  }, []);
 
   const codeSpanClass = useMemo(() => {
     if (!showProblem && !showProgress) return 'xl:col-span-3';
@@ -58,7 +58,7 @@ function BattlePlayer() {
           </div>
           {showProgress && (
             <div ref={progressRef} className="fade-slide-in xl:h-full xl:min-h-0">
-              <BattleProgress />
+              <BattleSituation />
             </div>
           )}
         </div>

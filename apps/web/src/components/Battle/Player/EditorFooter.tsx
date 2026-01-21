@@ -23,17 +23,17 @@ function EditorFooter({
         type="button"
         onClick={onDryRun}
         disabled={isDisabled}
-        className="inline-flex items-center gap-2 rounded-lg bg-base-muted px-3 py-2 text-xs font-semibold text-base-primary transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center gap-2 rounded-lg bg-green-05 px-3 py-2 text-sm font-semibold text-base-primary transition hover:brightness-110 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isTesting ? '▶ 실행 중' : '▶ 코드 실행'}
       </button>
-      <div className="text-xs text-base-secondary">
+      <div className="text-sm text-base-secondary">
         {statusText} · <span className="text-green-05">{progressLabel}</span> 통과
       </div>
       <div className="flex items-center gap-2">
         <button
           type="button"
-          className="rounded-lg bg-green-05 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-emerald-500/30 transition hover:brightness-110"
+          className="rounded-lg bg-black px-4 py-2 text-sm font-bold text-white transition hover:bg-neutral-800 dark:hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-60"
           onClick={onSubmit}
           disabled={isDisabled}
         >

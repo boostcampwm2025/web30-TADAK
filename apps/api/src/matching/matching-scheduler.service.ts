@@ -38,9 +38,6 @@ export class MatchingSchedulerService {
       const stats = await this.matchingService.getMatchingStats();
       const socketIds = await this.matchingService.getMatchingQueueSocketIds();
       this.matchingGateway.broadcastMatchingStats(stats, socketIds);
-      this.logger.debug(
-        `매칭 통계 전송: ${stats.waitingPlayers}명 대기, ${stats.ongoingBattles}개 진행 중, 평균 ${stats.avgMatchTime}초`,
-      );
     } catch (error: unknown) {
       if (error instanceof Error) this.logger.error(`통계 업데이트 에러: ${error.message}`);
     }

@@ -1,14 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { BATTLE_CONFIG } from '@packages/constants/battle';
 import { Battle, BattleUser, CreateBattleDTO, UpdateUserCodeDTO } from '@packages/types/battle';
 import { RoomUser } from '@packages/types/user';
+import Redis from 'ioredis';
 
 import { BattleRedisService } from '@/battle/battle-redis.service';
 import { ProblemService } from '@/problem/problem.service';
+import { REDIS_CLIENT } from '@/redis/redis.module';
+import { RedisKeys } from '@/redis/redis-key.constant';
 
 @Injectable()
 export class BattleService {
   constructor(
+    @Inject(REDIS_CLIENT) private readonly redisClient: Redis,
     private readonly battleRedisService: BattleRedisService,
     private readonly problemService: ProblemService,
   ) {}
@@ -42,7 +46,7 @@ export class BattleService {
       problemId: problem.id,
       status: 'running',
       config: {
-        duration: dto.config.duration || BATTLE_CONFIG.DURATION,
+        duration: problem.battleTimeLimit || BATTLE_CONFIG.DURATION,
       },
       startedAt: new Date(),
       users,
@@ -143,5 +147,11 @@ export class BattleService {
     if (battleId) {
       await this.battleRedisService.deleteBattle(battleId, roomId);
     }
+  }
+
+  async getSocketIdByUserId(userId: string): Promise<string | null> {
+    const socketId = await this.redisClient.hget(RedisKeys.matchingUser(userId), 'socketId');
+
+    return socketId;
   }
 }
