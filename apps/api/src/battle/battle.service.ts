@@ -1,7 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BATTLE_CONFIG } from '@packages/constants/battle';
-import { Battle, BattleUser, CreateBattleDTO, UpdateUserCodeDTO } from '@packages/types/battle';
+import {
+  Battle,
+  BattleResultResponse,
+  BattleUser,
+  CreateBattleDTO,
+  UpdateUserCodeDTO,
+} from '@packages/types/battle';
 import { RoomUser } from '@packages/types/user';
 import Redis from 'ioredis';
 import { Repository } from 'typeorm';
@@ -167,7 +173,7 @@ export class BattleService {
   }
 
   // 배틀 결과 조회
-  async getBattleResult(battleId: string) {
+  async getBattleResult(battleId: string): Promise<BattleResultResponse> {
     // Battle 정보 조회
     const battle = await this.battleRepository.findOne({ where: { id: battleId } });
 
