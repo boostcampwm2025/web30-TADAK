@@ -6,8 +6,6 @@
   <sub>실시간 1:1 알고리즘 배틀 플랫폼</sub>
 </p>
 
-
-
 <p align="center">
   📝 <a href="https://www.notion.so/web30-2c319e920f6080b2908dfb28ba83275a?source=copy_link">팀 노션</a> &nbsp;|&nbsp;
   🎨 <a href="https://www.figma.com/board/AKXDZaAymXKSg5XShewk1A/%ED%85%8C%EC%98%A4%EC%9D%98-%EC%8A%A4%ED%94%84%EB%A6%B0%ED%8A%B8-%ED%85%9C%ED%94%8C%EB%A6%BF--web30-?node-id=0-1&t=epjZ5ONDNW74eWT7-1">피그잼</a> &nbsp;|&nbsp;
@@ -17,8 +15,8 @@
 
 ---
 
-
 ## 📖 프로젝트 소개 (Introduction)
+
 > **"코딩도 E-Sports가 될 수 있다!"**
 
 **TADAK(타닥)** 은 혼자서 외롭게 풀던 알고리즘 문제 풀이를 **실시간 경쟁 게임**으로 재해석한 웹 서비스입니다.
@@ -61,25 +59,27 @@
 # Web30 - PORT:30
 
 > 안녕하세요! 부스트캠프 웹·모바일 10기 WEB-30팀 **PORT:30**입니다.
-> 
+>
 > 저희는 “언제나 열려있는 30번 포트처럼 소통하고, 항구처럼 목표에 확실하게 정박하자"라는 의미를 담은 PORT: 30 팀입니다.
 
 <br>
 
 ## 👥 팀원
 
-| [J029\_김다연](https://github.com/dyeon-dev) | [J074\_김채영](https://github.com/cchaeyoung) | [J213\_이준섭](https://github.com/SubJeeLee) | [J278\_최효진](https://github.com/eeekeee) |
-| :---: | :---: | :---: | :---: |
+|                       [J029\_김다연](https://github.com/dyeon-dev)                        |                       [J074\_김채영](https://github.com/cchaeyoung)                        |                        [J213\_이준섭](https://github.com/SubJeeLee)                        |                         [J278\_최효진](https://github.com/eeekeee)                         |
+| :---------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------: |
 | <img src="https://avatars.githubusercontent.com/u/93921784?v=4" width="130" height="130"> | <img src="https://avatars.githubusercontent.com/u/123921311?v=4" width="130" height="130"> | <img src="https://avatars.githubusercontent.com/u/176148148?v=4" width="130" height="130"> | <img src="https://avatars.githubusercontent.com/u/144501864?v=4" width="130" height="130"> |
 
 <br>
 
 ## 🎯 목표 (Goals)
+
 **Team Goal:** "근거 있는 기술 선택을 하는 개발자 되기"
 
 **Project Goal:** 개발자들의 고립감을 해소하고, 코딩을 E-Sports처럼 즐길 수 있는 문화를 만든다.
 
 ## 🤝 협업 문화 (Ground Rules)
+
 **Core Time:** 평일 10:00 ~ 18:00 집중 개발
 
 **Communication:** 모르는 것은 10분 고민 후 바로 공유하기
@@ -87,7 +87,6 @@
 **Process:** 매주 금요일 데모 데이 진행, 스크럼을 통한 매일의 이슈 공유
 
 [👉 자세한 그라운드 룰 보러가기](https://github.com/boostcampwm2025/web30-TADAK/wiki/%EA%B7%B8%EB%9D%BC%EC%9A%B4%EB%93%9C%EB%A3%B0)
-
 
 <br>
 
@@ -121,12 +120,12 @@
 
 프로젝트의 상세 설계 내용은 아래 문서에서 확인하실 수 있습니다.
 
-| 문서 종류 | 설명 | 링크 |
-| :-- | :-- | :-- |
-| **User Scenario** | 사용자 흐름 및 기능 명세 | [위키 바로가기](https://github.com/boostcampwm2025/web30-TADAK/wiki/%EC%9C%A0%EC%A0%80-%EC%8B%9C%EB%82%98%EB%A6%AC%EC%98%A4) |
-| **API Docs** | API 명세서 (Swagger/Wiki) | [API 문서 보기](링크_입력_필요) |
-| **ER Diagram** | 데이터베이스 구조도 | [ERD 보기](링크_입력_필요) |
-| **Figma** | 와이어프레임 및 디자인 | [Figma 보기](링크_입력_필요) |
+| 문서 종류         | 설명                      | 링크                                                                                                                         |
+| :---------------- | :------------------------ | :--------------------------------------------------------------------------------------------------------------------------- |
+| **User Scenario** | 사용자 흐름 및 기능 명세  | [위키 바로가기](https://github.com/boostcampwm2025/web30-TADAK/wiki/%EC%9C%A0%EC%A0%80-%EC%8B%9C%EB%82%98%EB%A6%AC%EC%98%A4) |
+| **API Docs**      | API 명세서 (Swagger/Wiki) | [API 문서 보기](링크_입력_필요)                                                                                              |
+| **ER Diagram**    | 데이터베이스 구조도       | [ERD 보기](링크_입력_필요)                                                                                                   |
+| **Figma**         | 와이어프레임 및 디자인    | [Figma 보기](링크_입력_필요)                                                                                                 |
 
 <br>
 
