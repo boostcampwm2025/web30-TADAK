@@ -49,7 +49,7 @@ function BattlePage() {
     return () => {
       socket.off(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
     };
-  }, [connect, setProblem]);
+  }, [connect, setProblem, setTimeOffset]);
 
   // 배틀 종료 이벤트 리스너 분리
   useEffect(() => {

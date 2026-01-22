@@ -56,7 +56,7 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
     const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [startedAt, duration, timeOffset, hasEmittedEnd]);
+  }, [startedAt, duration, timeOffset, hasEmittedEnd, battleId, roomId]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

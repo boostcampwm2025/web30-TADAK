@@ -143,7 +143,7 @@ export class PubsubSubscriberService implements OnModuleInit {
             );
 
             // 배틀 종료 이벤트 브로드캐스트
-            this.battleGateway.emitBattleEnd(userInfo.roomId, battle.id, battle.winnerId);
+            await this.battleGateway.emitBattleEnd(userInfo.roomId, battle.id, battle.winnerId);
           } catch (error) {
             this.logger.error(`[FINAL_RESULT] Failed to end battle ${submission.battleId}`, error);
           }

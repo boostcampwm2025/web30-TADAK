@@ -1,3 +1,4 @@
+import { forwardRef, Inject } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -17,6 +18,7 @@ import { type ChatMessage } from '@packages/types/chat';
 import { Server, Socket } from 'socket.io';
 
 import { BattleService } from '@/battle/battle.service';
+import { RoomService } from '@/room/room.service';
 
 @WebSocketGateway({
   namespace: SOCKET_NAMESPACE.GAME,
@@ -24,7 +26,11 @@ import { BattleService } from '@/battle/battle.service';
 export class BattleGateway {
   @WebSocketServer() server: Server;
 
-  constructor(private readonly battleService: BattleService) {}
+  constructor(
+    private readonly battleService: BattleService,
+    @Inject(forwardRef(() => RoomService))
+    private readonly roomService: RoomService,
+  ) {}
 
   @SubscribeMessage(BATTLE_EVENTS.CODE_CHANGE)
   async handleChangeCode(@ConnectedSocket() client: Socket, @MessageBody() dto: UpdateUserCodeDTO) {
@@ -96,6 +102,7 @@ export class BattleGateway {
 
     this.server.to(roomId).emit(SOCKET_EVENT.RECEIVE_CHAT, systemMessage);
   }
+
   // 타이머 종료 이벤트 처리
   @SubscribeMessage(BATTLE_EVENTS.TIMER_END)
   async handleTimerEnd(@MessageBody() data: { battleId: string; roomId: string }) {
@@ -103,7 +110,7 @@ export class BattleGateway {
     try {
       const battle = await this.battleService.endBattleByTimeout(battleId);
       // 배틀 종료 알림 전송 (배틀 엔티티 기반)
-      this.emitBattleEnd(roomIdFromClient, battle.id, battle.winnerId);
+      await this.emitBattleEnd(roomIdFromClient, battle.id, battle.winnerId);
 
       // 시스템 메시지 전송
       const systemMessage: ChatMessage = {
@@ -120,14 +127,37 @@ export class BattleGateway {
         `[BattleGateway] handleTimerEnd error or battle not found: ${error instanceof Error ? error.message : String(error)}`,
       );
       this.server.to(roomIdFromClient).emit(BATTLE_EVENTS.BATTLE_ENDED, { battleId });
+
+      // 방 상태 정리 및 목록 업데이트 시도
+      try {
+        await this.roomService.completeBattleRoom(roomIdFromClient);
+        await this.broadcastRoomList();
+      } catch (e) {
+        console.error('[BattleGateway] Failed to cleanup room on error:', e);
+      }
     }
   }
 
   // 배틀 종료 이벤트 브로드캐스트
-  emitBattleEnd(roomId: string, battleId: string, winnerId: string | null) {
+  async emitBattleEnd(roomId: string, battleId: string, winnerId: string | null) {
     this.server.to(roomId).emit(BATTLE_EVENTS.BATTLE_ENDED, {
       battleId,
       winnerId,
     });
+
+    // 방 상태 업데이트 및 목록 브로드캐스트
+    try {
+      await this.roomService.completeBattleRoom(roomId);
+      await this.broadcastRoomList();
+    } catch (error) {
+      console.error('[BattleGateway] Failed to update room list after battle end:', error);
+    }
+  }
+
+  // 방 목록을 모든 클라이언트에게 브로드캐스트
+  private async broadcastRoomList(): Promise<void> {
+    const rooms = await this.roomService.listRooms();
+    const publicRooms = this.roomService.toPublicRooms(rooms);
+    this.server.emit(SOCKET_EVENT.ROOM_LIST, publicRooms);
   }
 }
