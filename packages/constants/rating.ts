@@ -10,17 +10,17 @@ export const RATING_CONFIG = {
   TAU: 0.5,
 } as const;
 
-export const TIERS = ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND', 'MASTER'] as const;
+export const TIERS = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Master'] as const;
 export type TierName = (typeof TIERS)[number];
 
 // 브론즈: 400점 (하위 티어 넓게), 나머지: 200점씩
 export const TIER_THRESHOLDS = {
-  BRONZE: { min: 1000, max: 1399, divisionSize: 100 },
-  SILVER: { min: 1400, max: 1599, divisionSize: 50 }, // 시작 점수 1500 = SILVER 2
-  GOLD: { min: 1600, max: 1799, divisionSize: 50 },
-  PLATINUM: { min: 1800, max: 1999, divisionSize: 50 },
-  DIAMOND: { min: 2000, max: 2199, divisionSize: 50 },
-  MASTER: { min: 2200, max: Infinity, divisionSize: 0 },
+  Bronze: { min: 1000, max: 1399, divisionSize: 100 },
+  Silver: { min: 1400, max: 1599, divisionSize: 50 }, // 시작 점수 1500 = SILVER 2
+  Gold: { min: 1600, max: 1799, divisionSize: 50 },
+  Platinum: { min: 1800, max: 1999, divisionSize: 50 },
+  Diamond: { min: 2000, max: 2199, divisionSize: 50 },
+  Master: { min: 2200, max: Infinity, divisionSize: 0 },
 } as const;
 
 export const DIVISIONS = [4, 3, 2, 1] as const;
@@ -30,7 +30,7 @@ export function getTierFromRating(rating: number): { tier: TierName; division: D
   const clampedRating = clampRating(rating);
 
   // 티어 찾기
-  let tierName: TierName = 'BRONZE';
+  let tierName: TierName = 'Bronze';
   for (const tier of TIERS) {
     const threshold = TIER_THRESHOLDS[tier];
     if (clampedRating >= threshold.min && clampedRating <= threshold.max) {
@@ -40,8 +40,8 @@ export function getTierFromRating(rating: number): { tier: TierName; division: D
   }
 
   // Master 티어는 division 1 고정
-  if (tierName === 'MASTER') {
-    return { tier: 'MASTER', division: 1 };
+  if (tierName === 'Master') {
+    return { tier: 'Master', division: 1 };
   }
 
   // 4가 가장 낮고 1이 가장 높음
@@ -59,8 +59,8 @@ export function clampRating(rating: number): number {
 }
 
 export function getTierDisplayString(tier: TierName, division: Division): string {
-  if (tier === 'MASTER') {
-    return 'MASTER';
+  if (tier === 'Master') {
+    return 'Master';
   }
   return `${tier} ${division}`;
 }

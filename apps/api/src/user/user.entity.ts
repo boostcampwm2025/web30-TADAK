@@ -27,7 +27,7 @@ export class User {
   volatility: number = 0.06;
 
   @Column({ type: 'json' })
-  tier: { tier: string; division: number } = { tier: 'SILVER', division: 2 };
+  tier: { tier: string; division: number } = { tier: 'Silver', division: 2 };
 
   @Column({ type: 'int', default: 0 })
   wins: number;
