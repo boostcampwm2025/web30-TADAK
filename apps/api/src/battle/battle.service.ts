@@ -14,6 +14,7 @@ import { REDIS_CLIENT } from '@/redis/redis.module';
 import { RedisKeys } from '@/redis/redis-key.constant';
 import { Submission } from '@/submission/submission.entity';
 import { User } from '@/user/user.entity';
+import { UserService } from '@/user/user.service';
 
 @Injectable()
 export class BattleService {
@@ -29,6 +30,7 @@ export class BattleService {
     private readonly userRepository: Repository<User>,
     @Inject(forwardRef(() => MatchingService))
     private readonly matchingService: MatchingService,
+    private readonly userService: UserService,
   ) {}
 
   async createBattle(dto: CreateBattleDTO): Promise<Battle> {
@@ -259,6 +261,18 @@ export class BattleService {
     battleEntity.playerIds = battle.users.map((u) => u.userId);
 
     const savedBattle = await this.battleRepository.save(battleEntity);
+
+    // 4.5 유저 점수 업데이트
+    let winnerId: string = '';
+    let loserId: string = '';
+    if (winner && loser) {
+      winnerId = winner.userId;
+      loserId = loser.userId;
+    } else {
+      winnerId = battle.users[0].userId;
+      loserId = battle.users[1].userId;
+    }
+    await this.userService.updateRatings(winnerId, loserId, winner ? false : true);
 
     // 5. Redis에서 배틀 데이터 삭제
     await this.battleRedisService.deleteBattle(battle.battleId, battle.roomId);
