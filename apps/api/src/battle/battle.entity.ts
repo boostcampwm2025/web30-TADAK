@@ -11,14 +11,14 @@ export class Battle {
   @Column({ type: 'timestamp' })
   startedAt: Date;
 
-  @Column({ nullable: true })
-  winnerId: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  winnerId: string | null;
 
-  @Column({ nullable: true })
-  winnerSubmissionId: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  winnerSubmissionId: string | null;
 
-  @Column({ nullable: true })
-  loserSubmissionId: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  loserSubmissionId: string | null;
 
   @Column('simple-array')
   playerIds: string[];

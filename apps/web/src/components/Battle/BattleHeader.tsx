@@ -1,3 +1,4 @@
+import { BATTLE_EVENTS } from '@shared/constants/battle';
 import { AlertCircle, Eye, Moon, Sun, Timer } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -27,6 +28,7 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
 
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [hasEmittedEnd, setHasEmittedEnd] = useState(false);
 
   useEffect(() => {
     if (!startedAt || !duration) return;
@@ -40,9 +42,13 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
       const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
       setTimeLeft(remaining);
 
-      if (remaining <= 0) {
+      if (remaining <= 0 && !hasEmittedEnd) {
         // 타이머 종료 처리
-        navigate(`/result/${battleId}`);
+        const socket = useBattleSocketStore.getState().socket;
+        if (socket && battleId) {
+          socket.emit(BATTLE_EVENTS.TIMER_END, { battleId, roomId });
+          setHasEmittedEnd(true);
+        }
       }
     };
 
@@ -50,7 +56,7 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
     const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [startedAt, duration, timeOffset]);
+  }, [startedAt, duration, timeOffset, hasEmittedEnd, battleId, roomId]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

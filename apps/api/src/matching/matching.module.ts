@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 
 import { BattleModule } from '../battle/battle.module';
@@ -12,8 +12,8 @@ import { MatchingSchedulerService } from './matching-scheduler.service';
 @Module({
   imports: [
     ScheduleModule.forRoot(), // Cron 기반 매칭 Tick을 위해 필요
-    RoomModule, // Room & Battle 생성을 위해 필요
-    BattleModule,
+    forwardRef(() => RoomModule), // Room & Battle 생성을 위해 필요
+    forwardRef(() => BattleModule),
     UserModule,
   ],
   controllers: [MatchingController],

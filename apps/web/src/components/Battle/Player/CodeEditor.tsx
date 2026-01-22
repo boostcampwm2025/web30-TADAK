@@ -60,6 +60,7 @@ function CodeEditor() {
   const hasEditedRef = useRef(false);
   const hasSyncedRef = useRef(false);
   const problemId = useBattleProblemStore((state) => state.problem?.id ?? null);
+  const battleId = useBattleProblemStore((state) => state.problem?.battleId ?? null);
 
   const clearExecutionTimeout = () => {
     if (timeoutRef.current) {
@@ -315,6 +316,7 @@ function CodeEditor() {
           problemId,
           code,
           language: BATTLE_CONFIG.DEFAULT_LANGUAGE,
+          ...(battleId ? { battleId } : {}),
         },
         socket.id,
       );

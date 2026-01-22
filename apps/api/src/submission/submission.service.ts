@@ -24,6 +24,7 @@ export class SubmissionService {
       code: dto.code,
       language: dto.language,
       userId,
+      battleId: dto.battleId,
       status: 'PENDING',
     });
 
@@ -38,6 +39,7 @@ export class SubmissionService {
         code: dto.code,
         language: dto.language,
         userId,
+        battleId: dto.battleId,
         socketId,
       });
     } catch (error) {

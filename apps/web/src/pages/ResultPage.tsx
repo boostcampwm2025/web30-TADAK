@@ -1,7 +1,7 @@
 import type { BattleResultResponse } from '@shared/types/battle';
 import { Home } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import { getBattleResult } from '@/apis/battle';
 import Button from '@/components/Common/Button';
@@ -11,7 +11,6 @@ import PlayerCard from '@/components/Result/PlayerCard';
 import ResultHeader from '@/components/Result/ResultHeader';
 
 function ResultPage() {
-  const navigate = useNavigate();
   const [selectedPlayerIndex, setSelectedPlayerIndex] = useState(0);
 
   const { battleId } = useParams<{ battleId: string }>();
@@ -71,7 +70,7 @@ function ResultPage() {
             variant="muted"
             icon={Home}
             iconSize={20}
-            onClick={() => navigate('/')}
+            onClick={() => (window.location.href = '/')}
             className="gap-2 px-6 py-3 shadow-md"
           >
             홈으로

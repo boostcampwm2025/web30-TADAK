@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { MATCHING_CONFIG } from '@packages/constants/matching';
 import { MatchingUser, UserRate } from '@packages/types/matching';
 import Redis from 'ioredis';
@@ -16,6 +16,7 @@ export class MatchingService {
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     private readonly roomService: RoomService,
+    @Inject(forwardRef(() => BattleService))
     private readonly battleService: BattleService,
     private readonly matchingGateway: MatchingGateway,
   ) {}
@@ -142,8 +143,15 @@ export class MatchingService {
     const candidates = await this.fetchWaitingUsers(MATCHING_CONFIG.CANDIDATE_LIMIT as number);
 
     if (candidates.length < 2) {
+      if (candidates.length === 1) {
+        this.logger.debug(`Matching candidates: [${candidates[0].username}] (Waiting for more...)`);
+      }
       return matchedUsers;
     }
+
+    this.logger.log(
+      `Matching candidates (${candidates.length}): ${candidates.map((c) => `${c.username}(${c.status})`).join(', ')}`,
+    );
 
     // 2. 이미 매칭된 유저 추적 (중복 매칭 방지)
     const usedIds = new Set<string>();
@@ -233,8 +241,19 @@ export class MatchingService {
 
     // 3. 유저 정보 파싱
     const users: MatchingUser[] = [];
-    results.forEach(([err, userdata]) => {
-      if (err || !userdata || !userdata.userId) return;
+    const staleUserIds: string[] = [];
+
+    results.forEach(([err, userdata], index) => {
+      const userId = userIds[index];
+
+      // 데이터가 없거나 status가 WAITING이 아닌 경우 필터링
+      if (err || !userdata || !userdata.userId || userdata.status !== 'WAITING') {
+        staleUserIds.push(userId);
+        if (userdata && userdata.status !== 'WAITING') {
+          this.logger.warn(`User ${userId} in queue with invalid status: ${userdata.status}`);
+        }
+        return;
+      }
 
       users.push({
         userId: userdata.userId,
@@ -250,6 +269,12 @@ export class MatchingService {
         avatarUrl: userdata.avatarUrl || '',
       });
     });
+
+    // 4. 스태일 유저 자동 제거 (큐 관리)
+    if (staleUserIds.length > 0) {
+      await this.redis.zrem(RedisKeys.matchingQueue(), ...staleUserIds);
+      this.logger.log(`Removed ${staleUserIds.length} stale users from matching queue`);
+    }
 
     // 4. 메모리에서 rating 순으로 정렬
     users.sort((a, b) => a.rating - b.rating);
@@ -395,5 +420,14 @@ export class MatchingService {
       ongoingBattles,
       avgMatchTime,
     };
+  }
+
+  // 매칭 상태 초기화 (Redis 데이터 삭제)
+  async clearUserMatchingStatus(userId: string): Promise<void> {
+    const pipeline = this.redis.pipeline();
+    pipeline.del(RedisKeys.matchingUser(userId));
+    pipeline.zrem(RedisKeys.matchingQueue(), userId);
+    await pipeline.exec();
+    this.logger.log(`Cleared matching status for user ${userId}`);
   }
 }
