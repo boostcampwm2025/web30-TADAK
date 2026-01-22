@@ -1,4 +1,4 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BATTLE_CONFIG } from '@packages/constants/battle';
 import {
@@ -25,6 +25,8 @@ import { UserService } from '@/user/user.service';
 
 @Injectable()
 export class BattleService {
+  private readonly logger = new Logger(BattleService.name);
+
   constructor(
     @Inject(REDIS_CLIENT) private readonly redisClient: Redis,
     private readonly battleRedisService: BattleRedisService,
@@ -69,7 +71,8 @@ export class BattleService {
       problemId: problem.id,
       status: 'running',
       config: {
-        duration: problem.battleTimeLimit || BATTLE_CONFIG.DURATION,
+        // duration: problem.battleTimeLimit || BATTLE_CONFIG.DURATION,
+        duration: 5 * 60,
       },
       startedAt: new Date(),
       users,
@@ -187,9 +190,13 @@ export class BattleService {
    * @returns 저장된 배틀 엔티티
    */
   async endBattle(battleId: string): Promise<BattleEntity> {
+    this.logger.log(`[endBattle] 시작 - battleId: ${battleId}`);
+
     // 1. Redis에서 배틀 데이터 조회
     const battle = await this.battleRedisService.getBattle(battleId);
+    this.logger.log(`[endBattle] Redis 배틀 데이터 조회 완료 - battle: ${JSON.stringify(battle)}`);
     if (!battle) {
+      this.logger.error(`[endBattle] 배틀을 찾을 수 없음 - battleId: ${battleId}`);
       throw new Error(`Battle not found: ${battleId}`);
     }
 
@@ -204,6 +211,9 @@ export class BattleService {
       });
 
     let winner = finishedUsers.length > 0 ? finishedUsers[0] : null;
+    this.logger.log(
+      `[endBattle] 완료한 유저 목록: ${JSON.stringify(finishedUsers.map((u) => u.userId))}`,
+    );
 
     // 완료한 사람이 없으면 가장 많은 테스트를 통과한 사람이 승자
     if (!winner) {
@@ -228,35 +238,66 @@ export class BattleService {
         ? battle.users.find((u) => u.userId !== winner.userId)
         : null;
 
+    this.logger.log(
+      `[endBattle] 승자 결정 완료 - winner: ${winner?.userId || 'null'}, loser: ${loser?.userId || 'null'}`,
+    );
+
     // 3. 각 참가자의 제출 기록 저장
-    const submissionPromises = battle.users.map(async (user) => {
-      // 승패 결과 결정
-      let status = 'FAILED';
-      if (user.isFinished) {
-        status = 'ACCEPTED';
-      }
+    // const submissionPromises = battle.users.map(async (user) => {
+    //   // 승패 결과 결정
+    //   let status = 'FAILED';
+    //   if (user.isFinished) {
+    //     status = 'ACCEPTED';
+    //   }
 
-      const submission = this.submissionRepository.create({
-        problemId: battle.problemId,
-        userId: user.userId,
-        battleId: battle.battleId,
-        code: user.code,
-        language: user.language,
-        status,
-        passedTestCases: user.progress.passedCount,
-        totalTestCases: user.progress.totalCount,
-      });
+    //   const submission = this.submissionRepository.create({
+    //     problemId: battle.problemId,
+    //     userId: user.userId,
+    //     battleId: battle.battleId,
+    //     code: user.code,
+    //     language: user.language,
+    //     status,
+    //     passedTestCases: user.progress.passedCount,
+    //     totalTestCases: user.progress.totalCount,
+    //   });
 
-      return this.submissionRepository.save(submission);
-    });
+    //   return this.submissionRepository.save(submission);
+    // });
 
-    const savedSubmissions = await Promise.all(submissionPromises);
+    // const savedSubmissions = await Promise.all(submissionPromises);
+    // this.logger.log(`[endBattle] 제출 기록 저장 완료 - submissions: ${JSON.stringify(savedSubmissions.map((s) => ({ id: s.id, odUserId: s.userId, status: s.status })))}`);
+
+    // 3. 각 참가자의 마지막 제출 기록 조회
+    const lastSubmissions = await Promise.all(
+      battle.users.map(async (user) => {
+        const submission = await this.submissionRepository.findOne({
+          where: { battleId: battle.battleId, userId: user.userId },
+          order: { createdAt: 'DESC' },
+        });
+        return { odUserId: user.userId, submission };
+      }),
+    );
+    this.logger.log(
+      `[endBattle] 마지막 제출 조회 완료 - ${JSON.stringify(
+        lastSubmissions.map((s) => ({
+          odUserId: s.odUserId,
+          odSubmissionId: s.submission?.id || null,
+        })),
+      )}`,
+    );
+
+    const winnerSubmission = winner
+      ? lastSubmissions.find((s) => s.odUserId === winner.userId)?.submission || null
+      : null;
+    const loserSubmission = loser
+      ? lastSubmissions.find((s) => s.odUserId === loser.userId)?.submission || null
+      : null;
 
     // 4. 배틀 엔티티 생성 및 저장
-    const winnerSubmission = winner
-      ? savedSubmissions.find((s) => s.userId === winner.userId)
-      : null;
-    const loserSubmission = loser ? savedSubmissions.find((s) => s.userId === loser.userId) : null;
+    // const winnerSubmission = winner
+    //   ? savedSubmissions.find((s) => s.userId === winner.userId)
+    //   : null;
+    // const loserSubmission = loser ? savedSubmissions.find((s) => s.userId === loser.userId) : null;
 
     const battleEntity = new BattleEntity();
     battleEntity.id = battle.battleId;
@@ -268,6 +309,7 @@ export class BattleService {
     battleEntity.playerIds = battle.users.map((u) => u.userId);
 
     const savedBattle = await this.battleRepository.save(battleEntity);
+    this.logger.log(`[endBattle] 배틀 엔티티 저장 완료 - savedBattle.id: ${savedBattle.id}`);
 
     // 4.5 유저 점수 업데이트
     let winnerId: string = '';
@@ -282,16 +324,24 @@ export class BattleService {
     await this.userService.updateRatings(winnerId, loserId, winner ? false : true);
 
     // 5. Redis에서 배틀 데이터 삭제
+    this.logger.log(`[endBattle] Redis 배틀 데이터 삭제 시작`);
     await this.battleRedisService.deleteBattle(battle.battleId, battle.roomId);
+    this.logger.log(`[endBattle] Redis 배틀 데이터 삭제 완료`);
 
     // 6. 진행 중인 배틀 목록에서 제거
     await this.redisClient.srem(RedisKeys.activeBattles(), battle.battleId);
+    this.logger.log(`[endBattle] 진행 중인 배틀 목록에서 제거 완료`);
 
     // 7. 참가자들의 매칭 상태 초기화 (재매칭 가능하도록)
+    this.logger.log(
+      `[endBattle] 매칭 상태 초기화 시작 - users: ${battle.users.map((u) => u.userId).join(', ')}`,
+    );
     await Promise.all(
       battle.users.map((user) => this.matchingService.clearUserMatchingStatus(user.userId)),
     );
+    this.logger.log(`[endBattle] 매칭 상태 초기화 완료`);
 
+    this.logger.log(`[endBattle] 종료 - battleId: ${battleId}`);
     return savedBattle;
   }
 
