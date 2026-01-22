@@ -411,7 +411,7 @@ export class BattleService {
 
     const userMap = new Map(users.map((user) => [user.id, user]));
 
-    const players = playerIds.map((userId) => {
+    const players = playerIds.map((userId, index) => {
       const user = userMap.get(userId);
       const submission = submissionMap.get(userId);
 
@@ -429,6 +429,9 @@ export class BattleService {
 
       const tier = (user?.tier?.tier || 'Bronze') as Tier;
 
+      const ratingChange =
+        index === 0 ? battle.player1RatingChange || 0 : battle.player2RatingChange || 0;
+
       return {
         userId,
         username: user?.username || 'Unknown',
@@ -439,6 +442,7 @@ export class BattleService {
         totalScore: submission?.totalTestCases || 20,
         time,
         code: submission?.code || '',
+        ratingChange,
       };
     });
 
