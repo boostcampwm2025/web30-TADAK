@@ -11,11 +11,13 @@ import { ProblemModule } from '@/problem/problem.module';
 import { RoomModule } from '@/room/room.module';
 import { Submission } from '@/submission/submission.entity';
 import { User } from '@/user/user.entity';
+import { UserModule } from '@/user/user.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Battle, Submission, User]),
     ProblemModule,
+    UserModule,
     forwardRef(() => RoomModule),
     forwardRef(() => MatchingModule),
   ],

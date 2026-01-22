@@ -1,4 +1,5 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
+import { BattleResultResponse } from '@packages/types/battle';
 
 import { BattleService } from '@/battle/battle.service';
 
@@ -7,5 +8,7 @@ export class BattleController {
   constructor(private readonly battleService: BattleService) {}
 
   @Get(':battleId/result')
-  async getBattleResult() {}
+  async getBattleResult(@Param('battleId') battleId: string): Promise<BattleResultResponse> {
+    return this.battleService.getBattleResult(battleId);
+  }
 }

@@ -19,7 +19,7 @@ describe('MatchingGateway', () => {
     userId,
     username,
     rating,
-    tier: { tier: 'GOLD', division: 3 },
+    tier: { tier: 'Gold', division: 3 },
     status: 'MATCHED',
     waitingSince: new Date(),
     socketId: `socket-${userId}`,
@@ -78,7 +78,7 @@ describe('MatchingGateway', () => {
             userId: 'user2',
             username: 'User2',
             rating: 1550,
-            tier: { tier: 'GOLD', division: 3 },
+            tier: { tier: 'Gold', division: 3 },
           },
         }),
       );
@@ -102,7 +102,7 @@ describe('MatchingGateway', () => {
             userId: 'user1',
             username: 'User1',
             rating: 1500,
-            tier: { tier: 'GOLD', division: 3 },
+            tier: { tier: 'Gold', division: 3 },
           },
         }),
       );

@@ -1,7 +1,14 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BATTLE_CONFIG } from '@packages/constants/battle';
-import { Battle, BattleUser, CreateBattleDTO, UpdateUserCodeDTO } from '@packages/types/battle';
+import {
+  Battle,
+  BattleResultResponse,
+  BattleUser,
+  CreateBattleDTO,
+  UpdateUserCodeDTO,
+} from '@packages/types/battle';
+import { Tier } from '@packages/types/matching';
 import { RoomUser } from '@packages/types/user';
 import Redis from 'ioredis';
 import { Repository } from 'typeorm';
@@ -14,6 +21,7 @@ import { REDIS_CLIENT } from '@/redis/redis.module';
 import { RedisKeys } from '@/redis/redis-key.constant';
 import { Submission } from '@/submission/submission.entity';
 import { User } from '@/user/user.entity';
+import { UserService } from '@/user/user.service';
 
 @Injectable()
 export class BattleService {
@@ -29,6 +37,7 @@ export class BattleService {
     private readonly userRepository: Repository<User>,
     @Inject(forwardRef(() => MatchingService))
     private readonly matchingService: MatchingService,
+    private readonly userService: UserService,
   ) {}
 
   async createBattle(dto: CreateBattleDTO): Promise<Battle> {
@@ -260,6 +269,18 @@ export class BattleService {
 
     const savedBattle = await this.battleRepository.save(battleEntity);
 
+    // 4.5 유저 점수 업데이트
+    let winnerId: string = '';
+    let loserId: string = '';
+    if (winner && loser) {
+      winnerId = winner.userId;
+      loserId = loser.userId;
+    } else {
+      winnerId = battle.users[0].userId;
+      loserId = battle.users[1].userId;
+    }
+    await this.userService.updateRatings(winnerId, loserId, winner ? false : true);
+
     // 5. Redis에서 배틀 데이터 삭제
     await this.battleRedisService.deleteBattle(battle.battleId, battle.roomId);
 
@@ -306,5 +327,77 @@ export class BattleService {
   async endBattleByTimeout(battleId: string): Promise<BattleEntity> {
     // endBattle 메서드가 자동으로 점수 기반 승자 결정을 처리함
     return this.endBattle(battleId);
+  }
+
+  // 배틀 결과 조회
+  async getBattleResult(battleId: string): Promise<BattleResultResponse> {
+    // Battle 정보 조회
+    const battle = await this.battleRepository.findOne({ where: { id: battleId } });
+
+    if (!battle) {
+      throw new Error('배틀 정보를 찾을 수 없습니다.');
+    }
+
+    // 참가자 목록
+    const playerIds = battle.playerIds;
+
+    // 제출 조회
+    const submissionIds = [battle.winnerSubmissionId, battle.loserSubmissionId].filter(Boolean);
+    const submissions =
+      submissionIds.length > 0
+        ? await this.submissionRepository
+            .createQueryBuilder('submission')
+            .whereInIds(submissionIds)
+            .getMany()
+        : [];
+
+    const submissionMap = new Map(submissions.map((sub) => [sub.userId, sub]));
+
+    // User 정보 조회
+    const users = await this.userRepository
+      .createQueryBuilder('user')
+      .whereInIds(playerIds)
+      .getMany();
+
+    const userMap = new Map(users.map((user) => [user.id, user]));
+
+    const players = playerIds.map((userId) => {
+      const user = userMap.get(userId);
+      const submission = submissionMap.get(userId);
+
+      if (!user) {
+        console.warn(`유저 정보 없음 (ID: ${userId})`);
+      }
+
+      let time = '-';
+      if (submission) {
+        const timeElapsed = submission.createdAt.getTime() - battle.startedAt.getTime();
+        const minutes = Math.floor(timeElapsed / 60000);
+        const seconds = Math.floor((timeElapsed % 60000) / 1000);
+        time = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      }
+
+      const tier = (user?.tier?.tier || 'Bronze') as Tier;
+
+      return {
+        userId,
+        username: user?.username || 'Unknown',
+        avatarUrl: user?.avatarUrl || '',
+        tier,
+        rate: user?.rating || 0,
+        score: submission?.passedTestCases || 0,
+        totalScore: submission?.totalTestCases || 20,
+        time,
+        code: submission?.code || '',
+      };
+    });
+
+    return {
+      battle: {
+        id: battle.id,
+        winnerId: battle.winnerId || '',
+      },
+      players,
+    };
   }
 }

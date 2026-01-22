@@ -78,7 +78,7 @@ function BattleSituation() {
       wins: 0,
       losses: 0,
       rating: 1000,
-      tier: { tier: 'BRONZE', division: 4 },
+      tier: { tier: 'Bronze', division: 4 },
     };
     return {
       stats: s,

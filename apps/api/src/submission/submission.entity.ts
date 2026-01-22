@@ -35,6 +35,6 @@ export class Submission {
   @Column({ type: 'int', nullable: true })
   memoryUsed: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 }

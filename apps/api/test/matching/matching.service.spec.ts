@@ -34,7 +34,7 @@ describe('MatchingService with ioredis-mock', () => {
       userId,
       username: `User${userId}`,
       rating: String(rating),
-      tier: JSON.stringify({ tier: 'GOLD', division: 3 }),
+      tier: JSON.stringify({ tier: 'Gold', division: 3 }),
       status: 'WAITING',
       waitingSince: waitingSince.toISOString(),
       socketId: `socket-${userId}`,
