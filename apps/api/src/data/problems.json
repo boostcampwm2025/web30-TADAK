@@ -1,5 +1,227 @@
 [
   {
+    "id": "beta_easy_1",
+    "source": "ChatGPT",
+    "difficulty": "Bronze",
+    "tags": ["구현"],
+    "url": "",
+    "title": "간식 구매",
+    "timeLimit": 1,
+    "battleTimeLimit": 30,
+    "memoryLimit": 256,
+    "statement": "지훈은 편의점에서 간식을 사려고 한다.\n\n간식 한 개의 가격은 P원이고, 지훈이 가진 돈은 M원이다. 지훈은 간식을 K개 사고 싶다.\n\n하지만 편의점 규칙상 한 번에 최대 10개까지만 구매할 수 있다.\n\n지훈이 간식을 구매할 수 있으면 \"YES\"를, 구매할 수 없으면 \"NO\"를 출력하자.",
+    "input": "첫 번째 줄에 정수 P, M, K가 공백으로 주어진다.",
+    "output": "간식을 구매할 수 있으면 \"YES\"를 출력하고, 구매할 수 없으면 \"NO\"를 출력한다.",
+    "constraints": "모든 수는 정수이다.\n1 ≤ P ≤ 10,000\n1 ≤ M ≤ 1,000,000\n1 ≤ K ≤ 100",
+    "examples": [
+      {
+        "input": "100 1000 10",
+        "output": "YES"
+      },
+      {
+        "input": "100 1000 11",
+        "output": "NO"
+      },
+      {
+        "input": "200 1000 5",
+        "output": "YES"
+      }
+    ],
+    "testcases": [
+      {
+        "input": "100 1000 10",
+        "output": "YES"
+      },
+      {
+        "input": "100 1000 11",
+        "output": "NO"
+      },
+      {
+        "input": "100 999 10",
+        "output": "NO"
+      },
+      {
+        "input": "50 500 10",
+        "output": "YES"
+      },
+      {
+        "input": "50 499 10",
+        "output": "NO"
+      },
+      {
+        "input": "1000 10000 1",
+        "output": "YES"
+      },
+      {
+        "input": "1000 999 1",
+        "output": "NO"
+      },
+      {
+        "input": "1 10 10",
+        "output": "YES"
+      },
+      {
+        "input": "1 9 10",
+        "output": "NO"
+      },
+      {
+        "input": "10000 1000000 10",
+        "output": "YES"
+      },
+      {
+        "input": "10000 99999 10",
+        "output": "NO"
+      },
+      {
+        "input": "500 2500 5",
+        "output": "YES"
+      },
+      {
+        "input": "500 2499 5",
+        "output": "NO"
+      },
+      {
+        "input": "123 1230 10",
+        "output": "YES"
+      },
+      {
+        "input": "123 1229 10",
+        "output": "NO"
+      },
+      {
+        "input": "10 100 11",
+        "output": "NO"
+      },
+      {
+        "input": "9999 99990 10",
+        "output": "YES"
+      },
+      {
+        "input": "9999 99989 10",
+        "output": "NO"
+      },
+      {
+        "input": "42 420 10",
+        "output": "YES"
+      },
+      {
+        "input": "42 419 10",
+        "output": "NO"
+      }
+    ]
+  },
+  {
+    "id": "beta_easy_2",
+    "source": "ChatGPT",
+    "difficulty": "Bronze",
+    "tags": ["구현"],
+    "url": "",
+    "title": "엘리베이터 버튼",
+    "timeLimit": 1,
+    "battleTimeLimit": 30,
+    "memoryLimit": 256,
+    "statement": "아린이는 건물의 엘리베이터를 타고 이동하려고 한다.\n\n현재 층은 S층이고, 목표 층은 G층이다.\n엘리베이터에는 두 개의 버튼만 있다.\n\n- 위로 U층 이동하는 버튼\n- 아래로 D층 이동하는 버튼\n\n버튼을 한 번 누를 때마다 정확히 해당 층수만큼 이동한다.\n건물은 1층부터 F층까지 있으며, 범위를 벗어날 수 없다.\n\n아린이가 목표 층에 도착하기 위해 버튼을 최소 몇 번 눌러야 하는지 구하자.\n\n도착할 수 없다면 -1을 출력한다.",
+    "input": "첫 번째 줄에 정수 F, S, G, U, D가 공백으로 주어진다.",
+    "output": "최소 버튼 누른 횟수를 출력하거나, 불가능하면 -1을 출력한다.",
+    "constraints": "모든 수는 정수이다.\n1 ≤ F ≤ 100\n1 ≤ S, G ≤ F\n0 ≤ U, D ≤ 100",
+    "examples": [
+      {
+        "input": "10 1 10 2 1",
+        "output": "6"
+      },
+      {
+        "input": "10 5 5 3 2",
+        "output": "0"
+      },
+      {
+        "input": "10 1 10 0 1",
+        "output": "-1"
+      }
+    ],
+    "testcases": [
+      {
+        "input": "10 1 10 2 1",
+        "output": "6"
+      },
+      {
+        "input": "10 5 5 3 2",
+        "output": "0"
+      },
+      {
+        "input": "10 1 10 0 1",
+        "output": "-1"
+      },
+      {
+        "input": "10 10 1 1 2",
+        "output": "6"
+      },
+      {
+        "input": "10 1 9 2 0",
+        "output": "4"
+      },
+      {
+        "input": "10 9 1 0 2",
+        "output": "4"
+      },
+      {
+        "input": "5 1 5 4 0",
+        "output": "1"
+      },
+      {
+        "input": "5 5 1 0 4",
+        "output": "1"
+      },
+      {
+        "input": "100 50 100 10 5",
+        "output": "5"
+      },
+      {
+        "input": "100 50 1 5 10",
+        "output": "-1"
+      },
+      {
+        "input": "10 2 9 3 1",
+        "output": "5"
+      },
+      {
+        "input": "10 2 8 3 1",
+        "output": "2"
+      },
+      {
+        "input": "10 2 7 3 1",
+        "output": "3"
+      },
+      {
+        "input": "10 3 10 4 1",
+        "output": "3"
+      },
+      {
+        "input": "10 3 9 4 1",
+        "output": "4"
+      },
+      {
+        "input": "10 1 2 0 0",
+        "output": "-1"
+      },
+      {
+        "input": "10 1 1 0 0",
+        "output": "0"
+      },
+      {
+        "input": "10 4 6 2 2",
+        "output": "1"
+      },
+      {
+        "input": "10 4 5 2 2",
+        "output": "-1"
+      },
+      {
+        "input": "10 6 4 2 2",
+        "output": "1"
+      }
+    ]
+  },
+  {
     "id": "koi_2024_1_1",
     "source": "한국정보올림피아드(KOI)",
     "difficulty": "Bronze",
