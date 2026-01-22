@@ -1,5 +1,116 @@
 [
   {
+    "id": "beta_easy_1",
+    "source": "ChatGPT",
+    "difficulty": "Bronze",
+    "tags": ["구현"],
+    "url": "",
+    "title": "간식 구매",
+    "timeLimit": 1,
+    "battleTimeLimit": 30,
+    "memoryLimit": 256,
+    "statement": "지훈은 편의점에서 간식을 사려고 한다.\n\n간식 한 개의 가격은 P원이고, 지훈이 가진 돈은 M원이다. 지훈은 간식을 K개 사고 싶다.\n\n하지만 편의점 규칙상 한 번에 최대 10개까지만 구매할 수 있다.\n\n지훈이 간식을 구매할 수 있으면 \"YES\"를, 구매할 수 없으면 \"NO\"를 출력하자.",
+    "input": "첫 번째 줄에 정수 P, M, K가 공백으로 주어진다.",
+    "output": "간식을 구매할 수 있으면 \"YES\"를 출력하고, 구매할 수 없으면 \"NO\"를 출력한다.",
+    "constraints": "모든 수는 정수이다.\n1 ≤ P ≤ 10,000\n1 ≤ M ≤ 1,000,000\n1 ≤ K ≤ 100",
+    "examples": [
+      {
+        "input": "100 1000 10",
+        "output": "YES"
+      },
+      {
+        "input": "100 1000 11",
+        "output": "NO"
+      },
+      {
+        "input": "200 1000 5",
+        "output": "YES"
+      }
+    ],
+    "testcases": [
+      {
+        "input": "100 1000 10",
+        "output": "YES"
+      },
+      {
+        "input": "100 1000 11",
+        "output": "NO"
+      },
+      {
+        "input": "100 999 10",
+        "output": "NO"
+      },
+      {
+        "input": "50 500 10",
+        "output": "YES"
+      },
+      {
+        "input": "50 499 10",
+        "output": "NO"
+      },
+      {
+        "input": "1000 10000 1",
+        "output": "YES"
+      },
+      {
+        "input": "1000 999 1",
+        "output": "NO"
+      },
+      {
+        "input": "1 10 10",
+        "output": "YES"
+      },
+      {
+        "input": "1 9 10",
+        "output": "NO"
+      },
+      {
+        "input": "10000 1000000 10",
+        "output": "YES"
+      },
+      {
+        "input": "10000 99999 10",
+        "output": "NO"
+      },
+      {
+        "input": "500 2500 5",
+        "output": "YES"
+      },
+      {
+        "input": "500 2499 5",
+        "output": "NO"
+      },
+      {
+        "input": "123 1230 10",
+        "output": "YES"
+      },
+      {
+        "input": "123 1229 10",
+        "output": "NO"
+      },
+      {
+        "input": "10 100 11",
+        "output": "NO"
+      },
+      {
+        "input": "9999 99990 10",
+        "output": "YES"
+      },
+      {
+        "input": "9999 99989 10",
+        "output": "NO"
+      },
+      {
+        "input": "42 420 10",
+        "output": "YES"
+      },
+      {
+        "input": "42 419 10",
+        "output": "NO"
+      }
+    ]
+  },
+  {
     "id": "koi_2024_1_1",
     "source": "한국정보올림피아드(KOI)",
     "difficulty": "Bronze",
