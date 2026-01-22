@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AuthModule } from './auth/auth.module';
+import { Battle } from './battle/battle.entity';
 import { BattleModule } from './battle/battle.module';
 import { MatchingModule } from './matching/matching.module';
 import { Problem } from './problem/problem.entity';
@@ -34,13 +35,7 @@ import { UserModule } from './user/user.module';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
-        entities: [
-          // 여기에 Entity 클래스들을 나열해야 합니다.
-          // 예: User
-          User,
-          Problem,
-          Submission,
-        ],
+        entities: [User, Problem, Submission, Battle],
         synchronize: true, // 개발 단계에서는 true (Entity와 DB 스키마 동기화)
         logging: ['error'], // 에러만 로그로 출력
       }),
