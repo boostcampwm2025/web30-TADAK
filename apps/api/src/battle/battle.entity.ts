@@ -12,13 +12,13 @@ export class Battle {
   startedAt: Date;
 
   @Column({ nullable: true })
-  winnerId: string;
+  winnerId: string | null;
 
   @Column({ nullable: true })
-  winnerSubmissionId: string;
+  winnerSubmissionId: string | null;
 
   @Column({ nullable: true })
-  loserSubmissionId: string;
+  loserSubmissionId: string | null;
 
   @Column('simple-array')
   playerIds: string[];
