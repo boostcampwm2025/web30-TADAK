@@ -165,4 +165,69 @@ export class BattleService {
 
     return socketId;
   }
+
+  /**
+   * 배틀 종료 처리: DB에 저장하고 Redis에서 삭제
+   * @param battleId 종료할 배틀 ID
+   * @returns 저장된 배틀 엔티티
+   */
+  async endBattle(battleId: string): Promise<BattleEntity> {
+    // 1. Redis에서 배틀 데이터 조회
+    const battle = await this.battleRedisService.getBattle(battleId);
+    if (!battle) {
+      throw new Error(`Battle not found: ${battleId}`);
+    }
+
+    // 2. 승자 결정 (먼저 완료한 사람)
+    const finishedUsers = battle.users
+      .filter((user) => user.isFinished && user.finishedAt)
+      .sort((a, b) => {
+        const timeA = a.finishedAt ? new Date(a.finishedAt).getTime() : Infinity;
+        const timeB = b.finishedAt ? new Date(b.finishedAt).getTime() : Infinity;
+        return timeA - timeB;
+      });
+
+    const winner = finishedUsers.length > 0 ? finishedUsers[0] : null;
+    const loser =
+      finishedUsers.length > 1
+        ? finishedUsers[1]
+        : battle.users.find((u) => u.userId !== winner?.userId);
+
+    // 3. 각 참가자의 제출 기록 저장
+    const submissionPromises = battle.users.map(async (user) => {
+      const submission = this.submissionRepository.create({
+        problemId: battle.problemId,
+        userId: user.userId,
+        battleId: battle.battleId,
+        code: user.code,
+        language: user.language,
+        status: user.isFinished ? 'ACCEPTED' : 'FAILED',
+        passedTestCases: user.progress.passedCount,
+        totalTestCases: user.progress.totalCount,
+      });
+
+      return this.submissionRepository.save(submission);
+    });
+
+    const savedSubmissions = await Promise.all(submissionPromises);
+
+    // 4. 배틀 엔티티 생성 및 저장
+    const winnerSubmission = winner
+      ? savedSubmissions.find((s) => s.userId === winner.userId)
+      : null;
+    const loserSubmission = loser ? savedSubmissions.find((s) => s.userId === loser.userId) : null;
+
+    const battleEntity = new BattleEntity();
+    battleEntity.id = battle.battleId;
+    battleEntity.problemId = battle.problemId;
+    battleEntity.startedAt = battle.startedAt ? new Date(battle.startedAt) : new Date();
+    battleEntity.winnerId = winner?.userId || null;
+    battleEntity.winnerSubmissionId = winnerSubmission?.id || null;
+    battleEntity.loserSubmissionId = loserSubmission?.id || null;
+    battleEntity.playerIds = battle.users.map((u) => u.userId);
+
+    const savedBattle = await this.battleRepository.save(battleEntity);
+
+    return savedBattle;
+  }
 }
