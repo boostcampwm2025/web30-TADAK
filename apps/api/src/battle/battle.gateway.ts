@@ -99,12 +99,11 @@ export class BattleGateway {
   // 타이머 종료 이벤트 처리
   @SubscribeMessage(BATTLE_EVENTS.TIMER_END)
   async handleTimerEnd(@MessageBody() data: { battleId: string; roomId: string }) {
+    const { battleId, roomId: roomIdFromClient } = data;
     try {
-      const { battleId, roomId } = data;
       const battle = await this.battleService.endBattleByTimeout(battleId);
-
-      // 배틀 종료 알림 전송
-      this.emitBattleEnd(roomId, battle.id, battle.winnerId);
+      // 배틀 종료 알림 전송 (배틀 엔티티 기반)
+      this.emitBattleEnd(roomIdFromClient, battle.id, battle.winnerId);
 
       // 시스템 메시지 전송
       const systemMessage: ChatMessage = {
@@ -113,10 +112,14 @@ export class BattleGateway {
         message: '배틀 시간이 종료되었습니다!',
         timestamp: new Date().toISOString(),
       };
-      this.server.to(roomId).emit(SOCKET_EVENT.RECEIVE_CHAT, systemMessage);
+      this.server.to(roomIdFromClient).emit(SOCKET_EVENT.RECEIVE_CHAT, systemMessage);
     } catch (error) {
-      // 이미 종료된 배틀인 경우 무시
-      console.warn('Battle end processing error (might be already ended):', error);
+      // 이미 종료된 배틀이거나 Redis 데이터가 없는 경우(FLUSHALL 등)
+      // 클라이언트가 결과 페이지로 이동할 수 있도록 강제로 이벤트를 보냅니다.
+      console.warn(
+        `[BattleGateway] handleTimerEnd error or battle not found: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      this.server.to(roomIdFromClient).emit(BATTLE_EVENTS.BATTLE_ENDED, { battleId });
     }
   }
 
