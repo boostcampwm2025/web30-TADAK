@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { clampRating, getTierFromRating, RATING_CONFIG } from '@packages/constants/rating';
 import { Glicko2, newProcedure } from 'glicko2.ts';
 import { Repository } from 'typeorm';
 
@@ -19,9 +20,8 @@ export interface RatingUpdateResult {
   oldRd: number;
   newRd: number;
   ratingDelta: number;
+  tier: { tier: string; division: number };
 }
-
-const MIN_RD = 100;
 
 @Injectable()
 export class UserService {
@@ -33,10 +33,10 @@ export class UserService {
     private userRepository: Repository<User>,
   ) {
     this.glicko2 = new Glicko2({
-      tau: 0.5,
-      rating: 1000,
-      rd: 350,
-      vol: 0.06,
+      tau: RATING_CONFIG.TAU,
+      rating: RATING_CONFIG.INITIAL_RATING,
+      rd: RATING_CONFIG.INITIAL_RD,
+      vol: RATING_CONFIG.INITIAL_VOLATILITY,
       volatilityAlgorithm: newProcedure,
     });
   }
@@ -81,28 +81,33 @@ export class UserService {
     // 매치 결과 설정 (승자 기준: 1=승, 0=패, 0.5=무승부)
     const matchResultScore = isDraw ? MatchResult.DRAW : MatchResult.WIN;
 
-    // 레이팅 업데이트
     this.glicko2.updateRatings([[winnerPlayer, loserPlayer, matchResultScore]]);
 
-    // 새 레이팅 계산 (RD는 최소값 제한)
-    const winnerNewRating = Math.round(winnerPlayer.getRating());
-    const winnerNewRd = Math.max(winnerPlayer.getRd(), MIN_RD);
-    const loserNewRating = Math.round(loserPlayer.getRating());
-    const loserNewRd = Math.max(loserPlayer.getRd(), MIN_RD);
+    const winnerNewRating = clampRating(Math.round(winnerPlayer.getRating()));
+    const winnerNewRd = Math.max(winnerPlayer.getRd(), RATING_CONFIG.MIN_RD);
+    const loserNewRating = clampRating(Math.round(loserPlayer.getRating()));
+    const loserNewRd = Math.max(loserPlayer.getRd(), RATING_CONFIG.MIN_RD);
+
+    const winnerNewTier = getTierFromRating(winnerNewRating);
+    const loserNewTier = getTierFromRating(loserNewRating);
 
     // DB 업데이트
     await this.userRepository.update(winnerId, {
       rating: winnerNewRating,
       rd: winnerNewRd,
       volatility: winnerPlayer.getVol(),
+      tier: winnerNewTier,
       wins: isDraw ? winner.wins : winner.wins + 1,
+      draws: isDraw ? winner.draws + 1 : winner.draws,
     });
 
     await this.userRepository.update(loserId, {
       rating: loserNewRating,
       rd: loserNewRd,
       volatility: loserPlayer.getVol(),
+      tier: loserNewTier,
       losses: isDraw ? loser.losses : loser.losses + 1,
+      draws: isDraw ? loser.draws + 1 : loser.draws,
     });
 
     this.logger.log(
@@ -116,6 +121,7 @@ export class UserService {
         oldRd: winner.rd,
         newRd: winnerNewRd,
         ratingDelta: winnerNewRating - winner.rating,
+        tier: winnerNewTier,
       },
       loser: {
         oldRating: loser.rating,
@@ -123,6 +129,7 @@ export class UserService {
         oldRd: loser.rd,
         newRd: loserNewRd,
         ratingDelta: loserNewRating - loser.rating,
+        tier: loserNewTier,
       },
     };
   }
