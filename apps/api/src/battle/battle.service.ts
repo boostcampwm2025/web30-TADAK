@@ -281,6 +281,14 @@ export class BattleService {
       ? lastSubmissions.find((s) => s.odUserId === loserId)?.submission || null
       : null;
 
+    const isDraw = winnerId === null;
+    const finalWinnerId = winnerId || battle.users[0].userId;
+    const finalLoserId = loserId || battle.users[1].userId;
+    this.logger.log(
+      `[endBattle] 점수 업데이트 시작 - finalWinnerId: ${finalWinnerId}, finalLoserId: ${finalLoserId}, isDraw: ${isDraw}`,
+    );
+    const ratingResult = await this.userService.updateRatings(finalWinnerId, finalLoserId, isDraw);
+
     // 4. 배틀 엔티티 생성 및 저장
     const battleEntity = new BattleEntity();
     battleEntity.id = battle.battleId;
@@ -291,17 +299,18 @@ export class BattleService {
     battleEntity.loserSubmissionId = loserSubmission?.id || null;
     battleEntity.playerIds = battle.users.map((u) => u.userId);
 
+    const player1Id = battle.users[0].userId;
+    battleEntity.player1RatingChange =
+      finalWinnerId === player1Id
+        ? ratingResult.winner.ratingDelta
+        : ratingResult.loser.ratingDelta;
+    battleEntity.player2RatingChange =
+      finalWinnerId === player1Id
+        ? ratingResult.loser.ratingDelta
+        : ratingResult.winner.ratingDelta;
+
     const savedBattle = await this.battleRepository.save(battleEntity);
     this.logger.log(`[endBattle] 배틀 엔티티 저장 완료 - savedBattle.id: ${savedBattle.id}`);
-
-    // 4.5 유저 점수 업데이트
-    const isDraw = winnerId === null;
-    const finalWinnerId = winnerId || battle.users[0].userId;
-    const finalLoserId = loserId || battle.users[1].userId;
-    this.logger.log(
-      `[endBattle] 점수 업데이트 시작 - finalWinnerId: ${finalWinnerId}, finalLoserId: ${finalLoserId}, isDraw: ${isDraw}`,
-    );
-    await this.userService.updateRatings(finalWinnerId, finalLoserId, isDraw);
 
     // 5. Redis에서 배틀 데이터 삭제
     this.logger.log(`[endBattle] Redis 배틀 데이터 삭제 시작`);
