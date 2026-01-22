@@ -7,6 +7,7 @@ export interface SubmissionJobPayload {
   language: string;
   type: SubmissionJobType;
   userId?: string;
+  battleId?: string;
   socketId?: string;
 }
 
@@ -29,6 +30,7 @@ export function parseSubmissionJobPayload(payload: unknown): SubmissionJobPayloa
     language,
     type,
     userId: parseOptionalString(data.userId, 'userId'),
+    battleId: parseOptionalString(data.battleId, 'battleId'),
     socketId: parseOptionalString(data.socketId, 'socketId'),
   };
 }

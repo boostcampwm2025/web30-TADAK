@@ -66,6 +66,7 @@ export class SubmissionService {
     problemId: string,
     code: string,
     socketId?: string,
+    battleId?: string,
   ): Promise<void> {
     const submissionDir = path.join(this.submissionsDir, submissionId);
 
@@ -86,6 +87,7 @@ export class SubmissionService {
       memoryLimit: problem.memoryLimit,
       type,
       ...(socketId ? { socketId } : {}),
+      ...(battleId ? { battleId } : {}),
     };
     // TEST 타입의 경우 socketId 저장
     if (socketId) {
