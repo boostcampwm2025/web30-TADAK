@@ -6,6 +6,7 @@ import Redis from 'ioredis';
 import { Repository } from 'typeorm';
 
 import { BattleGateway } from '../battle/battle.gateway';
+import { BattleService } from '../battle/battle.service';
 import { REDIS_CLIENT } from '../redis/redis.module';
 import { RedisKeys } from '../redis/redis-key.constant';
 import { Submission } from '../submission/submission.entity';
@@ -21,6 +22,7 @@ export class PubsubSubscriberService implements OnModuleInit {
     @InjectRepository(Submission) private readonly submissionRepository: Repository<Submission>,
     private readonly pubsubGateway: PubsubGateway,
     @Inject(forwardRef(() => BattleGateway)) private readonly battleGateway: BattleGateway,
+    @Inject(forwardRef(() => BattleService)) private readonly battleService: BattleService,
   ) {
     this.subscriber = this.redisClient.duplicate();
   }
@@ -128,6 +130,18 @@ export class PubsubSubscriberService implements OnModuleInit {
           userId: userInfo.userId,
           username: userInfo.username,
         });
+
+        // 모든 테스트 케이스 통과 시 배틀 즉시 종료
+        if (message.status === 'ACCEPTED' && submission.battleId) {
+          try {
+            await this.battleService.markUserFinished(submission.battleId, userInfo.userId);
+            this.logger.log(
+              `[FINAL_RESULT] Battle ${submission.battleId} ended - user ${userInfo.userId} won`,
+            );
+          } catch (error) {
+            this.logger.error(`[FINAL_RESULT] Failed to end battle ${submission.battleId}`, error);
+          }
+        }
       }
     }
   }
