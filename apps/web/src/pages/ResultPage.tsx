@@ -1,6 +1,5 @@
 import { Home } from 'lucide-react';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import Button from '@/components/Common/Button';
 import Header from '@/components/Header/Header';
@@ -9,7 +8,6 @@ import PlayerCard from '@/components/Result/PlayerCard';
 import ResultHeader from '@/components/Result/ResultHeader';
 
 function ResultPage() {
-  const navigate = useNavigate();
   const [selectedPlayerIndex, setSelectedPlayerIndex] = useState(0);
 
   // TODO: 실제 데이터로 교체
@@ -95,7 +93,7 @@ function ResultPage() {
             variant="muted"
             icon={Home}
             iconSize={20}
-            onClick={() => navigate('/')}
+            onClick={() => (window.location.href = '/')}
             className="gap-2 px-6 py-3 shadow-md"
           >
             홈으로

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BATTLE_CONFIG } from '@packages/constants/battle';
 import { Battle, BattleUser, CreateBattleDTO, UpdateUserCodeDTO } from '@packages/types/battle';
@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 
 import { Battle as BattleEntity } from '@/battle/battle.entity';
 import { BattleRedisService } from '@/battle/battle-redis.service';
+import { MatchingService } from '@/matching/matching.service';
 import { ProblemService } from '@/problem/problem.service';
 import { REDIS_CLIENT } from '@/redis/redis.module';
 import { RedisKeys } from '@/redis/redis-key.constant';
@@ -26,6 +27,8 @@ export class BattleService {
     private readonly submissionRepository: Repository<Submission>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @Inject(forwardRef(() => MatchingService))
+    private readonly matchingService: MatchingService,
   ) {}
 
   async createBattle(dto: CreateBattleDTO): Promise<Battle> {
@@ -117,6 +120,9 @@ export class BattleService {
     battle.users = battle.users.filter((u) => u.userId !== userId);
 
     await this.battleRedisService.updateBattle(battle);
+
+    // 퇴장한 사용자의 매칭 상태 초기화
+    await this.matchingService.clearUserMatchingStatus(userId);
 
     return battle;
   }
@@ -259,6 +265,11 @@ export class BattleService {
 
     // 6. 진행 중인 배틀 목록에서 제거
     await this.redisClient.srem(RedisKeys.activeBattles(), battle.battleId);
+
+    // 7. 참가자들의 매칭 상태 초기화 (재매칭 가능하도록)
+    await Promise.all(
+      battle.users.map((user) => this.matchingService.clearUserMatchingStatus(user.userId)),
+    );
 
     return savedBattle;
   }
