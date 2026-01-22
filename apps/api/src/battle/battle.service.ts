@@ -178,7 +178,8 @@ export class BattleService {
       throw new Error(`Battle not found: ${battleId}`);
     }
 
-    // 2. 승자 결정 (먼저 완료한 사람)
+    // 2. 승자 결정
+    // 먼저 완료한 사람이 있으면 그 사람이 승자
     const finishedUsers = battle.users
       .filter((user) => user.isFinished && user.finishedAt)
       .sort((a, b) => {
@@ -187,21 +188,46 @@ export class BattleService {
         return timeA - timeB;
       });
 
-    const winner = finishedUsers.length > 0 ? finishedUsers[0] : null;
+    let winner = finishedUsers.length > 0 ? finishedUsers[0] : null;
+
+    // 완료한 사람이 없으면 가장 많은 테스트를 통과한 사람이 승자
+    if (!winner) {
+      const sortedByScore = [...battle.users].sort((a, b) => {
+        return b.progress.passedCount - a.progress.passedCount;
+      });
+
+      // 동점 체크: 1등과 2등의 점수가 같으면 무승부 (winner = null)
+      if (
+        sortedByScore.length > 1 &&
+        sortedByScore[0].progress.passedCount === sortedByScore[1].progress.passedCount
+      ) {
+        winner = null;
+      } else {
+        // 점수가 더 높은 사람이 승자 (0점이라도 상대보다 높으면 승자)
+        winner = sortedByScore[0];
+      }
+    }
+
     const loser =
-      finishedUsers.length > 1
-        ? finishedUsers[1]
-        : battle.users.find((u) => u.userId !== winner?.userId);
+      winner && battle.users.length > 1
+        ? battle.users.find((u) => u.userId !== winner.userId)
+        : null;
 
     // 3. 각 참가자의 제출 기록 저장
     const submissionPromises = battle.users.map(async (user) => {
+      // 승패 결과 결정
+      let status = 'FAILED';
+      if (user.isFinished) {
+        status = 'ACCEPTED';
+      }
+
       const submission = this.submissionRepository.create({
         problemId: battle.problemId,
         userId: user.userId,
         battleId: battle.battleId,
         code: user.code,
         language: user.language,
-        status: user.isFinished ? 'ACCEPTED' : 'FAILED',
+        status,
         passedTestCases: user.progress.passedCount,
         totalTestCases: user.progress.totalCount,
       });
