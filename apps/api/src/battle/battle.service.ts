@@ -327,6 +327,8 @@ export class BattleService {
   async endBattleByTimeout(battleId: string): Promise<BattleEntity> {
     // endBattle 메서드가 자동으로 점수 기반 승자 결정을 처리함
     return this.endBattle(battleId);
+  }
+
   // 배틀 결과 조회
   async getBattleResult(battleId: string): Promise<BattleResultResponse> {
     // Battle 정보 조회
@@ -393,7 +395,7 @@ export class BattleService {
     return {
       battle: {
         id: battle.id,
-        winnerId: battle.winnerId,
+        winnerId: battle.winnerId || '',
       },
       players,
     };
