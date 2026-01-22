@@ -228,6 +228,12 @@ export class BattleService {
 
     const savedBattle = await this.battleRepository.save(battleEntity);
 
+    // 5. Redis에서 배틀 데이터 삭제
+    await this.battleRedisService.deleteBattle(battle.battleId, battle.roomId);
+
+    // 6. 진행 중인 배틀 목록에서 제거
+    await this.redisClient.srem(RedisKeys.activeBattles(), battle.battleId);
+
     return savedBattle;
   }
 }
