@@ -1,4 +1,5 @@
 import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { BattleController } from '@/battle/battle.controller';
@@ -21,6 +22,11 @@ import { UserModule } from '@/user/user.module';
     forwardRef(() => RoomModule),
     forwardRef(() => MatchingModule),
   ],
+import { Submission } from '@/submission/submission.entity';
+import { User } from '@/user/user.entity';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([Battle, Submission, User]), ProblemModule],
   controllers: [BattleController],
   providers: [BattleService, BattleRedisService, BattleGateway],
   exports: [BattleService, BattleGateway],

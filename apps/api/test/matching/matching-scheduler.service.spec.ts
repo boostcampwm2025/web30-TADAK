@@ -18,7 +18,7 @@ describe('MatchingSchedulerService', () => {
     userId,
     username: `User${userId}`,
     rating: 1500,
-    tier: { tier: 'GOLD', division: 3 },
+    tier: { tier: 'Gold', division: 3 },
     status: 'MATCHED',
     waitingSince: new Date(),
     socketId: `socket-${userId}`,

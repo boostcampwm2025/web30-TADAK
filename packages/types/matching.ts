@@ -1,5 +1,5 @@
 export type MatchingStatus = 'WAITING' | 'MATCHED' | 'IN_ROOM' | 'CANCELED';
-export type Tier = 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM' | 'DIAMOND' | 'MASTER';
+export type Tier = 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Master';
 export type TierDivision = 1 | 2 | 3 | 4;
 export interface UserTier {
   tier: Tier;

@@ -1,7 +1,14 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BATTLE_CONFIG } from '@packages/constants/battle';
-import { Battle, BattleUser, CreateBattleDTO, UpdateUserCodeDTO } from '@packages/types/battle';
+import {
+  Battle,
+  BattleResultResponse,
+  BattleUser,
+  CreateBattleDTO,
+  UpdateUserCodeDTO,
+} from '@packages/types/battle';
+import { Tier } from '@packages/types/matching';
 import { RoomUser } from '@packages/types/user';
 import Redis from 'ioredis';
 import { Repository } from 'typeorm';
@@ -320,5 +327,75 @@ export class BattleService {
   async endBattleByTimeout(battleId: string): Promise<BattleEntity> {
     // endBattle 메서드가 자동으로 점수 기반 승자 결정을 처리함
     return this.endBattle(battleId);
+  // 배틀 결과 조회
+  async getBattleResult(battleId: string): Promise<BattleResultResponse> {
+    // Battle 정보 조회
+    const battle = await this.battleRepository.findOne({ where: { id: battleId } });
+
+    if (!battle) {
+      throw new Error('배틀 정보를 찾을 수 없습니다.');
+    }
+
+    // 참가자 목록
+    const playerIds = battle.playerIds;
+
+    // 제출 조회
+    const submissionIds = [battle.winnerSubmissionId, battle.loserSubmissionId].filter(Boolean);
+    const submissions =
+      submissionIds.length > 0
+        ? await this.submissionRepository
+            .createQueryBuilder('submission')
+            .whereInIds(submissionIds)
+            .getMany()
+        : [];
+
+    const submissionMap = new Map(submissions.map((sub) => [sub.userId, sub]));
+
+    // User 정보 조회
+    const users = await this.userRepository
+      .createQueryBuilder('user')
+      .whereInIds(playerIds)
+      .getMany();
+
+    const userMap = new Map(users.map((user) => [user.id, user]));
+
+    const players = playerIds.map((userId) => {
+      const user = userMap.get(userId);
+      const submission = submissionMap.get(userId);
+
+      if (!user) {
+        console.warn(`유저 정보 없음 (ID: ${userId})`);
+      }
+
+      let time = '-';
+      if (submission) {
+        const timeElapsed = submission.createdAt.getTime() - battle.startedAt.getTime();
+        const minutes = Math.floor(timeElapsed / 60000);
+        const seconds = Math.floor((timeElapsed % 60000) / 1000);
+        time = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      }
+
+      const tier = (user?.tier?.tier || 'Bronze') as Tier;
+
+      return {
+        userId,
+        username: user?.username || 'Unknown',
+        avatarUrl: user?.avatarUrl || '',
+        tier,
+        rate: user?.rating || 0,
+        score: submission?.passedTestCases || 0,
+        totalScore: submission?.totalTestCases || 20,
+        time,
+        code: submission?.code || '',
+      };
+    });
+
+    return {
+      battle: {
+        id: battle.id,
+        winnerId: battle.winnerId,
+      },
+      players,
+    };
   }
 }
