@@ -11,13 +11,13 @@ export class Battle {
   @Column()
   startedAt: Date;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   winnerId: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   winnerSubmissionId: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   loserSubmissionId: string | null;
 
   @Column('simple-array')
