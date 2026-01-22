@@ -104,10 +104,7 @@ export class BattleGateway {
       const battle = await this.battleService.endBattleByTimeout(battleId);
 
       // 배틀 종료 알림 전송
-      this.server.to(roomId).emit(BATTLE_EVENTS.BATTLE_ENDED, {
-        battleId: battle.id,
-        winnerId: battle.winnerId,
-      });
+      this.emitBattleEnd(roomId, battle.id, battle.winnerId);
 
       // 시스템 메시지 전송
       const systemMessage: ChatMessage = {
@@ -121,5 +118,13 @@ export class BattleGateway {
       // 이미 종료된 배틀인 경우 무시
       console.warn('Battle end processing error (might be already ended):', error);
     }
+  }
+
+  // 배틀 종료 이벤트 브로드캐스트
+  emitBattleEnd(roomId: string, battleId: string, winnerId: string | null) {
+    this.server.to(roomId).emit(BATTLE_EVENTS.BATTLE_ENDED, {
+      battleId,
+      winnerId,
+    });
   }
 }

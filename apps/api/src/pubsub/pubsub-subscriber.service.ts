@@ -134,10 +134,16 @@ export class PubsubSubscriberService implements OnModuleInit {
         // 모든 테스트 케이스 통과 시 배틀 즉시 종료
         if (message.status === 'ACCEPTED' && submission.battleId) {
           try {
-            await this.battleService.markUserFinished(submission.battleId, userInfo.userId);
+            const battle = await this.battleService.markUserFinished(
+              submission.battleId,
+              userInfo.userId,
+            );
             this.logger.log(
               `[FINAL_RESULT] Battle ${submission.battleId} ended - user ${userInfo.userId} won`,
             );
+
+            // 배틀 종료 이벤트 브로드캐스트
+            this.battleGateway.emitBattleEnd(userInfo.roomId, battle.id, battle.winnerId);
           } catch (error) {
             this.logger.error(`[FINAL_RESULT] Failed to end battle ${submission.battleId}`, error);
           }
