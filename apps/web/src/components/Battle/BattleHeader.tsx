@@ -42,7 +42,10 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
 
       if (remaining <= 0) {
         // 타이머 종료 처리
-        navigate(`/result/${battleId}`);
+        const socket = useBattleSocketStore.getState().socket;
+        if (socket && battleId) {
+          socket.emit('timer-end', { battleId, roomId });
+        }
       }
     };
 
