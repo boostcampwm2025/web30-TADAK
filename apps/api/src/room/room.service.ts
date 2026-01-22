@@ -211,6 +211,15 @@ export class RoomService {
     this.logger.log(`Deleted room ${roomId}`);
   }
 
+  async completeBattleRoom(roomId: string): Promise<void> {
+    const room = await this.getRoom(roomId);
+    if (!room) return;
+
+    room.status = 'completed';
+    await this.saveRoom(room);
+    this.logger.log(`Completed battle in room ${roomId}`);
+  }
+
   // 클라이언트에 노출할 때 socketId 등 민감 정보를 제거한 방 데이터
 
   toPublicRooms(rooms: Room[]): PublicRoom[] {

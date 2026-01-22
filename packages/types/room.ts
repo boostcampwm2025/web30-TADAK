@@ -1,6 +1,6 @@
 import type { RoomUser, UserRole } from './user';
 
-export type RoomStatus = 'waiting' | 'in-battle';
+export type RoomStatus = 'waiting' | 'in-battle' | 'completed';
 
 export interface Room {
   roomId: string;
