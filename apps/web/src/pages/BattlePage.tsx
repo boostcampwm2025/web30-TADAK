@@ -1,7 +1,7 @@
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { ProblemDataPayload } from '@shared/types/problem';
 import { useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import BattleHeader from '@/components/Battle/BattleHeader';
 import BattlePlayer from '@/components/Battle/Player/BattlePlayer';
@@ -13,6 +13,7 @@ import { useRoomStore } from '@/stores/roomStore';
 import { useUserStore } from '@/stores/userStore';
 
 function BattlePage() {
+  const navigate = useNavigate();
   const { roomId: roomIdParam } = useParams<{ roomId?: string }>();
   const [searchParams] = useSearchParams();
   const isSpectator = searchParams.get('mode') === 'spectator';
@@ -43,8 +44,17 @@ function BattlePage() {
     };
 
     socket.on(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
+
+    // 배틀 종료 이벤트 처리
+    const handleBattleEnded = (data: { battleId: string }) => {
+      // 결과 페이지로 이동
+      navigate(`/result/${data.battleId}`);
+    };
+    socket.on('battle-ended', handleBattleEnded);
+
     return () => {
       socket.off(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
+      socket.off('battle-ended', handleBattleEnded);
     };
   }, [connect, setProblem]);
 
