@@ -96,4 +96,30 @@ export class BattleGateway {
 
     this.server.to(roomId).emit(SOCKET_EVENT.RECEIVE_CHAT, systemMessage);
   }
+  // 타이머 종료 이벤트 처리
+  @SubscribeMessage(BATTLE_EVENTS.TIMER_END)
+  async handleTimerEnd(@MessageBody() data: { battleId: string; roomId: string }) {
+    try {
+      const { battleId, roomId } = data;
+      const battle = await this.battleService.endBattleByTimeout(battleId);
+
+      // 배틀 종료 알림 전송
+      this.server.to(roomId).emit(BATTLE_EVENTS.BATTLE_ENDED, {
+        battleId: battle.id,
+        winnerId: battle.winnerId,
+      });
+
+      // 시스템 메시지 전송
+      const systemMessage: ChatMessage = {
+        type: CHAT_TYPE.SYSTEM,
+        nickname: 'System',
+        message: '배틀 시간이 종료되었습니다!',
+        timestamp: new Date().toISOString(),
+      };
+      this.server.to(roomId).emit(SOCKET_EVENT.RECEIVE_CHAT, systemMessage);
+    } catch (error) {
+      // 이미 종료된 배틀인 경우 무시
+      console.warn('Battle end processing error (might be already ended):', error);
+    }
+  }
 }

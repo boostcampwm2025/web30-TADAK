@@ -30,6 +30,9 @@ export const BATTLE_EVENTS = {
   // 유저 진행률
   USER_TEST_RESULT: 'user-test-result',
 
+  // 타이머 종료
+  TIMER_END: 'timer-end',
+
   // 배틀 상태 업데이트
   BATTLE_STATUS_UPDATE: 'battle-status-update',
 } as const;
