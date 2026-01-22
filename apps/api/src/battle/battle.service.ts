@@ -371,15 +371,26 @@ export class BattleService {
     // 참가자 목록
     const playerIds = battle.playerIds;
 
-    // 제출 조회
+    // 제출 조회: 승부가 난 경우 id로 조회, 무승부인 경우 각 유저별 최신 제출 조회
     const submissionIds = [battle.winnerSubmissionId, battle.loserSubmissionId].filter(Boolean);
-    const submissions =
-      submissionIds.length > 0
-        ? await this.submissionRepository
-            .createQueryBuilder('submission')
-            .whereInIds(submissionIds)
-            .getMany()
-        : [];
+    let submissions: Submission[];
+
+    if (submissionIds.length > 0) {
+      submissions = await this.submissionRepository
+        .createQueryBuilder('submission')
+        .whereInIds(submissionIds)
+        .getMany();
+    } else {
+      submissions = await Promise.all(
+        playerIds.map(async (userId) => {
+          const submission = await this.submissionRepository.findOne({
+            where: { battleId, userId },
+            order: { createdAt: 'DESC' },
+          });
+          return submission;
+        }),
+      ).then((results) => results.filter((sub) => sub !== null));
+    }
 
     const submissionMap = new Map(submissions.map((sub) => [sub.userId, sub]));
 
