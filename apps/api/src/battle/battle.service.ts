@@ -200,74 +200,7 @@ export class BattleService {
       throw new Error(`Battle not found: ${battleId}`);
     }
 
-    // 2. 승자 결정
-    // 먼저 완료한 사람이 있으면 그 사람이 승자
-    const finishedUsers = battle.users
-      .filter((user) => user.isFinished && user.finishedAt)
-      .sort((a, b) => {
-        const timeA = a.finishedAt ? new Date(a.finishedAt).getTime() : Infinity;
-        const timeB = b.finishedAt ? new Date(b.finishedAt).getTime() : Infinity;
-        return timeA - timeB;
-      });
-
-    let winner = finishedUsers.length > 0 ? finishedUsers[0] : null;
-    this.logger.log(
-      `[endBattle] 완료한 유저 목록: ${JSON.stringify(finishedUsers.map((u) => u.userId))}`,
-    );
-
-    // 완료한 사람이 없으면 가장 많은 테스트를 통과한 사람이 승자
-    if (!winner) {
-      const sortedByScore = [...battle.users].sort((a, b) => {
-        return b.progress.passedCount - a.progress.passedCount;
-      });
-
-      // 동점 체크: 1등과 2등의 점수가 같으면 무승부 (winner = null)
-      if (
-        sortedByScore.length > 1 &&
-        sortedByScore[0].progress.passedCount === sortedByScore[1].progress.passedCount
-      ) {
-        winner = null;
-      } else {
-        // 점수가 더 높은 사람이 승자 (0점이라도 상대보다 높으면 승자)
-        winner = sortedByScore[0];
-      }
-    }
-
-    const loser =
-      winner && battle.users.length > 1
-        ? battle.users.find((u) => u.userId !== winner.userId)
-        : null;
-
-    this.logger.log(
-      `[endBattle] 승자 결정 완료 - winner: ${winner?.userId || 'null'}, loser: ${loser?.userId || 'null'}`,
-    );
-
-    // 3. 각 참가자의 제출 기록 저장
-    // const submissionPromises = battle.users.map(async (user) => {
-    //   // 승패 결과 결정
-    //   let status = 'FAILED';
-    //   if (user.isFinished) {
-    //     status = 'ACCEPTED';
-    //   }
-
-    //   const submission = this.submissionRepository.create({
-    //     problemId: battle.problemId,
-    //     userId: user.userId,
-    //     battleId: battle.battleId,
-    //     code: user.code,
-    //     language: user.language,
-    //     status,
-    //     passedTestCases: user.progress.passedCount,
-    //     totalTestCases: user.progress.totalCount,
-    //   });
-
-    //   return this.submissionRepository.save(submission);
-    // });
-
-    // const savedSubmissions = await Promise.all(submissionPromises);
-    // this.logger.log(`[endBattle] 제출 기록 저장 완료 - submissions: ${JSON.stringify(savedSubmissions.map((s) => ({ id: s.id, odUserId: s.userId, status: s.status })))}`);
-
-    // 3. 각 참가자의 마지막 제출 기록 조회
+    // 2. 각 참가자의 마지막 제출 기록 조회
     const lastSubmissions = await Promise.all(
       battle.users.map(async (user) => {
         const submission = await this.submissionRepository.findOne({
@@ -281,29 +214,79 @@ export class BattleService {
       `[endBattle] 마지막 제출 조회 완료 - ${JSON.stringify(
         lastSubmissions.map((s) => ({
           odUserId: s.odUserId,
-          odSubmissionId: s.submission?.id || null,
+          submissionId: s.submission?.id || null,
+          passedTestCases: s.submission?.passedTestCases || 0,
+          status: s.submission?.status || null,
         })),
       )}`,
     );
 
-    const winnerSubmission = winner
-      ? lastSubmissions.find((s) => s.odUserId === winner.userId)?.submission || null
+    // 3. 승자 결정 (submission 기반)
+    // ACCEPTED 상태인 사람이 있으면 그 사람이 승자 (먼저 제출한 사람 우선)
+    const acceptedSubmissions = lastSubmissions
+      .filter((s) => s.submission?.status === 'ACCEPTED')
+      .sort((a, b) => {
+        const timeA = a.submission?.createdAt
+          ? new Date(a.submission.createdAt).getTime()
+          : Infinity;
+        const timeB = b.submission?.createdAt
+          ? new Date(b.submission.createdAt).getTime()
+          : Infinity;
+        return timeA - timeB;
+      });
+
+    let winnerId: string | null = null;
+    let loserId: string | null = null;
+
+    if (acceptedSubmissions.length > 0) {
+      // ACCEPTED가 있으면 먼저 ACCEPTED한 사람이 승자
+      winnerId = acceptedSubmissions[0].odUserId;
+      loserId = battle.users.find((u) => u.userId !== winnerId)?.userId || null;
+      this.logger.log(`[endBattle] ACCEPTED 기준 승자 결정 - winnerId: ${winnerId}`);
+    } else {
+      // ACCEPTED가 없으면 passedTestCases가 많은 사람이 승자
+      const sortedByScore = [...lastSubmissions].sort((a, b) => {
+        const scoreA = a.submission?.passedTestCases || 0;
+        const scoreB = b.submission?.passedTestCases || 0;
+        return scoreB - scoreA;
+      });
+
+      const firstScore = sortedByScore[0]?.submission?.passedTestCases || 0;
+      const secondScore = sortedByScore[1]?.submission?.passedTestCases || 0;
+
+      if (firstScore === secondScore) {
+        // 동점이면 무승부
+        winnerId = null;
+        loserId = null;
+        this.logger.log(
+          `[endBattle] 동점 무승부 - firstScore: ${firstScore}, secondScore: ${secondScore}`,
+        );
+      } else {
+        winnerId = sortedByScore[0].odUserId;
+        loserId = sortedByScore[1]?.odUserId || null;
+        this.logger.log(
+          `[endBattle] 점수 기준 승자 결정 - winnerId: ${winnerId}, firstScore: ${firstScore}, secondScore: ${secondScore}`,
+        );
+      }
+    }
+
+    this.logger.log(
+      `[endBattle] 최종 승자 결정 완료 - winnerId: ${winnerId || 'null'}, loserId: ${loserId || 'null'}`,
+    );
+
+    const winnerSubmission = winnerId
+      ? lastSubmissions.find((s) => s.odUserId === winnerId)?.submission || null
       : null;
-    const loserSubmission = loser
-      ? lastSubmissions.find((s) => s.odUserId === loser.userId)?.submission || null
+    const loserSubmission = loserId
+      ? lastSubmissions.find((s) => s.odUserId === loserId)?.submission || null
       : null;
 
     // 4. 배틀 엔티티 생성 및 저장
-    // const winnerSubmission = winner
-    //   ? savedSubmissions.find((s) => s.userId === winner.userId)
-    //   : null;
-    // const loserSubmission = loser ? savedSubmissions.find((s) => s.userId === loser.userId) : null;
-
     const battleEntity = new BattleEntity();
     battleEntity.id = battle.battleId;
     battleEntity.problemId = battle.problemId;
     battleEntity.startedAt = battle.startedAt ? new Date(battle.startedAt) : new Date();
-    battleEntity.winnerId = winner?.userId || null;
+    battleEntity.winnerId = winnerId;
     battleEntity.winnerSubmissionId = winnerSubmission?.id || null;
     battleEntity.loserSubmissionId = loserSubmission?.id || null;
     battleEntity.playerIds = battle.users.map((u) => u.userId);
@@ -312,16 +295,13 @@ export class BattleService {
     this.logger.log(`[endBattle] 배틀 엔티티 저장 완료 - savedBattle.id: ${savedBattle.id}`);
 
     // 4.5 유저 점수 업데이트
-    let winnerId: string = '';
-    let loserId: string = '';
-    if (winner && loser) {
-      winnerId = winner.userId;
-      loserId = loser.userId;
-    } else {
-      winnerId = battle.users[0].userId;
-      loserId = battle.users[1].userId;
-    }
-    await this.userService.updateRatings(winnerId, loserId, winner ? false : true);
+    const isDraw = winnerId === null;
+    const finalWinnerId = winnerId || battle.users[0].userId;
+    const finalLoserId = loserId || battle.users[1].userId;
+    this.logger.log(
+      `[endBattle] 점수 업데이트 시작 - finalWinnerId: ${finalWinnerId}, finalLoserId: ${finalLoserId}, isDraw: ${isDraw}`,
+    );
+    await this.userService.updateRatings(finalWinnerId, finalLoserId, isDraw);
 
     // 5. Redis에서 배틀 데이터 삭제
     this.logger.log(`[endBattle] Redis 배틀 데이터 삭제 시작`);
