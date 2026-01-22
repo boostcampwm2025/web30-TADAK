@@ -8,7 +8,7 @@ export class Battle {
   @Column()
   problemId: string;
 
-  @Column()
+  @Column({ type: 'timestamp' })
   startedAt: Date;
 
   @Column({ nullable: true })
@@ -23,6 +23,6 @@ export class Battle {
   @Column('simple-array')
   playerIds: string[];
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 }
