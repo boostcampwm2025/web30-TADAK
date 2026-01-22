@@ -262,4 +262,38 @@ export class BattleService {
 
     return savedBattle;
   }
+
+  /**
+   * 사용자가 모든 테스트를 통과했을 때 호출 (즉시 승리)
+   * @param battleId 배틀 ID
+   * @param userId 완료한 사용자 ID
+   */
+  async markUserFinished(battleId: string, userId: string): Promise<BattleEntity> {
+    const battle = await this.battleRedisService.getBattle(battleId);
+    if (!battle) {
+      throw new Error(`Battle not found: ${battleId}`);
+    }
+
+    const user = battle.users.find((u) => u.userId === userId);
+    if (!user) {
+      throw new Error(`User not found in battle: ${userId}`);
+    }
+
+    // Redis 업데이트
+    user.isFinished = true;
+    user.finishedAt = new Date();
+    await this.battleRedisService.updateBattle(battle);
+
+    // 한 명이라도 완료하면 즉시 배틀 종료
+    return this.endBattle(battleId);
+  }
+
+  /**
+   * 타이머 종료 시 호출 (점수 기반 승리)
+   * @param battleId 배틀 ID
+   */
+  async endBattleByTimeout(battleId: string): Promise<BattleEntity> {
+    // endBattle 메서드가 자동으로 점수 기반 승자 결정을 처리함
+    return this.endBattle(battleId);
+  }
 }
