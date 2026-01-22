@@ -11,9 +11,6 @@ export class Submission {
   @Column()
   userId: string;
 
-  @Column({ nullable: true })
-  battleId: string;
-
   @Column({ type: 'text' })
   code: string;
 
