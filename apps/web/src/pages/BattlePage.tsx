@@ -1,3 +1,4 @@
+import { BATTLE_EVENTS } from '@shared/constants/battle';
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { ProblemDataPayload } from '@shared/types/problem';
 import { useEffect } from 'react';
@@ -45,18 +46,28 @@ function BattlePage() {
 
     socket.on(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
 
-    // 배틀 종료 이벤트 처리
-    const handleBattleEnded = (data: { battleId: string }) => {
-      // 결과 페이지로 이동
-      navigate(`/result/${data.battleId}`);
-    };
-    socket.on('battle-ended', handleBattleEnded);
-
     return () => {
       socket.off(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
-      socket.off('battle-ended', handleBattleEnded);
     };
   }, [connect, setProblem]);
+
+  // 배틀 종료 이벤트 리스너 분리
+  useEffect(() => {
+    const socket = connect();
+    const handleBattleEnded = (data: { battleId: string }) => {
+      if (data.battleId) {
+        navigate(`/result/${data.battleId}`);
+      } else {
+        console.error('[BattlePage] battleId missing in BATTLE_ENDED payload');
+      }
+    };
+
+    socket.on(BATTLE_EVENTS.BATTLE_ENDED, handleBattleEnded);
+
+    return () => {
+      socket.off(BATTLE_EVENTS.BATTLE_ENDED, handleBattleEnded);
+    };
+  }, [connect, navigate, roomId]);
 
   useEffect(() => {
     const desiredRole = isSpectator ? 'spectator' : 'player';
