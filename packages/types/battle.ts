@@ -75,3 +75,21 @@ export interface UserFinishedPayload {
   userId: string;
   username?: string;
 }
+
+export interface BattleResultResponse {
+  battle: {
+    id: string;
+    winnerId: string;
+  };
+  players: Array<{
+    userId: string;
+    username: string;
+    avatarUrl: string;
+    tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Ruby' | 'Master';
+    rate: number;
+    score: number;
+    totalScore: number;
+    time: string;
+    code: string;
+  }>;
+}

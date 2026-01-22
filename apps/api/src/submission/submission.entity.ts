@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Submission {
@@ -31,4 +31,7 @@ export class Submission {
 
   @Column({ type: 'int', nullable: true })
   memoryUsed: number;
+
+  @CreateDateColumn({ type: 'timestamp' })
+  createdAt: Date;
 }
