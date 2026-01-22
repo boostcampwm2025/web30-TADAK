@@ -11,6 +11,7 @@ interface PlayerCardProps {
     score: number;
     totalScore: number;
     time: string;
+    ratingChange: number;
   };
   rank: number;
   isWinner: boolean;
@@ -19,8 +20,7 @@ interface PlayerCardProps {
 }
 
 function PlayerCard({ player, isWinner, isSelected, onClick }: PlayerCardProps) {
-  const { username, avatarUrl, tier, rate, score, totalScore, time } = player;
-  const scoreChange = isWinner ? 25 : -25;
+  const { username, avatarUrl, tier, rate, score, totalScore, time, ratingChange } = player;
 
   return (
     <button
@@ -57,8 +57,8 @@ function PlayerCard({ player, isWinner, isSelected, onClick }: PlayerCardProps) 
           </div>
           <div>
             <div className={`text-3xl font-bold ${isWinner ? 'text-green-05' : 'text-pink-05'}`}>
-              {scoreChange > 0 ? '+' : ''}
-              {scoreChange}
+              {ratingChange > 0 ? '+' : ''}
+              {ratingChange}
             </div>
             <div className="text-sm font-semibold text-base-secondary">랭크 변동</div>
           </div>
