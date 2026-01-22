@@ -8,6 +8,7 @@ import {
   CreateBattleDTO,
   UpdateUserCodeDTO,
 } from '@packages/types/battle';
+import { Tier } from '@packages/types/matching';
 import { RoomUser } from '@packages/types/user';
 import Redis from 'ioredis';
 import { Repository } from 'typeorm';
@@ -220,14 +221,7 @@ export class BattleService {
         time = `${minutes}:${seconds.toString().padStart(2, '0')}`;
       }
 
-      const tier = (user?.tier?.tier || 'Bronze') as
-        | 'Bronze'
-        | 'Silver'
-        | 'Gold'
-        | 'Platinum'
-        | 'Diamond'
-        | 'Ruby'
-        | 'Master';
+      const tier = (user?.tier?.tier || 'Bronze') as Tier;
 
       return {
         userId,
