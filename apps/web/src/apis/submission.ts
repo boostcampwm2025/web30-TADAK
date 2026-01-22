@@ -4,6 +4,7 @@ export type SubmissionRequest = {
   problemId: string;
   code: string;
   language: string;
+  battleId?: string;
 };
 
 export type SubmissionResponse = {
