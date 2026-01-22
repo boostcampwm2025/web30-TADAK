@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateSubmissionDto {
   @IsNotEmpty()
@@ -12,4 +12,8 @@ export class CreateSubmissionDto {
   @IsNotEmpty()
   @IsString()
   language: string;
+
+  @IsOptional()
+  @IsString()
+  battleId?: string;
 }
