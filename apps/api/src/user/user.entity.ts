@@ -17,8 +17,8 @@ export class User {
   @Column({ type: 'text', nullable: true })
   refreshToken: string | null;
 
-  @Column({ type: 'int', default: 1000 })
-  rating: number = 1000;
+  @Column({ type: 'int', default: 1500 })
+  rating: number = 1500;
 
   @Column({ type: 'float', default: 350 })
   rd: number = 350;
@@ -27,13 +27,16 @@ export class User {
   volatility: number = 0.06;
 
   @Column({ type: 'json' })
-  tier: { tier: string; division: number } = { tier: 'BRONZE', division: 4 };
+  tier: { tier: string; division: number } = { tier: 'SILVER', division: 2 };
 
   @Column({ type: 'int', default: 0 })
   wins: number;
 
   @Column({ type: 'int', default: 0 })
   losses: number;
+
+  @Column({ type: 'int', default: 0 })
+  draws: number;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
