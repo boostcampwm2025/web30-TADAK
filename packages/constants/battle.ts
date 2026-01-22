@@ -3,8 +3,8 @@ export const BATTLE_CONFIG = {
   DEFAULT_LANGUAGE: 'javascript',
 } as const;
 
-export const DEFAULT_CODE_TEMPLATE = `function solution() {
-  // TODO
+export const DEFAULT_CODE_TEMPLATE = `function solution(input) {
+  // TODO: 문제 풀이 로직 작성
 }`;
 
 export const BATTLE_EVENTS = {

@@ -9,6 +9,7 @@ import BattlePlayer from '@/components/Battle/Player/BattlePlayer';
 import BattleSpectator from '@/components/Battle/Spectator/BattleSpectator';
 import { useTheme } from '@/hooks/useTheme';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
+import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useRoomStore } from '@/stores/roomStore';
 import { useUserStore } from '@/stores/userStore';
@@ -26,6 +27,7 @@ function BattlePage() {
   const setTimeOffset = useBattleProblemStore((state) => state.setTimeOffset);
   const user = useUserStore((state) => state.user);
   const me = useRoomStore((state) => state.me);
+  const resetProgresses = useBattleProgressStore((state) => state.resetProgresses);
 
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
 
@@ -55,6 +57,15 @@ function BattlePage() {
   useEffect(() => {
     const socket = connect();
     const handleBattleEnded = (data: { battleId: string }) => {
+      // 배틀 종료 시 세션 스토리지 정리
+      try {
+        sessionStorage.removeItem('battle-session');
+        sessionStorage.removeItem('battle-progress');
+      } catch {
+        // ignore cleanup failures
+      }
+      resetProgresses();
+
       if (data.battleId) {
         navigate(`/result/${data.battleId}`);
       } else {
@@ -67,7 +78,7 @@ function BattlePage() {
     return () => {
       socket.off(BATTLE_EVENTS.BATTLE_ENDED, handleBattleEnded);
     };
-  }, [connect, navigate, roomId]);
+  }, [connect, navigate, resetProgresses, roomId]);
 
   useEffect(() => {
     const desiredRole = isSpectator ? 'spectator' : 'player';
