@@ -23,6 +23,12 @@ function BattlePage() {
   const resumeSession = useBattleSocketStore((state) => state.resumeSession);
   const connect = useBattleSocketStore((state) => state.connect);
   const joinRoom = useBattleSocketStore((state) => state.joinRoom);
+  const subscribeRoomAvailability = useBattleSocketStore(
+    (state) => state.subscribeRoomAvailability,
+  );
+  const unsubscribeRoomAvailability = useBattleSocketStore(
+    (state) => state.unsubscribeRoomAvailability,
+  );
   const setProblem = useBattleProblemStore((state) => state.setProblem);
   const setTimeOffset = useBattleProblemStore((state) => state.setTimeOffset);
   const user = useUserStore((state) => state.user);
@@ -97,6 +103,16 @@ function BattlePage() {
     };
     attempt();
   }, [me, resumeSession, joinRoom, roomId, isSpectator, user?.avatarUrl, user?.id, user?.username]);
+
+  // 관전자 수 및 인원 변동을 수신하기 위한 구독
+  useEffect(() => {
+    if (!roomId) return;
+
+    subscribeRoomAvailability(roomId);
+    return () => {
+      unsubscribeRoomAvailability();
+    };
+  }, [roomId, subscribeRoomAvailability, unsubscribeRoomAvailability]);
 
   useEffect(() => {
     const socket = connect();
