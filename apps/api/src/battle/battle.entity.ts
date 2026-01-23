@@ -23,6 +23,12 @@ export class Battle {
   @Column('simple-array')
   playerIds: string[];
 
+  @Column({ type: 'int', nullable: true })
+  player1RatingChange: number | null;
+
+  @Column({ type: 'int', nullable: true })
+  player2RatingChange: number | null;
+
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 }

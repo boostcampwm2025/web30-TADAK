@@ -281,6 +281,14 @@ export class BattleService {
       ? lastSubmissions.find((s) => s.odUserId === loserId)?.submission || null
       : null;
 
+    const isDraw = winnerId === null;
+    const finalWinnerId = winnerId || battle.users[0].userId;
+    const finalLoserId = loserId || battle.users[1].userId;
+    this.logger.log(
+      `[endBattle] 점수 업데이트 시작 - finalWinnerId: ${finalWinnerId}, finalLoserId: ${finalLoserId}, isDraw: ${isDraw}`,
+    );
+    const ratingResult = await this.userService.updateRatings(finalWinnerId, finalLoserId, isDraw);
+
     // 4. 배틀 엔티티 생성 및 저장
     const battleEntity = new BattleEntity();
     battleEntity.id = battle.battleId;
@@ -291,17 +299,18 @@ export class BattleService {
     battleEntity.loserSubmissionId = loserSubmission?.id || null;
     battleEntity.playerIds = battle.users.map((u) => u.userId);
 
+    const player1Id = battle.users[0].userId;
+    battleEntity.player1RatingChange =
+      finalWinnerId === player1Id
+        ? ratingResult.winner.ratingDelta
+        : ratingResult.loser.ratingDelta;
+    battleEntity.player2RatingChange =
+      finalWinnerId === player1Id
+        ? ratingResult.loser.ratingDelta
+        : ratingResult.winner.ratingDelta;
+
     const savedBattle = await this.battleRepository.save(battleEntity);
     this.logger.log(`[endBattle] 배틀 엔티티 저장 완료 - savedBattle.id: ${savedBattle.id}`);
-
-    // 4.5 유저 점수 업데이트
-    const isDraw = winnerId === null;
-    const finalWinnerId = winnerId || battle.users[0].userId;
-    const finalLoserId = loserId || battle.users[1].userId;
-    this.logger.log(
-      `[endBattle] 점수 업데이트 시작 - finalWinnerId: ${finalWinnerId}, finalLoserId: ${finalLoserId}, isDraw: ${isDraw}`,
-    );
-    await this.userService.updateRatings(finalWinnerId, finalLoserId, isDraw);
 
     // 5. Redis에서 배틀 데이터 삭제
     this.logger.log(`[endBattle] Redis 배틀 데이터 삭제 시작`);
@@ -371,15 +380,26 @@ export class BattleService {
     // 참가자 목록
     const playerIds = battle.playerIds;
 
-    // 제출 조회
+    // 제출 조회: 승부가 난 경우 id로 조회, 무승부인 경우 각 유저별 최신 제출 조회
     const submissionIds = [battle.winnerSubmissionId, battle.loserSubmissionId].filter(Boolean);
-    const submissions =
-      submissionIds.length > 0
-        ? await this.submissionRepository
-            .createQueryBuilder('submission')
-            .whereInIds(submissionIds)
-            .getMany()
-        : [];
+    let submissions: Submission[];
+
+    if (submissionIds.length > 0) {
+      submissions = await this.submissionRepository
+        .createQueryBuilder('submission')
+        .whereInIds(submissionIds)
+        .getMany();
+    } else {
+      submissions = await Promise.all(
+        playerIds.map(async (userId) => {
+          const submission = await this.submissionRepository.findOne({
+            where: { battleId, userId },
+            order: { createdAt: 'DESC' },
+          });
+          return submission;
+        }),
+      ).then((results) => results.filter((sub) => sub !== null));
+    }
 
     const submissionMap = new Map(submissions.map((sub) => [sub.userId, sub]));
 
@@ -391,7 +411,7 @@ export class BattleService {
 
     const userMap = new Map(users.map((user) => [user.id, user]));
 
-    const players = playerIds.map((userId) => {
+    const players = playerIds.map((userId, index) => {
       const user = userMap.get(userId);
       const submission = submissionMap.get(userId);
 
@@ -409,6 +429,9 @@ export class BattleService {
 
       const tier = (user?.tier?.tier || 'Bronze') as Tier;
 
+      const ratingChange =
+        index === 0 ? battle.player1RatingChange || 0 : battle.player2RatingChange || 0;
+
       return {
         userId,
         username: user?.username || 'Unknown',
@@ -419,6 +442,7 @@ export class BattleService {
         totalScore: submission?.totalTestCases || 20,
         time,
         code: submission?.code || '',
+        ratingChange,
       };
     });
 
