@@ -19,7 +19,6 @@ import { MatchingService } from '@/matching/matching.service';
 import { ProblemService } from '@/problem/problem.service';
 import { REDIS_CLIENT } from '@/redis/redis.module';
 import { RedisKeys } from '@/redis/redis-key.constant';
-import { RoomService } from '@/room/room.service';
 import { Submission } from '@/submission/submission.entity';
 import { User } from '@/user/user.entity';
 import { UserService } from '@/user/user.service';
@@ -41,8 +40,6 @@ export class BattleService {
     @Inject(forwardRef(() => MatchingService))
     private readonly matchingService: MatchingService,
     private readonly userService: UserService,
-    @Inject(forwardRef(() => RoomService))
-    private readonly roomService: RoomService,
   ) {}
 
   async createBattle(dto: CreateBattleDTO): Promise<Battle> {
@@ -75,7 +72,7 @@ export class BattleService {
       status: 'running',
       config: {
         // duration: problem.battleTimeLimit || BATTLE_CONFIG.DURATION,
-        duration: 10,
+        duration: 5 * 60,
       },
       startedAt: new Date(),
       users,
@@ -179,8 +176,6 @@ export class BattleService {
     if (battleId) {
       await this.battleRedisService.deleteBattle(battleId, roomId);
     }
-    // 방 데이터도 함께 삭제
-    await this.roomService.deleteRoom(roomId);
   }
 
   async getSocketIdByUserId(userId: string): Promise<string | null> {
@@ -321,11 +316,6 @@ export class BattleService {
     this.logger.log(`[endBattle] Redis 배틀 데이터 삭제 시작`);
     await this.battleRedisService.deleteBattle(battle.battleId, battle.roomId);
     this.logger.log(`[endBattle] Redis 배틀 데이터 삭제 완료`);
-
-    // 5.1. Redis에서 방 데이터 삭제
-    this.logger.log(`[endBattle] Redis 방 데이터 삭제 시작`);
-    await this.roomService.deleteRoom(battle.roomId);
-    this.logger.log(`[endBattle] Redis 방 데이터 삭제 완료`);
 
     // 6. 진행 중인 배틀 목록에서 제거
     await this.redisClient.srem(RedisKeys.activeBattles(), battle.battleId);
