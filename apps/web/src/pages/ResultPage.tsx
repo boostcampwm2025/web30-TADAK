@@ -36,16 +36,18 @@ function ResultPage() {
       });
   }, [battleId]);
 
+  // 페이지 이탈 시(unmount) 모든 배틀 상태 초기화
+  useEffect(() => {
+    return () => {
+      clearMatching();
+      clearProblem();
+      clearRoom();
+      sessionStorage.removeItem('battle-session');
+    };
+  }, [clearMatching, clearProblem, clearRoom]);
+
   const handleGoHome = () => {
-    // 모든 배틀 관련 상태 초기화
-    clearMatching();
-    clearProblem();
-    clearRoom();
-
-    // 세션 정보 삭제 (재접속 방지)
-    sessionStorage.removeItem('battle-session');
-
-    // 홈으로 이동
+    // navigate 호출 시 컴포넌트가 unmount 되면서 위 useEffect의 cleanup 함수가 실행된다.
     navigate('/');
   };
 
