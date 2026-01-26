@@ -22,6 +22,13 @@ describe('MatchingSchedulerService', () => {
     status: 'MATCHED',
     waitingSince: new Date(),
     socketId: `socket-${userId}`,
+    myRate: {
+      win: 10,
+      lose: 5,
+      draw: 0,
+      winRate: 66,
+    },
+    avatarUrl: `https://avatar.com/${userId}`,
   });
 
   beforeEach(async () => {
@@ -29,6 +36,7 @@ describe('MatchingSchedulerService', () => {
       matchUsers: jest.fn(),
       getMatchingStats: jest.fn(),
       getMatchingQueueSocketIds: jest.fn(),
+      findTimeoutUsers: jest.fn().mockResolvedValue(undefined),
     };
 
     mockMatchingGateway = {
@@ -59,6 +67,14 @@ describe('MatchingSchedulerService', () => {
       await service.handleMatchingTick();
 
       expect(mockMatchingService.matchUsers).toHaveBeenCalledTimes(1);
+    });
+
+    it('매칭 후 findTimeoutUsers()를 호출해야 한다', async () => {
+      mockMatchingService.matchUsers.mockResolvedValue([]);
+
+      await service.handleMatchingTick();
+
+      expect(mockMatchingService.findTimeoutUsers).toHaveBeenCalledTimes(1);
     });
 
     it('매칭 성공 시 성공 로그를 출력해야 한다', async () => {
@@ -111,6 +127,56 @@ describe('MatchingSchedulerService', () => {
       await service.handleMatchingTick();
 
       expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('매칭 성공: 3쌍 (6명)'));
+    });
+  });
+
+  describe('handleStatsUpdate', () => {
+    it('매칭 통계를 대기 중인 소켓들에게 브로드캐스트해야 한다', async () => {
+      const mockStats = {
+        waitingPlayers: 5,
+        ongoingBattles: 3,
+        avgMatchTime: 15,
+      };
+      const mockSocketIds = ['socket-1', 'socket-2'];
+
+      mockMatchingService.getMatchingStats.mockResolvedValue(mockStats);
+      mockMatchingService.getMatchingQueueSocketIds.mockResolvedValue(mockSocketIds);
+
+      await service.handleStatsUpdate();
+
+      expect(mockMatchingService.getMatchingStats).toHaveBeenCalled();
+      expect(mockMatchingService.getMatchingQueueSocketIds).toHaveBeenCalled();
+      expect(mockMatchingGateway.broadcastMatchingStats).toHaveBeenCalledWith(
+        mockStats,
+        mockSocketIds,
+      );
+    });
+
+    it('대기 중인 소켓이 없어도 브로드캐스트를 호출해야 한다', async () => {
+      const mockStats = {
+        waitingPlayers: 0,
+        ongoingBattles: 0,
+        avgMatchTime: 0,
+      };
+      mockMatchingService.getMatchingStats.mockResolvedValue(mockStats);
+      mockMatchingService.getMatchingQueueSocketIds.mockResolvedValue([]);
+
+      await service.handleStatsUpdate();
+
+      expect(mockMatchingGateway.broadcastMatchingStats).toHaveBeenCalledWith(mockStats, []);
+    });
+
+    it('에러 발생 시 에러 로그를 출력해야 한다', async () => {
+      const error = new Error('Stats fetch failed');
+      mockMatchingService.getMatchingStats.mockRejectedValue(error);
+
+      const loggerSpy = jest.spyOn(service['logger'], 'error').mockImplementation();
+
+      await service.handleStatsUpdate();
+
+      expect(loggerSpy).toHaveBeenCalledWith(
+        expect.stringContaining('통계 업데이트 에러: Stats fetch failed'),
+      );
     });
   });
 });
