@@ -32,16 +32,23 @@ export class SubmissionService {
 
     // 큐에 작업 등록
     try {
-      await this.submissionQueue.add('submission-job', {
-        type: 'SUBMISSION',
-        submissionId: String(savedSubmission.id),
-        problemId: dto.problemId,
-        code: dto.code,
-        language: dto.language,
-        userId,
-        battleId: dto.battleId,
-        socketId,
-      });
+      await this.submissionQueue.add(
+        'submission-job',
+        {
+          type: 'SUBMISSION',
+          submissionId: String(savedSubmission.id),
+          problemId: dto.problemId,
+          code: dto.code,
+          language: dto.language,
+          userId,
+          battleId: dto.battleId,
+          socketId,
+        },
+        {
+          removeOnComplete: true,
+          removeOnFail: true,
+        },
+      );
     } catch (error) {
       await this.submissionRepository.update(savedSubmission.id, {
         // 큐 등록 실패 시 DB 상태를 ERROR로 변경
@@ -61,14 +68,21 @@ export class SubmissionService {
     const testSubmissionId = `test-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
     // 큐에 작업 등록
-    await this.submissionQueue.add('test-job', {
-      type: 'TEST',
-      submissionId: testSubmissionId,
-      problemId: dto.problemId,
-      code: dto.code,
-      language: dto.language,
-      userId,
-      socketId,
-    });
+    await this.submissionQueue.add(
+      'test-job',
+      {
+        type: 'TEST',
+        submissionId: testSubmissionId,
+        problemId: dto.problemId,
+        code: dto.code,
+        language: dto.language,
+        userId,
+        socketId,
+      },
+      {
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
+    );
   }
 }
