@@ -11,7 +11,10 @@ import { SubmissionService } from './submission.service';
 
 @Module({
   imports: [
-    BullModule.registerQueue({ name: SUBMISSION_QUEUE }),
+    BullModule.registerQueue({
+      name: SUBMISSION_QUEUE,
+      defaultJobOptions: { removeOnComplete: true, removeOnFail: true },
+    }),
     DockerModule,
     JudgeModule,
     TypeOrmModule.forFeature([Problem]),
