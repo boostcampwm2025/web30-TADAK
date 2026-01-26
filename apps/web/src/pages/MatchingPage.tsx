@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useBlocker, useNavigate } from 'react-router-dom';
 
+import Modal from '@/components/Common/Modal';
 import Toast from '@/components/Common/Toast';
 import Header from '@/components/Header/Header';
 import { MatchingCancelButton } from '@/components/Matching/MatchingCancelButton';
@@ -13,6 +14,7 @@ import { useUserStore } from '@/stores/userStore';
 function MatchingPage() {
   const navigate = useNavigate();
   const [waitTime, setWaitTime] = useState(0);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const isMatchingStartedRef = useRef(false);
   const user = useUserStore((state) => state.user);
   const isLoading = useUserStore((state) => state.isLoading);
@@ -98,20 +100,32 @@ function MatchingPage() {
 
   useEffect(() => {
     if (blocker.state === 'blocked') {
-      const ok = window.confirm('매칭을 취소하고 나가시겠습니까?');
-
-      if (ok) {
-        const { cancelMatching } = useMatchingStore.getState();
-        const user = useUserStore.getState().user;
-
-        if (user?.id) cancelMatching(user.id);
-
-        blocker.proceed();
-      } else {
-        blocker.reset();
-      }
+      setShowCancelModal(true);
     }
   }, [blocker]);
+
+  const handleConfirmCancel = () => {
+    setShowCancelModal(false);
+    const { matchResult, cancelMatching, cleanup } = useMatchingStore.getState();
+    const user = useUserStore.getState().user;
+
+    if (matchResult) {
+      cleanup();
+    } else if (user?.id) {
+      cancelMatching(user.id);
+    }
+
+    if (blocker.state === 'blocked') {
+      blocker.proceed();
+    }
+  };
+
+  const handleCancelModal = () => {
+    setShowCancelModal(false);
+    if (blocker.state === 'blocked') {
+      blocker.reset();
+    }
+  };
 
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -129,6 +143,29 @@ function MatchingPage() {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
+
+  const cancelModal = (
+    <Modal
+      isOpen={showCancelModal}
+      title="매칭 취소"
+      description={
+        matchResult ? '매칭이 완료되었습니다. 취소하시겠습니까?' : '매칭을 취소하고 나가시겠습니까?'
+      }
+      closeOnBackdrop={false}
+      buttons={[
+        {
+          label: '취소',
+          onClick: handleCancelModal,
+          variant: 'muted',
+        },
+        {
+          label: '확인',
+          onClick: handleConfirmCancel,
+          variant: 'green',
+        },
+      ]}
+    />
+  );
 
   if (hasToken && (isLoading || !user)) {
     return (
@@ -148,6 +185,7 @@ function MatchingPage() {
         <div className="flex flex-1 items-center justify-center">
           <MatchingSuccess />
         </div>
+        {cancelModal}
       </div>
     );
   }
@@ -166,6 +204,7 @@ function MatchingPage() {
           }}
         />
       )}
+      {cancelModal}
     </div>
   );
 }
