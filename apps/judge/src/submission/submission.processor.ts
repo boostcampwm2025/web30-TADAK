@@ -45,14 +45,15 @@ export class SubmissionProcessor extends WorkerHost {
         payload.battleId,
       );
 
-      const judgePromise = this.judgeService.judgeSubmission(executionId);
-      const result = await this.dockerRunnerService.runSubmission({ submissionId: executionId });
+      // Docker 실행과 채점을 병렬로 시작
+      const [result] = await Promise.all([
+        this.dockerRunnerService.runSubmission({ submissionId: executionId }),
+        this.judgeService.judgeSubmission(executionId),
+      ]);
 
       this.logger.log(
         `Docker run completed: exitCode=${result.exitCode ?? 'null'}, signal=${result.signal ?? 'null'}`,
       );
-
-      await judgePromise;
     } finally {
       await this.dockerCleanupService.cleanupExecution(executionId);
     }
