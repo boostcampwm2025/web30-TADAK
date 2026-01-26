@@ -18,6 +18,7 @@ function ChatSpectator() {
   const user = useUserStore((state) => state.user);
   const socket = useBattleSocketStore((state) => state.socket);
   const connectSocket = useBattleSocketStore((state) => state.connect);
+  const leaveRoom = useBattleSocketStore((state) => state.leaveRoom);
   const listRef = useRef<HTMLDivElement>(null);
 
   const myNickname = useMemo(() => {
@@ -81,6 +82,18 @@ function ChatSpectator() {
       avatarUrl: myAvatar,
     });
     setInput('');
+  };
+
+  const handleLoginClick = () => {
+    if (roomId) {
+      leaveRoom(roomId);
+    }
+    try {
+      sessionStorage.removeItem('battle-session');
+    } catch {
+      // ignore
+    }
+    navigate('/login');
   };
 
   const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (event) => {
@@ -199,7 +212,7 @@ function ChatSpectator() {
           {!isLoggedIn && (
             <button
               type="button"
-              onClick={() => navigate('/login')}
+              onClick={handleLoginClick}
               className="rounded-lg border border-border-soft px-3 py-2 text-xs font-bold text-base-primary transition hover:bg-base-muted"
             >
               로그인
