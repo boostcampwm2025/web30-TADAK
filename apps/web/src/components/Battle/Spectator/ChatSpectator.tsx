@@ -93,7 +93,7 @@ function ChatSpectator() {
     } catch {
       // ignore
     }
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (event) => {
