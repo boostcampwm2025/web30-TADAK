@@ -46,7 +46,7 @@ export class SubmissionService {
         },
         {
           removeOnComplete: true,
-          removeOnFail: true,
+          removeOnFail: { age: 3600, count: 50 },
         },
       );
     } catch (error) {
@@ -81,7 +81,7 @@ export class SubmissionService {
       },
       {
         removeOnComplete: true,
-        removeOnFail: true,
+        removeOnFail: { age: 3600, count: 50 },
       },
     );
   }

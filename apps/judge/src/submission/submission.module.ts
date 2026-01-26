@@ -13,7 +13,10 @@ import { SubmissionService } from './submission.service';
   imports: [
     BullModule.registerQueue({
       name: SUBMISSION_QUEUE,
-      defaultJobOptions: { removeOnComplete: true, removeOnFail: true },
+      defaultJobOptions: {
+        removeOnComplete: true,
+        removeOnFail: { age: 3600, count: 50 },
+      },
     }),
     DockerModule,
     JudgeModule,
