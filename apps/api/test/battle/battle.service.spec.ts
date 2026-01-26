@@ -11,6 +11,7 @@ import { BattleService } from '@/battle/battle.service';
 import { BattleRedisService } from '@/battle/battle-redis.service';
 import { ProblemService } from '@/problem/problem.service';
 import { REDIS_CLIENT } from '@/redis/redis.module';
+import { RoomService } from '@/room/room.service';
 import { Submission } from '@/submission/submission.entity';
 import { User } from '@/user/user.entity';
 
@@ -19,6 +20,7 @@ describe('BattleService', () => {
   let mockBattleRepository: any;
   let mockSubmissionRepository: any;
   let mockUserRepository: any;
+  let mockRoomService: any;
   let redis: RedisMock;
 
   beforeEach(async () => {
@@ -44,6 +46,11 @@ describe('BattleService', () => {
       })),
     };
 
+    // room service mock 설정
+    mockRoomService = {
+      deleteRoom: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BattleService,
@@ -65,11 +72,36 @@ describe('BattleService', () => {
         },
         {
           provide: BattleRedisService,
-          useValue: {},
+          useValue: {
+            getBattle: jest.fn(),
+            getBattleIdByRoomId: jest.fn(),
+            deleteBattle: jest.fn(),
+          },
         },
         {
           provide: ProblemService,
-          useValue: {},
+          useValue: {
+            findOne: jest.fn(),
+          },
+        },
+        {
+          provide: RoomService,
+          useValue: mockRoomService,
+        },
+        {
+          provide: 'MatchingService', // forwardRef 대응
+          useValue: {
+            clearUserMatchingStatus: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: 'UserService',
+          useValue: {
+            updateRatings: jest.fn().mockResolvedValue({
+              winner: { ratingDelta: 10 },
+              loser: { ratingDelta: -10 },
+            }),
+          },
         },
       ],
     }).compile();
