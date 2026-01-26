@@ -12,6 +12,7 @@ export type Player = {
 type CodeMap = Record<string, string>;
 
 type State = {
+  clearRoom: any;
   players: Player[];
   codes: CodeMap;
   me?: Player;
@@ -35,4 +36,5 @@ export const useRoomStore = create<State>((set) => ({
       return { players: next };
     }),
   upsertCode: (userId, code) => set((s) => ({ codes: { ...s.codes, [userId]: code } })),
+  clearRoom: () => set({ players: [], codes: {}, me: undefined }),
 }));
