@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useBlocker, useNavigate } from 'react-router-dom';
 
 import Toast from '@/components/Common/Toast';
 import Header from '@/components/Header/Header';
@@ -23,9 +23,15 @@ function MatchingPage() {
   const clearToast = useMatchingStore((state) => state.clearToast);
   const startMatching = useMatchingStore((state) => state.startMatching);
   const registerMatchingListeners = useMatchingStore((state) => state.registerMatchingListeners);
+  const blocker = useBlocker(() => !useMatchingStore.getState().allowNavigation);
 
   // 토큰 존재 여부 확인
   const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('accessToken');
+
+  // 페이지 진입 시 allowNavigation 초기화
+  useEffect(() => {
+    useMatchingStore.getState().setAllowNavigation(false);
+  }, []);
 
   // 유저 정보 로드 (토큰 있을 때만)
   useEffect(() => {
@@ -89,6 +95,23 @@ function MatchingPage() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (blocker.state === 'blocked') {
+      const ok = window.confirm('매칭을 취소하고 나가시겠습니까?');
+
+      if (ok) {
+        const { cancelMatching } = useMatchingStore.getState();
+        const user = useUserStore.getState().user;
+
+        if (user?.id) cancelMatching(user.id);
+
+        blocker.proceed();
+      } else {
+        blocker.reset();
+      }
+    }
+  }, [blocker]);
 
   useEffect(() => {
     const handleBeforeUnload = () => {
