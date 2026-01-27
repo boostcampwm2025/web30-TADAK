@@ -76,16 +76,17 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
   };
 
   const handleConfirmLeave = () => {
-    if (roomId) {
-      // 플레이어가 배틀 중이면 배틀 포기
-      if (showLeaveConfirm && battleId && me?.userId) {
-        // BATTLE_ENDED 이벤트에서 정리 및 페이지 이동 처리
-        leaveBattle(roomId, battleId, me.userId);
-      } else {
-        leaveRoom(roomId);
-        navigate('/');
-      }
+    if (!roomId) {
+      navigate('/');
+      return;
+    }
+
+    // 플레이어가 배틀 중이면 배틀 포기
+    if (showLeaveConfirm && battleId && me?.userId) {
+      // BATTLE_ENDED 이벤트에서 정리 및 페이지 이동 처리
+      leaveBattle(roomId, battleId, me.userId);
     } else {
+      leaveRoom(roomId);
       navigate('/');
     }
   };
