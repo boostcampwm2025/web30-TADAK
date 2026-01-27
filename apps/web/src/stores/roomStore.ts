@@ -12,7 +12,7 @@ export type Player = {
 type CodeMap = Record<string, string>;
 
 type State = {
-  clearRoom: any;
+  clearRoom: () => void;
   players: Player[];
   codes: CodeMap;
   me?: Player;
