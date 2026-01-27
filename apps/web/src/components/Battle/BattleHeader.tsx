@@ -7,6 +7,7 @@ import logo from '@/assets/logo.png';
 import Modal from '@/components/Common/Modal';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
+import { useRoomStore } from '@/stores/roomStore';
 
 interface BattleHeaderProps {
   theme: 'light' | 'dark';
@@ -22,6 +23,7 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
   const spectatorCount = useBattleSocketStore((state) => state.spectatorCount);
   const problem = useBattleProblemStore((state) => state.problem);
   const timeOffset = useBattleProblemStore((state) => state.timeOffset);
+  const me = useRoomStore((state) => state.me);
 
   const battleId = problem?.battleId;
   const duration = problem?.duration;
@@ -75,15 +77,16 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
 
   const handleConfirmLeave = () => {
     if (roomId) {
-      // 배틀 포기
-      if (showLeaveConfirm && battleId) {
-        leaveBattle(roomId, battleId);
+      // 플레이어가 배틀 중이면 배틀 포기
+      if (showLeaveConfirm && battleId && me?.userId) {
+        // BATTLE_ENDED 이벤트에서 정리 및 페이지 이동 처리
+        leaveBattle(roomId, battleId, me.userId);
       } else {
-        // 관전자: 단순 방 나가기
         leaveRoom(roomId);
       }
+    } else {
+      navigate('/');
     }
-    navigate('/');
   };
 
   const handleCancelLeave = () => {
