@@ -105,7 +105,7 @@ export class RoomService {
       const room = await this.createRoom({
         roomId,
         title: problemEntity.title,
-        status: 'in-battle',
+        status: 'waiting',
         currentPlayers: [player1, player2],
       });
 
