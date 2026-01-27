@@ -18,7 +18,7 @@ export default function MatchingSuccess() {
     if (countdown === 0) {
       if (matchResult?.roomId) {
         setAllowNavigation(true);
-        navigate(`/room/${matchResult.roomId}`);
+        navigate(`/room/${matchResult.roomId}`, { replace: true });
       }
       return;
     }

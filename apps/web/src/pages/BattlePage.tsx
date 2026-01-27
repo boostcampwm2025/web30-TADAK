@@ -82,7 +82,7 @@ function BattlePage() {
       resetProgresses();
 
       if (data.battleId) {
-        navigate(`/result/${data.battleId}`);
+        navigate(`/result/${data.battleId}`, { replace: true });
       } else {
         console.error('[BattlePage] battleId missing in BATTLE_ENDED payload');
       }
