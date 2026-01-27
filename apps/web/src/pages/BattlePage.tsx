@@ -63,6 +63,15 @@ function BattlePage() {
   useEffect(() => {
     const socket = connect();
     const handleBattleEnded = (data: { battleId: string }) => {
+      // 현재 배틀의 ID가 아닌 경우 무시 (다른 방의 종료 이벤트가 전역으로 퍼지는 문제 대비)
+      const currentBattleId = useBattleProblemStore.getState().problem?.battleId;
+      if (currentBattleId && data.battleId !== currentBattleId) {
+        console.warn(
+          `[BattlePage] Received BATTLE_ENDED for a different battle: ${data.battleId}. Current: ${currentBattleId}`,
+        );
+        return;
+      }
+
       // 배틀 종료 시 세션 스토리지 정리
       try {
         sessionStorage.removeItem('battle-session');

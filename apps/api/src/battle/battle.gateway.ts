@@ -126,14 +126,18 @@ export class BattleGateway {
       console.warn(
         `[BattleGateway] handleTimerEnd error or battle not found: ${error instanceof Error ? error.message : String(error)}`,
       );
-      this.server.to(roomIdFromClient).emit(BATTLE_EVENTS.BATTLE_ENDED, { battleId });
+      if (roomIdFromClient) {
+        this.server.to(roomIdFromClient).emit(BATTLE_EVENTS.BATTLE_ENDED, { battleId });
 
-      // 방 상태 정리 및 목록 업데이트 시도
-      try {
-        await this.roomService.completeBattleRoom(roomIdFromClient);
-        await this.broadcastRoomList();
-      } catch (e) {
-        console.error('[BattleGateway] Failed to cleanup room on error:', e);
+        // 방 상태 정리 및 목록 업데이트 시도
+        try {
+          await this.roomService.completeBattleRoom(roomIdFromClient);
+          await this.broadcastRoomList();
+        } catch (e) {
+          console.error('[BattleGateway] Failed to cleanup room on error:', e);
+        }
+      } else {
+        console.error('[BattleGateway] handleTimerEnd failed and no roomId provided');
       }
     }
   }

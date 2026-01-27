@@ -43,8 +43,8 @@ export class BattleService {
   ) {}
 
   async createBattle(dto: CreateBattleDTO): Promise<Battle> {
-    // TODO: 배틀 ID 생성 로직 추가
-    const battleId = `battle-${Date.now()}`;
+    // 배틀 ID 생성 로직 추가
+    const battleId = `battle-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
     // 임시 문제 선택
     const problem = await this.problemService.findFirst();

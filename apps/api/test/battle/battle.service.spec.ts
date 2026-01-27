@@ -9,10 +9,12 @@ import RedisMock from 'ioredis-mock';
 import { Battle as BattleEntity } from '@/battle/battle.entity';
 import { BattleService } from '@/battle/battle.service';
 import { BattleRedisService } from '@/battle/battle-redis.service';
+import { MatchingService } from '@/matching/matching.service';
 import { ProblemService } from '@/problem/problem.service';
 import { REDIS_CLIENT } from '@/redis/redis.module';
 import { Submission } from '@/submission/submission.entity';
 import { User } from '@/user/user.entity';
+import { UserService } from '@/user/user.service';
 
 describe('BattleService', () => {
   let service: BattleService;
@@ -26,10 +28,12 @@ describe('BattleService', () => {
 
     mockBattleRepository = {
       findOne: jest.fn(),
+      save: jest.fn().mockImplementation((entity) => Promise.resolve(entity)),
     };
 
     // submission repository mock 설정
     mockSubmissionRepository = {
+      findOne: jest.fn(),
       createQueryBuilder: jest.fn(() => ({
         whereInIds: jest.fn().mockReturnThis(),
         getMany: jest.fn().mockResolvedValue([]),
@@ -65,11 +69,35 @@ describe('BattleService', () => {
         },
         {
           provide: BattleRedisService,
-          useValue: {},
+          useValue: {
+            getBattle: jest.fn(),
+            getBattleIdByRoomId: jest.fn(),
+            deleteBattle: jest.fn(),
+            createBattle: jest.fn(),
+            updateBattle: jest.fn(),
+          },
         },
         {
           provide: ProblemService,
-          useValue: {},
+          useValue: {
+            findOne: jest.fn(),
+            findFirst: jest.fn(),
+          },
+        },
+        {
+          provide: MatchingService,
+          useValue: {
+            clearUserMatchingStatus: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: UserService,
+          useValue: {
+            updateRatings: jest.fn().mockResolvedValue({
+              winner: { ratingDelta: 10 },
+              loser: { ratingDelta: -10 },
+            }),
+          },
         },
       ],
     }).compile();
@@ -216,5 +244,35 @@ describe('BattleService', () => {
     await expect(service.getBattleResult('non-existent')).rejects.toThrow(
       '배틀 정보를 찾을 수 없습니다.',
     );
+  });
+
+  describe('배틀 정리 로직', () => {
+    it('deleteBattle 호출 시 battleRedisService.deleteBattle이 호출되어야 한다', async () => {
+      const roomId = 'room-123';
+      const battleId = 'battle-456';
+
+      const battleRedisService = (service as any).battleRedisService;
+      battleRedisService.getBattleIdByRoomId = jest.fn().mockResolvedValue(battleId);
+      battleRedisService.deleteBattle = jest.fn().mockResolvedValue(undefined);
+
+      await service.deleteBattle(roomId);
+
+      expect(battleRedisService.deleteBattle).toHaveBeenCalledWith(battleId, roomId);
+    });
+
+    it('endBattle 호출 시 battleRedisService.deleteBattle이 호출되어야 한다', async () => {
+      const battleId = 'battle-123';
+      const roomId = 'room-123';
+      const mockBattleData = { battleId, roomId, users: [{ userId: 'u1' }, { userId: 'u2' }] };
+
+      const battleRedisService = (service as any).battleRedisService;
+      battleRedisService.getBattle = jest.fn().mockResolvedValue(mockBattleData);
+      battleRedisService.deleteBattle = jest.fn().mockResolvedValue(undefined);
+      (service as any).redisClient = { srem: jest.fn().mockResolvedValue(1) };
+
+      await service.endBattle(battleId);
+
+      expect(battleRedisService.deleteBattle).toHaveBeenCalledWith(battleId, roomId);
+    });
   });
 });
