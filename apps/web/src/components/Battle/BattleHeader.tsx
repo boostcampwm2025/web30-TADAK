@@ -1,6 +1,6 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
 import { AlertCircle, Eye, Moon, Sun, Timer } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import logo from '@/assets/logo.png';
@@ -30,6 +30,7 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [hasEmittedEnd, setHasEmittedEnd] = useState(false);
+  const hasPlayedCountdownRef = useRef(false);
 
   useEffect(() => {
     if (!startedAt || !duration) return;
@@ -43,9 +44,10 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
       const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
       setTimeLeft(remaining);
 
-      // 5초 이하일 때 효과음 재생 (매 초마다 한 번만)
-      if (remaining <= 5 && remaining > 0) {
-        playCountdownSound(remaining === 1 ? 'warning' : 'tick');
+      // 5초 시점에 효과음 시작 (한 번만)
+      if (remaining === 5 && !hasPlayedCountdownRef.current) {
+        hasPlayedCountdownRef.current = true;
+        playCountdownSound('tick');
       }
 
       if (remaining <= 0 && !hasEmittedEnd) {
