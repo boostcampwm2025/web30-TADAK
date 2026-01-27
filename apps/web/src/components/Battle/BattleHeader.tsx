@@ -1,10 +1,11 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
 import { AlertCircle, Eye, Moon, Sun, Timer } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import logo from '@/assets/logo.png';
 import Modal from '@/components/Common/Modal';
+import { playCountdownSound } from '@/lib/sound';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 
@@ -29,6 +30,7 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [hasEmittedEnd, setHasEmittedEnd] = useState(false);
+  const lastPlayedSecondRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!startedAt || !duration) return;
@@ -42,8 +44,18 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
       const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
       setTimeLeft(remaining);
 
+      // 5초 이하일 때 효과음 재생 (매 초마다 한 번만)
+      if (remaining <= 5 && remaining > 0 && !lastPlayedSecondRef.current) {
+        lastPlayedSecondRef.current = true;
+        playCountdownSound(remaining === 1 ? 'warning' : 'tick');
+      }
+
       if (remaining <= 0 && !hasEmittedEnd) {
         // 타이머 종료 처리
+        if (lastPlayedSecondRef.current) {
+          lastPlayedSecondRef.current = false;
+          playCountdownSound('end');
+        }
         const socket = useBattleSocketStore.getState().socket;
         if (socket && battleId) {
           socket.emit(BATTLE_EVENTS.TIMER_END, { battleId, roomId });
