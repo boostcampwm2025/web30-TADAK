@@ -9,6 +9,7 @@ import BattleHeader from '@/components/Battle/BattleHeader';
 import BattlePlayer from '@/components/Battle/Player/BattlePlayer';
 import BattleSpectator from '@/components/Battle/Spectator/BattleSpectator';
 import { useTheme } from '@/hooks/useTheme';
+import { playCountdownSound } from '@/lib/sound';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
@@ -95,6 +96,7 @@ function BattlePage() {
 
       if (data.battleId) {
         setShowFinishOverlay(true);
+        playCountdownSound('end');
         setTimeout(() => {
           navigate(`/result/${data.battleId}`, { replace: true });
         }, 3000);
