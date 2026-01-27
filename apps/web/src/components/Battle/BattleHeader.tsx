@@ -1,4 +1,5 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
+import { motion } from 'framer-motion';
 import { AlertCircle, Eye, Moon, Sun, Timer } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -99,10 +100,24 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 rounded-3xl bg-green-01 px-4 py-1 text-lg font-bold text-green-06 shadow-[1px_1px_4px_rgba(0,0,0,0.05)]">
+        <motion.div
+          animate={
+            timeLeft <= 5 && timeLeft > 0
+              ? {
+                  scale: [1, 1.05, 1],
+                  transition: { repeat: Infinity, duration: 0.8 },
+                }
+              : { scale: 1 }
+          }
+          className={`flex items-center gap-2 rounded-3xl px-4 py-1 text-lg font-bold shadow-[1px_1px_4px_rgba(0,0,0,0.05)] transition-colors duration-300 ${
+            timeLeft <= 5 && timeLeft > 0
+              ? 'bg-red-50 text-error-01 dark:bg-error-01/10'
+              : 'bg-green-01 text-green-06'
+          }`}
+        >
           <Timer className="h-5 w-5" strokeWidth={2.5} />
           <span className="font-bold leading-7">{formatTime(timeLeft)}</span>
-        </div>
+        </motion.div>
       </div>
 
       <div className="flex items-center gap-3">
