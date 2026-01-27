@@ -132,7 +132,7 @@ function CodeSpectator() {
             </div>
           </div>
 
-          <div className="flex-1 min-h-0 bg-(--bg-layer-2) px-4 py-3 font-mono text-sm leading-relaxed text-base-primary overflow-hidden">
+          <div className="min-h-[520px] h-[40vh] bg-(bg-layer-2) font-mono text-sm text-base-primary xl:h-auto xl:flex-1">
             <BaseCodeEditor
               value={selectedCode}
               options={{

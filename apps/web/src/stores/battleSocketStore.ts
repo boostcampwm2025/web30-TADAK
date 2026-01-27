@@ -301,6 +301,7 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
     if (!session) return;
     if (options?.roomId && options.roomId !== session.roomId) return;
 
+    const profile = useUserStore.getState().user;
     const requestedRole =
       (session.role as 'player' | 'spectator') ??
       (options?.roleHint as 'player' | 'spectator') ??
@@ -308,9 +309,9 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
     await get().joinRoom({
       roomId: session.roomId,
       requestedRole,
-      userId: session.userId,
-      username: session.username,
-      avatarUrl: session.avatarUrl,
+      userId: profile?.id ?? session.userId,
+      username: profile?.username ?? session.username,
+      avatarUrl: profile?.avatarUrl ?? session.avatarUrl,
     });
   },
   subscribeRoomList: () => {

@@ -53,14 +53,12 @@ function BattleSpectator() {
           <div className={`fade-slide-in xl:h-full xl:min-h-0 ${codeSpanClass}`}>
             <CodeSpectator />
           </div>
-          {showChat && (
-            <div
-              ref={chatRef}
-              className={`fade-slide-in xl:h-full xl:min-h-0 ${showChat ? '' : 'hidden'}`}
-            >
-              <ChatSpectator />
-            </div>
-          )}
+          <div
+            ref={chatRef}
+            className={`fade-slide-in xl:h-full xl:min-h-0 ${showChat ? '' : 'hidden'}`}
+          >
+            <ChatSpectator />
+          </div>
         </div>
       </div>
     </>
