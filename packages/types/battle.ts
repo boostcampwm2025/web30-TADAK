@@ -91,5 +91,6 @@ export interface BattleResultResponse {
     totalScore: number;
     time: string;
     code: string;
+    ratingChange: number;
   }>;
 }
