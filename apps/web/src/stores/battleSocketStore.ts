@@ -1,3 +1,4 @@
+import { BATTLE_EVENTS } from '@shared/constants/battle';
 import { SOCKET_ERROR, SOCKET_EVENT } from '@shared/constants/socket-event';
 import type {
   JoinRoomRequest,
@@ -67,6 +68,7 @@ interface BattleSocketState {
   ) => Promise<RoomAvailabilityResponseDTO>;
   joinRoom: (payload: JoinRoomRequest) => Promise<JoinRoomResponse>;
   leaveRoom: (roomId: string) => void;
+  leaveBattle: (roomId: string, battleId: string) => void;
   subscribeRoomAvailability: (roomId: string) => void;
   unsubscribeRoomAvailability: () => void;
   resumeSession: (options?: { roomId?: string; roleHint?: string }) => Promise<void>;
@@ -225,6 +227,13 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
     if (!socket) return;
 
     socket.emit(SOCKET_EVENT.LEAVE_ROOM, { roomId });
+  },
+  // 배틀 나가기 요청 (배틀 포기)
+  leaveBattle: (roomId: string, battleId: string) => {
+    const socket = get().socket;
+    if (!socket) return;
+
+    socket.emit(BATTLE_EVENTS.BATTLE_LEFT, { roomId, battleId });
   },
   subscribeRoomAvailability: (roomId: string) => {
     const socket = get().connect();
