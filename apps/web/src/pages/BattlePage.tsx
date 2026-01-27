@@ -37,6 +37,15 @@ function BattlePage() {
 
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
 
+  // 페이지 나갈 때 배틀 상태 초기화
+  useEffect(() => {
+    return () => {
+      useRoomStore.getState().clearRoom();
+      useBattleProblemStore.getState().clearProblem();
+      useBattleProgressStore.getState().resetProgresses();
+    };
+  }, []);
+
   useEffect(() => {
     const socket = connect();
     const handleProblemInfo = (payload: ProblemDataPayload) => {
