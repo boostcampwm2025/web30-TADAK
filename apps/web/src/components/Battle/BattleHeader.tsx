@@ -83,6 +83,7 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
         leaveBattle(roomId, battleId, me.userId);
       } else {
         leaveRoom(roomId);
+        navigate('/');
       }
     } else {
       navigate('/');
