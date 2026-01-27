@@ -131,6 +131,23 @@ export class PubsubSubscriberService implements OnModuleInit {
           username: userInfo.username,
         });
 
+        // Redis 배틀 상태 업데이트 (최종 제출 전송 시 진행률 기록)
+        if (submission.battleId) {
+          try {
+            await this.battleService.updateUserProgress(
+              submission.battleId,
+              userInfo.userId,
+              message.result.passed,
+              message.result.total,
+            );
+          } catch (error) {
+            this.logger.error(
+              `[FINAL_RESULT] Failed to update Redis progress for SUBMISSION`,
+              error,
+            );
+          }
+        }
+
         // 모든 테스트 케이스 통과 시 배틀 즉시 종료
         if (message.status === 'ACCEPTED' && submission.battleId) {
           try {
