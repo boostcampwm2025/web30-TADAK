@@ -19,6 +19,7 @@ import { MatchingService } from '@/matching/matching.service';
 import { ProblemService } from '@/problem/problem.service';
 import { REDIS_CLIENT } from '@/redis/redis.module';
 import { RedisKeys } from '@/redis/redis-key.constant';
+import { RoomService } from '@/room/room.service';
 import { Submission } from '@/submission/submission.entity';
 import { User } from '@/user/user.entity';
 import { UserService } from '@/user/user.service';
@@ -40,6 +41,8 @@ export class BattleService {
     @Inject(forwardRef(() => MatchingService))
     private readonly matchingService: MatchingService,
     private readonly userService: UserService,
+    @Inject(forwardRef(() => RoomService))
+    private readonly roomService: RoomService,
   ) {}
 
   async createBattle(dto: CreateBattleDTO): Promise<Battle> {
@@ -423,9 +426,10 @@ export class BattleService {
 
     const savedBattle = await this.battleRepository.save(battleEntity);
 
-    // 배틀 데이터 및 진행 중인 배틀 목록에서 삭제
+    // 배틀 및 방 삭제
     await this.battleRedisService.deleteBattle(battle.battleId, battle.roomId);
     await this.redisClient.srem(RedisKeys.activeBattles(), battle.battleId);
+    await this.roomService.deleteRoom(battle.roomId);
 
     // 참가자들의 매칭 상태 초기화
     await Promise.all(
