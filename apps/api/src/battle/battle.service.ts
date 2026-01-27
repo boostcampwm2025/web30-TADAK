@@ -119,7 +119,7 @@ export class BattleService {
     return battle;
   }
 
-  // 배틀 나가기
+  // 배틀 나가기 (단순 퇴장, 배틀은 계속)
   async leaveBattle(roomId: string, userId: string): Promise<Battle | null> {
     const battleId = await this.battleRedisService.getBattleIdByRoomId(roomId);
     if (!battleId) return null;
@@ -366,6 +366,74 @@ export class BattleService {
   async endBattleByTimeout(battleId: string): Promise<BattleEntity> {
     // endBattle 메서드가 자동으로 점수 기반 승자 결정을 처리함
     return this.endBattle(battleId);
+  }
+
+  // 사용자가 배틀을 나갔을 때 호출
+  async forfeitBattle(battleId: string, forfeiterUserId: string): Promise<BattleEntity> {
+    this.logger.log(
+      `[forfeitBattle] 시작 - battleId: ${battleId}, forfeiterUserId: ${forfeiterUserId}`,
+    );
+
+    // Redis에서 배틀 데이터 조회
+    const battle = await this.battleRedisService.getBattle(battleId);
+    if (!battle) {
+      this.logger.error(`[forfeitBattle] 배틀을 찾을 수 없음 - battleId: ${battleId}`);
+      throw new Error(`Battle not found: ${battleId}`);
+    }
+
+    // 상대방 찾기 (나간 사람이 아닌 사람)
+    const opponent = battle.users.find((user) => user.userId !== forfeiterUserId);
+    if (!opponent) {
+      this.logger.error(
+        `[forfeitBattle] 상대방을 찾을 수 없음 - forfeiterUserId: ${forfeiterUserId}`,
+      );
+      throw new Error('Opponent not found in battle');
+    }
+
+    // 승자 결정 및 레이팅 업데이트
+    const winnerId = opponent.userId;
+    const loserId = forfeiterUserId;
+    const ratingResult = await this.userService.updateRatings(winnerId, loserId, false);
+
+    // 마지막 제출 기록 조회 (있으면 저장)
+    const winnerSubmission = await this.submissionRepository.findOne({
+      where: { battleId: battle.battleId, userId: winnerId },
+      order: { createdAt: 'DESC' },
+    });
+    const loserSubmission = await this.submissionRepository.findOne({
+      where: { battleId: battle.battleId, userId: loserId },
+      order: { createdAt: 'DESC' },
+    });
+
+    // 배틀 엔티티 생성 및 저장
+    const battleEntity = new BattleEntity();
+    battleEntity.id = battle.battleId;
+    battleEntity.problemId = battle.problemId;
+    battleEntity.startedAt = battle.startedAt ? new Date(battle.startedAt) : new Date();
+    battleEntity.winnerId = winnerId;
+    battleEntity.winnerSubmissionId = winnerSubmission?.id || null;
+    battleEntity.loserSubmissionId = loserSubmission?.id || null;
+    battleEntity.playerIds = battle.users.map((u) => u.userId);
+
+    const player1Id = battle.users[0].userId;
+    battleEntity.player1RatingChange =
+      winnerId === player1Id ? ratingResult.winner.ratingDelta : ratingResult.loser.ratingDelta;
+    battleEntity.player2RatingChange =
+      winnerId === player1Id ? ratingResult.loser.ratingDelta : ratingResult.winner.ratingDelta;
+
+    const savedBattle = await this.battleRepository.save(battleEntity);
+
+    // 배틀 데이터 및 진행 중인 배틀 목록에서 삭제
+    await this.battleRedisService.deleteBattle(battle.battleId, battle.roomId);
+    await this.redisClient.srem(RedisKeys.activeBattles(), battle.battleId);
+
+    // 참가자들의 매칭 상태 초기화
+    await Promise.all(
+      battle.users.map((user) => this.matchingService.clearUserMatchingStatus(user.userId)),
+    );
+
+    this.logger.log(`[forfeitBattle] 종료 - battleId: ${battleId}`);
+    return savedBattle;
   }
 
   // 배틀 결과 조회
