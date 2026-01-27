@@ -4,8 +4,10 @@
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { MATCHING_CONFIG } from '@packages/constants/matching';
+import { MatchingUser } from '@packages/types/matching';
 import RedisMock from 'ioredis-mock';
 
+import { BattleService } from '../../src/battle/battle.service';
 import { MatchingGateway } from '../../src/matching/matching.gateway';
 import { MatchingService } from '../../src/matching/matching.service';
 import { REDIS_CLIENT } from '../../src/redis/redis.module';
@@ -16,9 +18,27 @@ describe('MatchingService with ioredis-mock', () => {
   let service: MatchingService;
   let redis: RedisMock;
   let mockRoomService: any;
+  let mockBattleService: any;
   let mockMatchingGateway: any;
 
-  // 헬퍼: Redis에 유저 데이터 추가
+  // 헬퍼: MatchingUser 객체 생성
+  const createMockUser = (
+    userId: string,
+    rating: number,
+    waitingSince: Date = new Date(),
+  ): MatchingUser => ({
+    userId,
+    username: `User_${userId}`,
+    rating,
+    tier: { tier: 'Gold', division: 3 },
+    status: 'WAITING',
+    waitingSince,
+    socketId: `socket-${userId}`,
+    myRate: { win: 10, lose: 5, draw: 0, winRate: 66 },
+    avatarUrl: `https://avatar.com/${userId}`,
+  });
+
+  // 헬퍼: Redis에 유저 데이터 추가 (매칭 대기 상태로)
   const addUserToQueue = async (
     userId: string,
     rating: number,
@@ -32,12 +52,14 @@ describe('MatchingService with ioredis-mock', () => {
     // HASH에 유저 메타데이터 추가
     await redis.hset(RedisKeys.matchingUser(userId), {
       userId,
-      username: `User${userId}`,
+      username: `User_${userId}`,
       rating: String(rating),
       tier: JSON.stringify({ tier: 'Gold', division: 3 }),
       status: 'WAITING',
       waitingSince: waitingSince.toISOString(),
       socketId: `socket-${userId}`,
+      myRate: JSON.stringify({ win: 10, lose: 5, draw: 0, winRate: 66 }),
+      avatarUrl: `https://avatar.com/${userId}`,
     });
   };
 
@@ -57,11 +79,25 @@ describe('MatchingService with ioredis-mock', () => {
           status: 'running',
           startedAt: new Date(),
         },
+        problem: {
+          id: 'problem-123',
+          title: 'Test Problem',
+        },
       }),
+      deleteRoom: jest.fn().mockResolvedValue(undefined),
+      listRooms: jest.fn().mockResolvedValue([]),
+      toPublicRooms: jest.fn().mockReturnValue([]),
+    };
+
+    mockBattleService = {
+      deleteBattle: jest.fn().mockResolvedValue(undefined),
     };
 
     mockMatchingGateway = {
       emitMatchSuccess: jest.fn(),
+      registerUserSocket: jest.fn(),
+      emitOpponentDisconnected: jest.fn(),
+      broadcastRoomList: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -76,6 +112,10 @@ describe('MatchingService with ioredis-mock', () => {
           useValue: mockRoomService,
         },
         {
+          provide: BattleService,
+          useValue: mockBattleService,
+        },
+        {
           provide: MatchingGateway,
           useValue: mockMatchingGateway,
         },
@@ -87,6 +127,79 @@ describe('MatchingService with ioredis-mock', () => {
 
   afterEach(async () => {
     await redis.flushall();
+  });
+
+  describe('startMatching', () => {
+    it('매칭 시작 시 유저 상태가 WAITING으로 설정되어야 한다', async () => {
+      const user = createMockUser('user1', 1500);
+
+      await service.startMatching(user);
+
+      // Redis HSET에서 status 확인
+      const status = await redis.hget(RedisKeys.matchingUser('user1'), 'status');
+      expect(status).toBe('WAITING');
+
+      // ZSET에 추가되었는지 확인
+      const queueSize = await redis.zcard(RedisKeys.matchingQueue());
+      expect(queueSize).toBe(1);
+
+      // Gateway의 registerUserSocket이 호출되었는지 확인
+      expect(mockMatchingGateway.registerUserSocket).toHaveBeenCalledWith('socket-user1', 'user1');
+    });
+
+    it('매칭 시작 시 유저 정보가 Redis에 저장되어야 한다', async () => {
+      const user = createMockUser('user1', 1500);
+
+      await service.startMatching(user);
+
+      const userData = await redis.hgetall(RedisKeys.matchingUser('user1'));
+      expect(userData.userId).toBe('user1');
+      expect(userData.username).toBe('User_user1');
+      expect(userData.rating).toBe('1500');
+      expect(userData.status).toBe('WAITING');
+      expect(userData.socketId).toBe('socket-user1');
+    });
+
+    it('이미 WAITING 상태인 유저는 중복 매칭 시작이 되지 않아야 한다', async () => {
+      const user = createMockUser('user1', 1500);
+
+      // 첫 번째 매칭 시작
+      await service.startMatching(user);
+
+      // 두 번째 매칭 시작 시도
+      await service.startMatching(user);
+
+      // ZSET에 1번만 추가되어야 함
+      const queueSize = await redis.zcard(RedisKeys.matchingQueue());
+      expect(queueSize).toBe(1);
+
+      // registerUserSocket도 1번만 호출
+      expect(mockMatchingGateway.registerUserSocket).toHaveBeenCalledTimes(1);
+    });
+
+    it('이미 MATCHED 상태인 유저는 매칭 시작이 되지 않아야 한다', async () => {
+      // 유저를 MATCHED 상태로 설정
+      await redis.hset(RedisKeys.matchingUser('user1'), { status: 'MATCHED' });
+
+      const user = createMockUser('user1', 1500);
+      await service.startMatching(user);
+
+      // ZSET에 추가되지 않아야 함
+      const queueSize = await redis.zcard(RedisKeys.matchingQueue());
+      expect(queueSize).toBe(0);
+    });
+
+    it('이미 IN_ROOM 상태인 유저는 매칭 시작이 되지 않아야 한다', async () => {
+      // 유저를 IN_ROOM 상태로 설정
+      await redis.hset(RedisKeys.matchingUser('user1'), { status: 'IN_ROOM' });
+
+      const user = createMockUser('user1', 1500);
+      await service.startMatching(user);
+
+      // ZSET에 추가되지 않아야 함
+      const queueSize = await redis.zcard(RedisKeys.matchingQueue());
+      expect(queueSize).toBe(0);
+    });
   });
 
   describe('matchUsers', () => {
@@ -129,7 +242,21 @@ describe('MatchingService with ioredis-mock', () => {
       );
     });
 
-    it('매칭 성공 후 Redis에서 상태를 업데이트해야 한다', async () => {
+    it('매칭 성공 후 유저 상태가 MATCHED로 변경되어야 한다', async () => {
+      const now = new Date();
+      await addUserToQueue('user1', 1500, now);
+      await addUserToQueue('user2', 1550, now);
+
+      await service.matchUsers();
+
+      // 상태가 MATCHED로 변경되었는지 확인
+      const user1Status = await redis.hget(RedisKeys.matchingUser('user1'), 'status');
+      const user2Status = await redis.hget(RedisKeys.matchingUser('user2'), 'status');
+      expect(user1Status).toBe('MATCHED');
+      expect(user2Status).toBe('MATCHED');
+    });
+
+    it('매칭 성공 후 Redis 큐에서 유저가 제거되어야 한다', async () => {
       const now = new Date();
       await addUserToQueue('user1', 1500, now);
       await addUserToQueue('user2', 1550, now);
@@ -139,12 +266,36 @@ describe('MatchingService with ioredis-mock', () => {
       // Redis에서 유저가 제거되었는지 확인
       const queueSize = await redis.zcard(RedisKeys.matchingQueue());
       expect(queueSize).toBe(0);
+    });
 
-      // 상태가 MATCHED로 변경되었는지 확인
-      const user1Status = await redis.hget(RedisKeys.matchingUser('user1'), 'status');
-      const user2Status = await redis.hget(RedisKeys.matchingUser('user2'), 'status');
-      expect(user1Status).toBe('MATCHED');
-      expect(user2Status).toBe('MATCHED');
+    it('매칭 성공 후 roomId와 opponentId가 저장되어야 한다', async () => {
+      const now = new Date();
+      await addUserToQueue('user1', 1500, now);
+      await addUserToQueue('user2', 1550, now);
+
+      await service.matchUsers();
+
+      // user1의 데이터 확인
+      const user1Data = await redis.hgetall(RedisKeys.matchingUser('user1'));
+      expect(user1Data.roomId).toBe('room-123');
+      expect(user1Data.opponentId).toBe('user2');
+
+      // user2의 데이터 확인
+      const user2Data = await redis.hgetall(RedisKeys.matchingUser('user2'));
+      expect(user2Data.roomId).toBe('room-123');
+      expect(user2Data.opponentId).toBe('user1');
+    });
+
+    it('매칭 성공 후 matchedAt 시간이 저장되어야 한다', async () => {
+      const now = new Date();
+      await addUserToQueue('user1', 1500, now);
+      await addUserToQueue('user2', 1550, now);
+
+      await service.matchUsers();
+
+      const user1Data = await redis.hgetall(RedisKeys.matchingUser('user1'));
+      expect(user1Data.matchedAt).toBeDefined();
+      expect(new Date(user1Data.matchedAt).getTime()).toBeGreaterThan(0);
     });
 
     it('레이팅 차이가 허용 범위를 벗어나면 매칭하지 않아야 한다', async () => {
@@ -229,6 +380,109 @@ describe('MatchingService with ioredis-mock', () => {
 
       // 최소 1쌍은 매칭되어야 함
       expect(result.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe('cancelMatching', () => {
+    it('WAITING 상태의 유저를 취소하면 큐와 데이터가 삭제되어야 한다', async () => {
+      await addUserToQueue('user1', 1500);
+
+      await service.cancelMatching('user1');
+
+      const queueSize = await redis.zcard(RedisKeys.matchingQueue());
+      expect(queueSize).toBe(0);
+
+      const userData = await redis.hgetall(RedisKeys.matchingUser('user1'));
+      expect(Object.keys(userData as Record<string, string>).length).toBe(0);
+    });
+
+    it('MATCHED 상태에서 취소하면 상대방에게 알림을 보내야 한다', async () => {
+      // 두 유저를 MATCHED 상태로 설정
+      const now = new Date();
+      await addUserToQueue('user1', 1500, now);
+      await addUserToQueue('user2', 1550, now);
+      await service.matchUsers();
+
+      // matchedAt을 최근으로 설정 (5초 이내)
+      await redis.hset(RedisKeys.matchingUser('user1'), {
+        matchedAt: new Date().toISOString(),
+      });
+      await redis.hset(RedisKeys.matchingUser('user2'), {
+        matchedAt: new Date().toISOString(),
+      });
+
+      // user1이 취소
+      await service.cancelMatching('user1');
+
+      // 상대방에게 알림이 전송되어야 함
+      expect(mockMatchingGateway.emitOpponentDisconnected).toHaveBeenCalledWith('socket-user2');
+    });
+
+    it('IN_ROOM 상태의 유저는 취소해도 데이터가 유지되어야 한다', async () => {
+      // 유저를 IN_ROOM 상태로 설정
+      await redis.hset(RedisKeys.matchingUser('user1'), {
+        userId: 'user1',
+        status: 'IN_ROOM',
+        roomId: 'room-123',
+      });
+
+      await service.cancelMatching('user1');
+
+      // 데이터가 유지되어야 함
+      const userData = await redis.hgetall(RedisKeys.matchingUser('user1'));
+      expect(userData.status).toBe('IN_ROOM');
+    });
+  });
+
+  describe('상태 전환 흐름 (WAITING -> MATCHED)', () => {
+    it('전체 흐름: 매칭 시작 -> 매칭 성공 시 상태가 올바르게 전환되어야 한다', async () => {
+      const user1 = createMockUser('user1', 1500);
+      const user2 = createMockUser('user2', 1550);
+
+      // 1. 매칭 시작 - WAITING 상태
+      await service.startMatching(user1);
+      await service.startMatching(user2);
+
+      const user1StatusBefore = await redis.hget(RedisKeys.matchingUser('user1'), 'status');
+      const user2StatusBefore = await redis.hget(RedisKeys.matchingUser('user2'), 'status');
+      expect(user1StatusBefore).toBe('WAITING');
+      expect(user2StatusBefore).toBe('WAITING');
+
+      // 2. 매칭 실행 - MATCHED 상태
+      await service.matchUsers();
+
+      const user1StatusAfter = await redis.hget(RedisKeys.matchingUser('user1'), 'status');
+      const user2StatusAfter = await redis.hget(RedisKeys.matchingUser('user2'), 'status');
+      expect(user1StatusAfter).toBe('MATCHED');
+      expect(user2StatusAfter).toBe('MATCHED');
+    });
+  });
+
+  describe('getMatchingStats', () => {
+    it('매칭 통계를 올바르게 반환해야 한다', async () => {
+      // 대기 유저 2명 추가
+      await addUserToQueue('user1', 1500);
+      await addUserToQueue('user2', 1550);
+
+      const stats = await service.getMatchingStats();
+
+      expect(stats.waitingPlayers).toBe(2);
+      expect(stats.ongoingBattles).toBe(0);
+      expect(stats.avgMatchTime).toBe(0);
+    });
+  });
+
+  describe('clearUserMatchingStatus', () => {
+    it('유저의 매칭 상태를 완전히 삭제해야 한다', async () => {
+      await addUserToQueue('user1', 1500);
+
+      await service.clearUserMatchingStatus('user1');
+
+      const queueSize = await redis.zcard(RedisKeys.matchingQueue());
+      expect(queueSize).toBe(0);
+
+      const userData = await redis.hgetall(RedisKeys.matchingUser('user1'));
+      expect(Object.keys(userData as Record<string, string>).length).toBe(0);
     });
   });
 });

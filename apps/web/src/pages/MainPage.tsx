@@ -6,7 +6,6 @@ import Modal from '@/components/Common/Modal';
 import Header from '@/components/Header/Header';
 import RoomCardList from '@/components/Main/RoomCardList';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
-import { useMatchingStore } from '@/stores/matchingStore';
 import { useUserStore } from '@/stores/userStore';
 
 const tierFilters = [
@@ -31,8 +30,6 @@ function MainPage() {
   const rooms = useBattleSocketStore((state) => state.rooms);
   const socket = useBattleSocketStore((state) => state.socket);
 
-  const startMatching = useMatchingStore((state) => state.startMatching);
-  const registerMatchingListeners = useMatchingStore((state) => state.registerMatchingListeners);
   const [joiningRoomId, setJoiningRoomId] = useState<string | null>(null);
 
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -71,22 +68,13 @@ function MainPage() {
     return { totalBattles, totalSpectators, totalPlayers };
   }, [rooms]);
 
-  const handleStartBattle = async () => {
+  const handleStartBattle = () => {
     if (!user?.id) {
       setShowLoginModal(true);
       return;
     }
 
-    try {
-      const activeSocket = await ensureSocketReady();
-      if (!activeSocket.id) throw new Error('Socket ID를 받지 못했습니다.');
-
-      registerMatchingListeners(activeSocket);
-      await startMatching(user.id, activeSocket.id);
-      navigate('/matching');
-    } catch (error) {
-      console.error('매칭 시작 중 오류:', error);
-    }
+    navigate('/matching');
   };
 
   const handleJoinSpectator = async (roomId: string) => {

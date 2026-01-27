@@ -11,11 +11,13 @@ export default function MatchingSuccess() {
 
   const matchResult = useMatchingStore((state) => state.matchResult);
   const user = useUserStore((state) => state.user);
+  const setAllowNavigation = useMatchingStore((s) => s.setAllowNavigation);
 
   // 카운트다운 로직
   useEffect(() => {
     if (countdown === 0) {
       if (matchResult?.roomId) {
+        setAllowNavigation(true);
         navigate(`/room/${matchResult.roomId}`);
       }
       return;
@@ -26,7 +28,7 @@ export default function MatchingSuccess() {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [countdown, matchResult, navigate]);
+  }, [countdown, matchResult, navigate, setAllowNavigation]);
 
   if (!matchResult || !user) {
     return null;

@@ -23,6 +23,8 @@ interface MatchingStore {
   cancelMatching: (userId: string) => Promise<void>;
   cleanup: () => void;
   clearToast: () => void;
+  allowNavigation: boolean;
+  setAllowNavigation: (v: boolean) => void;
 }
 
 export const useMatchingStore = create<MatchingStore>((set, get) => ({
@@ -30,6 +32,7 @@ export const useMatchingStore = create<MatchingStore>((set, get) => ({
   stats: null,
   timeoutMessage: null,
   toastMessage: null,
+  allowNavigation: false,
 
   // MATCH_SUCCESS, STATS_UPDATE, MATCHING_TIMEOUT, OPPONENT_DISCONNECTED 이벤트 리스너 등록
   registerMatchingListeners: (socket: Socket) => {
@@ -101,11 +104,13 @@ export const useMatchingStore = create<MatchingStore>((set, get) => ({
 
   // 정리
   cleanup: () => {
-    set({ matchResult: null, stats: null, timeoutMessage: null });
+    set({ matchResult: null, stats: null, timeoutMessage: null, allowNavigation: false });
   },
 
   // 토스트 메시지 제거
   clearToast: () => {
     set({ toastMessage: null });
   },
+
+  setAllowNavigation: (v: boolean) => set({ allowNavigation: v }),
 }));

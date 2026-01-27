@@ -6,7 +6,8 @@ import { useUserStore } from '@/stores/userStore';
 
 export function MatchingCancelButton() {
   const navigate = useNavigate();
-  const { cancelMatching, unregisterMatchingListeners, cleanup } = useMatchingStore();
+  const { cancelMatching, unregisterMatchingListeners } = useMatchingStore();
+  const setAllowNavigation = useMatchingStore((s) => s.setAllowNavigation);
   const user = useUserStore((state) => state.user);
   const socket = useBattleSocketStore((state) => state.socket);
 
@@ -16,7 +17,7 @@ export function MatchingCancelButton() {
     try {
       unregisterMatchingListeners(socket);
       await cancelMatching(user.id);
-      cleanup();
+      setAllowNavigation(true);
       navigate('/');
     } catch (error) {
       console.error('매칭 취소 실패:', error);
