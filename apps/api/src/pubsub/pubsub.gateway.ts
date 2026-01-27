@@ -28,7 +28,7 @@ export class PubsubGateway {
 
     this.server.to(socketId).emit('testcase-update', payload);
 
-    this.logger.debug(`Sent testcase-update to socket ${socketId}`);
+    // this.logger.debug(`Sent testcase-update to socket ${socketId}`);
   }
 
   // 방 전체에 최종 결과 브로드캐스트
