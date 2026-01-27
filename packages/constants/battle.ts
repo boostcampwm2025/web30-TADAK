@@ -12,6 +12,7 @@ export const BATTLE_EVENTS = {
   BATTLE_CREATED: 'battle-created',
   BATTLE_STARTED: 'battle-started',
   BATTLE_ENDED: 'battle-ended',
+  BATTLE_LEFT: 'battle-left',
 
   // 코드 변경
   CODE_CHANGE: 'code-change',
