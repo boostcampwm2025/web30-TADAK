@@ -18,6 +18,7 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId: string }>();
   const leaveRoom = useBattleSocketStore((state) => state.leaveRoom);
+  const leaveBattle = useBattleSocketStore((state) => state.leaveBattle);
   const spectatorCount = useBattleSocketStore((state) => state.spectatorCount);
   const problem = useBattleProblemStore((state) => state.problem);
   const timeOffset = useBattleProblemStore((state) => state.timeOffset);
@@ -74,7 +75,13 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
 
   const handleConfirmLeave = () => {
     if (roomId) {
-      leaveRoom(roomId);
+      // 배틀 포기
+      if (showLeaveConfirm && battleId) {
+        leaveBattle(roomId, battleId);
+      } else {
+        // 관전자: 단순 방 나가기
+        leaveRoom(roomId);
+      }
     }
     navigate('/');
   };
