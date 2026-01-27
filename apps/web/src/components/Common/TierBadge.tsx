@@ -1,6 +1,5 @@
+import type { TierType } from '@shared/types/user';
 import { Crown, Diamond, Medal, Shield, Sparkles, Star, Trophy } from 'lucide-react';
-
-type TierType = 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Ruby' | 'Master';
 
 interface TierBadgeProps {
   tier: TierType;
