@@ -171,6 +171,25 @@ export class BattleService {
     return battle;
   }
 
+  async updateUserProgress(
+    battleId: string,
+    userId: string,
+    passedCount: number,
+    totalCount: number,
+  ): Promise<void> {
+    const battle = await this.battleRedisService.getBattle(battleId);
+    if (!battle) return;
+
+    const user = battle.users.find((u) => u.userId === userId);
+    if (user) {
+      user.progress = {
+        passedCount,
+        totalCount,
+      };
+      await this.battleRedisService.updateBattle(battle);
+    }
+  }
+
   async deleteBattle(roomId: string): Promise<void> {
     const battleId = await this.battleRedisService.getBattleIdByRoomId(roomId);
     if (battleId) {

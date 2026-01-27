@@ -342,7 +342,7 @@ function CodeEditor() {
             <button className="rounded-md bg-base-muted px-3 py-1 text-xs">JavaScript</button>
           </div>
         </div>
-        <div className="min-h-[520px] h-[40vh] bg-(bg-layer-2) font-mono text-sm text-base-primary xl:h-auto xl:flex-1">
+        <div className="min-h-[320px] h-[40vh] bg-(bg-layer-2) font-mono text-sm text-base-primary xl:h-auto xl:flex-1">
           <BaseCodeEditor
             value={code}
             onChange={(value) => handleChange(value || '')}

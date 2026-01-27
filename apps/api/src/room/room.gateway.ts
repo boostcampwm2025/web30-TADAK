@@ -214,6 +214,19 @@ export class RoomGateway {
           code: user.code,
           language: user.language,
         });
+
+        // 현재 진행률 스냅샷 전송
+        if (user.progress) {
+          client.emit('submission-result', {
+            submissionId: `sync-${Date.now()}`,
+            status: 'SYNC',
+            userId: user.userId,
+            result: {
+              passed: user.progress.passedCount,
+              total: user.progress.totalCount,
+            },
+          });
+        }
       });
     }
 

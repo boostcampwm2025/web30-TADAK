@@ -1,13 +1,13 @@
-import { Trophy } from 'lucide-react';
+import type { UserStats } from '@shared/types/user';
 
+import TierBadge from '@/components/Common/TierBadge';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
-
 type Participant = {
   userId: string;
   username: string;
   avatarUrl?: string;
+  stats?: UserStats;
 };
-
 type Props = {
   participants: Participant[];
   selectedId: string | null;
@@ -25,6 +25,7 @@ function ProgressBarSpectator({ participants, selectedId, onSelect }: Props) {
       percent,
       passed: progress?.passed ?? 0,
       total: progress?.total ?? 0,
+      tier: p.stats?.tier.tier ?? 'Silver',
       color: idx === 0 ? 'var(--color-green-05)' : 'var(--color-pink-05)',
       bg: idx === 0 ? 'bg-[var(--color-green-05)]' : 'bg-[var(--color-pink-05)]',
     };
@@ -61,8 +62,7 @@ function ProgressBarSpectator({ participants, selectedId, onSelect }: Props) {
               <div className="space-y-1">
                 <p className="text-base font-semibold text-base-primary">{player.username}</p>
                 <div className="flex items-center gap-1 text-xs font-semibold text-amber-500">
-                  <Trophy className="h-4 w-4" />
-                  <span>Gold</span>
+                  <TierBadge tier={player.tier} />
                 </div>
               </div>
             </div>
