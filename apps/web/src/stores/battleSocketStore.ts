@@ -13,6 +13,7 @@ import type { Socket } from 'socket.io-client';
 import { create } from 'zustand';
 
 import { connectBattleSocket, disconnectBattleSocket } from '../lib/battleSocket';
+import { useBattleProblemStore } from './battleProblemStore';
 import { useRoomStore } from './roomStore';
 import { useUserStore } from './userStore';
 
@@ -57,6 +58,7 @@ interface BattleSocketState {
   roomAvailability: RoomAvailabilityResponseDTO | null;
   spectatorCount: number;
   rooms: Room[];
+  isLeavingBattle: boolean;
   availabilityListener: ((payload: RoomAvailabilityResponseDTO) => void) | null;
   roomListListener: ((rooms: Room[]) => void) | null;
   joinedListener: ((payload: { playerCount: number }) => void) | null;
@@ -68,7 +70,7 @@ interface BattleSocketState {
   ) => Promise<RoomAvailabilityResponseDTO>;
   joinRoom: (payload: JoinRoomRequest) => Promise<JoinRoomResponse>;
   leaveRoom: (roomId: string) => void;
-  leaveBattle: (roomId: string, battleId: string) => void;
+  leaveBattle: (roomId: string, battleId: string, userId: string) => void;
   subscribeRoomAvailability: (roomId: string) => void;
   unsubscribeRoomAvailability: () => void;
   resumeSession: (options?: { roomId?: string; roleHint?: string }) => Promise<void>;
@@ -83,6 +85,7 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
   roomAvailability: null,
   spectatorCount: 0,
   rooms: [],
+  isLeavingBattle: false,
   availabilityListener: null,
   roomListListener: null,
   joinedListener: null,
@@ -103,6 +106,21 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
 
     newSocket.on(SOCKET_EVENT.CONNECT, () => set({ isConnected: true }));
     newSocket.on(SOCKET_EVENT.DISCONNECT, () => set({ isConnected: false }));
+
+    // 문제 정보 수신 및 서버 시간 오프셋 계산 리스너 등록
+    newSocket.on(SOCKET_EVENT.PROBLEM_INFO, (payload) => {
+      const { setProblem, setTimeOffset } = useBattleProblemStore.getState();
+      if (payload?.id) {
+        setProblem(payload);
+
+        if (payload.serverTime) {
+          const serverTime = new Date(payload.serverTime).getTime();
+          const clientTime = Date.now();
+          const offset = serverTime - clientTime;
+          setTimeOffset(offset);
+        }
+      }
+    });
 
     set({ socket: newSocket, isConnected: newSocket.connected });
     return newSocket;
@@ -229,11 +247,12 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
     socket.emit(SOCKET_EVENT.LEAVE_ROOM, { roomId });
   },
   // 배틀 나가기 요청 (배틀 포기)
-  leaveBattle: (roomId: string, battleId: string) => {
+  leaveBattle: (roomId: string, battleId: string, userId: string) => {
     const socket = get().socket;
     if (!socket) return;
 
-    socket.emit(BATTLE_EVENTS.BATTLE_LEFT, { roomId, battleId });
+    set({ isLeavingBattle: true });
+    socket.emit(BATTLE_EVENTS.BATTLE_LEFT, { roomId, battleId, userId });
   },
   subscribeRoomAvailability: (roomId: string) => {
     const socket = get().connect();
