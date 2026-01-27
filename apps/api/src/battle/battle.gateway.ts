@@ -142,6 +142,39 @@ export class BattleGateway {
     }
   }
 
+  // 배틀 나가기(포기) 이벤트 처리
+  @SubscribeMessage(BATTLE_EVENTS.BATTLE_LEFT)
+  async handleBattleLeft(
+    @MessageBody() data: { battleId: string; roomId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { battleId, roomId } = data;
+    const userId = (client.data as { user?: { userId?: string } }).user?.userId;
+
+    if (!userId) {
+      console.error('[BattleGateway] handleBattleLeft: userId not found in socket data');
+      return;
+    }
+
+    try {
+      const battle = await this.battleService.forfeitBattle(battleId, userId);
+      // 배틀 종료 알림 전송
+      await this.emitBattleEnd(roomId, battle.id, battle.winnerId);
+    } catch (error) {
+      console.error('[BattleGateway] handleBattleLeft error:', error);
+      // 에러 발생 시에도 배틀 종료 이벤트 전송
+      if (roomId) {
+        this.server.to(roomId).emit(BATTLE_EVENTS.BATTLE_ENDED, { battleId });
+        try {
+          await this.roomService.completeBattleRoom(roomId);
+          await this.broadcastRoomList();
+        } catch (e) {
+          console.error('[BattleGateway] Failed to cleanup room on error:', e);
+        }
+      }
+    }
+  }
+
   // 배틀 종료 이벤트 브로드캐스트
   async emitBattleEnd(roomId: string, battleId: string, winnerId: string | null) {
     this.server.to(roomId).emit(BATTLE_EVENTS.BATTLE_ENDED, {
