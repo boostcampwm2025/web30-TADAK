@@ -8,6 +8,7 @@ interface PlayerCardProps {
     username: string;
     avatarUrl: string;
     tier: TierType;
+    division: number;
     rate: number;
     score: number;
     totalScore: number;
@@ -21,7 +22,8 @@ interface PlayerCardProps {
 }
 
 function PlayerCard({ player, isWinner, isSelected, onClick }: PlayerCardProps) {
-  const { username, avatarUrl, tier, rate, score, totalScore, time, ratingChange } = player;
+  const { username, avatarUrl, tier, division, rate, score, totalScore, time, ratingChange } =
+    player;
 
   return (
     <button
@@ -39,7 +41,7 @@ function PlayerCard({ player, isWinner, isSelected, onClick }: PlayerCardProps) 
         </div>
         <div className="flex-1">
           <h3 className="font-bold text-base-primary text-left">{username}</h3>
-          <TierBadge tier={tier} />
+          <TierBadge tier={tier} division={division} />
         </div>
         <div className="text-right">
           <div className="text-3xl font-bold text-base-primary">{rate}</div>

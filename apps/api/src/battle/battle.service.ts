@@ -522,6 +522,7 @@ export class BattleService {
       }
 
       const tier = (user?.tier?.tier || 'Bronze') as Tier;
+      const division = user?.tier?.division ?? 4;
 
       const ratingChange =
         index === 0 ? battle.player1RatingChange || 0 : battle.player2RatingChange || 0;
@@ -531,6 +532,7 @@ export class BattleService {
         username: user?.username || 'Unknown',
         avatarUrl: user?.avatarUrl || '',
         tier,
+        division,
         rate: user?.rating || 0,
         score: submission?.passedTestCases || 0,
         totalScore: submission?.totalTestCases || 20,

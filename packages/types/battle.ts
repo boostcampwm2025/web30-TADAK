@@ -88,6 +88,7 @@ export interface BattleResultResponse {
     username: string;
     avatarUrl: string;
     tier: TierType;
+    division: number;
     rate: number;
     score: number;
     totalScore: number;
