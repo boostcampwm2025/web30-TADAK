@@ -83,6 +83,7 @@ function BattlePage() {
     // 플레이어가 배틀 중이면 배틀 포기
     if (battleId && me?.userId) {
       leaveBattle(roomId, battleId, me.userId);
+      useUserStore.getState().clearCurrentRoomId();
       if (blocker.state === 'blocked') blocker.proceed?.();
     } else {
       leaveRoom(roomId);
@@ -130,6 +131,7 @@ function BattlePage() {
       clearProblem();
       clearRoom();
       resetProgresses();
+      useUserStore.getState().clearCurrentRoomId();
       useBattleSocketStore.setState({ isLeavingBattle: false });
       try {
         sessionStorage.removeItem('battle-session');
