@@ -343,6 +343,9 @@ export class BattleService {
     await this.redisClient.srem(RedisKeys.activeBattles(), battle.battleId);
     this.logger.log(`[endBattle] 진행 중인 배틀 목록에서 제거 완료`);
 
+    // 6.5. 방 삭제
+    await this.roomService.deleteRoom(battle.roomId);
+
     // 7. 참가자들의 매칭 상태 초기화 (재매칭 가능하도록)
     this.logger.log(
       `[endBattle] 매칭 상태 초기화 시작 - users: ${battle.users.map((u) => u.userId).join(', ')}`,
