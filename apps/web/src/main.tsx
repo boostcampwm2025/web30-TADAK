@@ -7,6 +7,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from '@/App.tsx';
 import BattlePage from '@/pages/BattlePage.tsx';
 import LoginErrorPage from '@/pages/Error/LoginErrorPage';
+import LandingPage from '@/pages/LandingPage.tsx';
 import LoginPage from '@/pages/LoginPage.tsx';
 import MainPage from '@/pages/MainPage.tsx';
 import MatchingPage from '@/pages/MatchingPage.tsx';
@@ -20,6 +21,10 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <MainPage />,
+      },
+      {
+        path: '/landing',
+        element: <LandingPage />,
       },
       {
         path: '/matching',
