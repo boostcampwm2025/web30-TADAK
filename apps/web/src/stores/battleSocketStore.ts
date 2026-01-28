@@ -204,7 +204,11 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
         if (error?.code === SOCKET_ERROR.ROOM_NOT_FOUND) {
           clearSession();
         }
-        reject(new Error(error?.message ?? 'JOIN_ROOM_FAILED'));
+        const err = new Error(error?.message ?? 'JOIN_ROOM_FAILED');
+        if (error?.code) {
+          (err as Error & { code?: string }).code = error.code;
+        }
+        reject(err);
       };
 
       socket.on(SOCKET_EVENT.ROOM_STATE_ROLE, handleSync);
