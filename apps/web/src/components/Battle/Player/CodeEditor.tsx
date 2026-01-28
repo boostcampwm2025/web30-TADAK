@@ -22,8 +22,9 @@ type TestcaseResult = TestcaseUpdateMessage['testcase'] & {
 type TestcaseUpdatePayload = Omit<TestcaseUpdateMessage, 'type'> & {
   results?: TestcaseUpdateMessage['results'];
 };
-type SubmissionResultPayload = Omit<FinalResultMessage, 'type'> & {
+type SubmissionResultPayload = Omit<FinalResultMessage, 'type' | 'status'> & {
   userId?: string;
+  status: FinalResultMessage['status'] | 'SYNC';
 };
 
 // 실행 상태 타입
@@ -46,6 +47,7 @@ function CodeEditor() {
   const socket = useBattleSocketStore((state) => state.socket);
   const connect = useBattleSocketStore((state) => state.connect);
   const upsertProgress = useBattleProgressStore((state) => state.upsertProgress);
+  const syncProgress = useBattleProgressStore((state) => state.syncProgress);
 
   const [code, setCode] = useState(DEFAULT_CODE_TEMPLATE);
   const [statusText, setStatusText] = useState('대기 중');
@@ -158,10 +160,18 @@ function CodeEditor() {
     const handleSubmissionResult = (payload: SubmissionResultPayload) => {
       // 모든 플레이어의 제출 결과를 store에 저장 (ProgressBar용)
       if (payload.userId && payload.result) {
-        upsertProgress(payload.userId, {
-          passed: payload.result.passed,
-          total: payload.result.total,
-        });
+        // SYNC 이벤트는 재접속 시 진행률 동기화용이므로 activity log 추가하지 않음
+        if (payload.status === 'SYNC') {
+          syncProgress(payload.userId, {
+            passed: payload.result.passed,
+            total: payload.result.total,
+          });
+        } else {
+          upsertProgress(payload.userId, {
+            passed: payload.result.passed,
+            total: payload.result.total,
+          });
+        }
       }
 
       const execution = executionRef.current;
@@ -209,7 +219,7 @@ function CodeEditor() {
       socket.off('testcase-update', handleTestcaseUpdate);
       socket.off('submission-result', handleSubmissionResult);
     };
-  }, [me?.userId, roomId, socket, upsertProgress]);
+  }, [me?.userId, roomId, socket, upsertProgress, syncProgress]);
 
   const handleChange = (value: string) => {
     hasEditedRef.current = true;
