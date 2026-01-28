@@ -21,10 +21,12 @@ function BattlePage() {
   const { roomId: roomIdParam } = useParams<{ roomId?: string }>();
   const [searchParams] = useSearchParams();
   const isSpectator = searchParams.get('mode') === 'spectator';
+  const desiredRole = isSpectator ? 'spectator' : 'player';
   const { theme, toggleTheme } = useTheme();
   const resumeSession = useBattleSocketStore((state) => state.resumeSession);
   const connect = useBattleSocketStore((state) => state.connect);
   const joinRoom = useBattleSocketStore((state) => state.joinRoom);
+  const leaveRoom = useBattleSocketStore((state) => state.leaveRoom);
   const subscribeRoomAvailability = useBattleSocketStore(
     (state) => state.subscribeRoomAvailability,
   );
@@ -40,6 +42,11 @@ function BattlePage() {
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
 
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
+  const effectiveRole =
+    me && me.roomId === roomId ? me.role : (desiredRole as 'player' | 'spectator');
+  const isSpectatorView = effectiveRole === 'spectator';
+  const isRoleMismatch = Boolean(me && me.roomId === roomId && me.role !== desiredRole);
+  const shouldShowRoleModal = isRoleModalOpen || isRoleMismatch;
 
   // 페이지 나갈 때 배틀 상태 초기화
   useEffect(() => {
@@ -117,9 +124,10 @@ function BattlePage() {
   }, [requestRoomAvailability, roomId, subscribeRoomAvailability, unsubscribeRoomAvailability]);
 
   useEffect(() => {
-    const desiredRole = isSpectator ? 'spectator' : 'player';
-    if (isRoleModalOpen) return;
-    if (me && me.roomId === roomId && me.role === desiredRole) return;
+    if (isRoleModalOpen || isRoleMismatch) return;
+    if (me && me.roomId === roomId) {
+      return;
+    }
     const attempt = async () => {
       await resumeSession({ roomId, roleHint: desiredRole }).catch(() => {});
       if (!useRoomStore.getState().me) {
@@ -140,23 +148,24 @@ function BattlePage() {
       }
     };
     attempt();
-  }, [me, resumeSession, joinRoom, roomId, isSpectator, user?.avatarUrl, user?.id, user?.username]);
-
-  // 관전자 수 및 인원 변동을 수신하기 위한 구독
-  useEffect(() => {
-    if (!roomId) return;
-
-    subscribeRoomAvailability(roomId);
-    return () => {
-      unsubscribeRoomAvailability();
-    };
-  }, [roomId, subscribeRoomAvailability, unsubscribeRoomAvailability]);
+  }, [
+    isRoleModalOpen,
+    isRoleMismatch,
+    me,
+    resumeSession,
+    joinRoom,
+    roomId,
+    desiredRole,
+    user?.avatarUrl,
+    user?.id,
+    user?.username,
+  ]);
 
   useEffect(() => {
     const socket = connect();
     const handleReconnect = () => {
+      if (isRoleMismatch) return;
       // 소켓 재연결 시 저장된 세션 기준으로 다시 JOIN_ROOM 시도
-      const desiredRole = isSpectator ? 'spectator' : 'player';
       resumeSession({ roleHint: desiredRole })
         .catch(() => {})
         .then(() => {
@@ -185,7 +194,8 @@ function BattlePage() {
     resumeSession,
     joinRoom,
     roomId,
-    isSpectator,
+    desiredRole,
+    isRoleMismatch,
     user?.avatarUrl,
     user?.id,
     user?.username,
@@ -193,19 +203,31 @@ function BattlePage() {
 
   const handleRoleDenied = () => {
     setIsRoleModalOpen(false);
+    if (me?.roomId === roomId) {
+      leaveRoom(roomId);
+    }
+    try {
+      sessionStorage.removeItem('battle-session');
+    } catch {
+      // ignore
+    }
     navigate('/', { replace: true });
   };
 
   return (
     <div className="min-h-svh overflow-auto xl:h-screen xl:overflow-hidden">
       <div className="flex min-h-svh flex-col gap-3 px-3 py-3 xl:h-full xl:w-full xl:gap-4 xl:px-6 xl:py-4">
-        <BattleHeader theme={theme} onToggleTheme={toggleTheme} showLeaveConfirm={!isSpectator} />
+        <BattleHeader
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          showLeaveConfirm={!isSpectatorView}
+        />
         <div className="flex-1 min-h-0 overflow-visible xl:overflow-hidden">
-          {isSpectator ? <BattleSpectator /> : <BattlePlayer />}
+          {isSpectatorView ? <BattleSpectator /> : <BattlePlayer />}
         </div>
       </div>
       <Modal
-        isOpen={isRoleModalOpen}
+        isOpen={shouldShowRoleModal}
         onClose={handleRoleDenied}
         icon={AlertCircle}
         iconColor="text-error-01"
