@@ -76,6 +76,12 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
     if (roomId) {
       leaveRoom(roomId);
     }
+    try {
+      sessionStorage.removeItem('battle-session');
+      sessionStorage.removeItem('battle-progress');
+    } catch {
+      // ignore
+    }
     navigate('/');
   };
 
