@@ -1,12 +1,14 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
 import { SOCKET_ERROR, SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { ProblemDataPayload } from '@shared/types/problem';
-import { useEffect } from 'react';
+import { AlertCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import BattleHeader from '@/components/Battle/BattleHeader';
 import BattlePlayer from '@/components/Battle/Player/BattlePlayer';
 import BattleSpectator from '@/components/Battle/Spectator/BattleSpectator';
+import Modal from '@/components/Common/Modal';
 import { useTheme } from '@/hooks/useTheme';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
@@ -35,6 +37,7 @@ function BattlePage() {
   const user = useUserStore((state) => state.user);
   const me = useRoomStore((state) => state.me);
   const resetProgresses = useBattleProgressStore((state) => state.resetProgresses);
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
 
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
 
@@ -115,6 +118,7 @@ function BattlePage() {
 
   useEffect(() => {
     const desiredRole = isSpectator ? 'spectator' : 'player';
+    if (isRoleModalOpen) return;
     if (me && me.roomId === roomId && me.role === desiredRole) return;
     const attempt = async () => {
       await resumeSession({ roomId, roleHint: desiredRole }).catch(() => {});
@@ -130,8 +134,7 @@ function BattlePage() {
         } catch (error) {
           const code = (error as Error & { code?: string }).code;
           if (code === SOCKET_ERROR.INVALID_ROLE) {
-            alert('참가자만 배틀에 입장할 수 있습니다.');
-            navigate('/', { replace: true });
+            setIsRoleModalOpen(true);
           }
         }
       }
@@ -167,8 +170,7 @@ function BattlePage() {
             }).catch((error) => {
               const code = (error as Error & { code?: string }).code;
               if (code === SOCKET_ERROR.INVALID_ROLE) {
-                alert('참가자만 배틀에 입장할 수 있습니다.');
-                navigate('/', { replace: true });
+                setIsRoleModalOpen(true);
               }
             });
           }
@@ -189,6 +191,11 @@ function BattlePage() {
     user?.username,
   ]);
 
+  const handleRoleDenied = () => {
+    setIsRoleModalOpen(false);
+    navigate('/', { replace: true });
+  };
+
   return (
     <div className="min-h-svh overflow-auto xl:h-screen xl:overflow-hidden">
       <div className="flex min-h-svh flex-col gap-3 px-3 py-3 xl:h-full xl:w-full xl:gap-4 xl:px-6 xl:py-4">
@@ -197,6 +204,29 @@ function BattlePage() {
           {isSpectator ? <BattleSpectator /> : <BattlePlayer />}
         </div>
       </div>
+      <Modal
+        isOpen={isRoleModalOpen}
+        onClose={handleRoleDenied}
+        icon={AlertCircle}
+        iconColor="text-error-01"
+        iconBgColor="bg-error-01/20"
+        title="참가자 전용 방입니다"
+        description={
+          <>
+            참가자만 배틀에 입장할 수 있습니다.
+            <br />
+            메인 페이지로 이동합니다.
+          </>
+        }
+        buttons={[
+          {
+            label: '확인',
+            onClick: handleRoleDenied,
+            variant: 'black',
+          },
+        ]}
+        closeOnBackdrop={false}
+      />
     </div>
   );
 }
