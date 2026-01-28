@@ -40,12 +40,21 @@ function BattlePage() {
   const me = useRoomStore((state) => state.me);
   const resetProgresses = useBattleProgressStore((state) => state.resetProgresses);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [roleModalReason, setRoleModalReason] = useState<
+    'player-to-spectator' | 'spectator-to-player' | 'not-authorized-player' | null
+  >(null);
 
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
   const effectiveRole =
     me && me.roomId === roomId ? me.role : (desiredRole as 'player' | 'spectator');
   const isSpectatorView = effectiveRole === 'spectator';
   const isRoleMismatch = Boolean(me && me.roomId === roomId && me.role !== desiredRole);
+  const mismatchReason = isRoleMismatch
+    ? me?.role === 'player'
+      ? 'player-to-spectator'
+      : 'spectator-to-player'
+    : null;
+  const modalReason = roleModalReason ?? mismatchReason;
   const shouldShowRoleModal = isRoleModalOpen || isRoleMismatch;
 
   // 페이지 나갈 때 배틀 상태 초기화
@@ -142,6 +151,7 @@ function BattlePage() {
         } catch (error) {
           const code = (error as Error & { code?: string }).code;
           if (code === SOCKET_ERROR.INVALID_ROLE) {
+            setRoleModalReason('not-authorized-player');
             setIsRoleModalOpen(true);
           }
         }
@@ -179,6 +189,7 @@ function BattlePage() {
             }).catch((error) => {
               const code = (error as Error & { code?: string }).code;
               if (code === SOCKET_ERROR.INVALID_ROLE) {
+                setRoleModalReason('not-authorized-player');
                 setIsRoleModalOpen(true);
               }
             });
@@ -203,6 +214,18 @@ function BattlePage() {
 
   const handleRoleDenied = () => {
     setIsRoleModalOpen(false);
+    setRoleModalReason(null);
+
+    if (modalReason === 'player-to-spectator') {
+      navigate(`/room/${roomId}`, { replace: true });
+      return;
+    }
+
+    if (modalReason === 'spectator-to-player') {
+      navigate(`/room/${roomId}?mode=spectator`, { replace: true });
+      return;
+    }
+
     if (me?.roomId === roomId) {
       leaveRoom(roomId);
     }
@@ -213,6 +236,34 @@ function BattlePage() {
     }
     navigate('/', { replace: true });
   };
+
+  const roleModalTitle =
+    modalReason === 'player-to-spectator'
+      ? '참가자는 관전자로 전환할 수 없습니다'
+      : modalReason === 'spectator-to-player'
+        ? '관전자는 참가자로 전환할 수 없습니다'
+        : '참가자 전용 방입니다';
+
+  const roleModalDescription =
+    modalReason === 'player-to-spectator' ? (
+      <>
+        참가자 화면으로 이동합니다.
+        <br />
+        URL을 변경해도 역할은 바뀌지 않습니다.
+      </>
+    ) : modalReason === 'spectator-to-player' ? (
+      <>
+        관전 화면으로 이동합니다.
+        <br />
+        참가자 권한이 있어야 입장할 수 있습니다.
+      </>
+    ) : (
+      <>
+        해당 방의 참가자가 아닙니다.
+        <br />
+        메인 페이지로 이동합니다.
+      </>
+    );
 
   return (
     <div className="min-h-svh overflow-auto xl:h-screen xl:overflow-hidden">
@@ -232,14 +283,8 @@ function BattlePage() {
         icon={AlertCircle}
         iconColor="text-error-01"
         iconBgColor="bg-error-01/20"
-        title="참가자 전용 방입니다"
-        description={
-          <>
-            참가자만 배틀에 입장할 수 있습니다.
-            <br />
-            메인 페이지로 이동합니다.
-          </>
-        }
+        title={roleModalTitle}
+        description={roleModalDescription}
         buttons={[
           {
             label: '확인',
