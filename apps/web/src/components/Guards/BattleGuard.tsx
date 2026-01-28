@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { useUserStore } from '@/stores/userStore';
 
@@ -7,23 +7,23 @@ interface BattleGuardProps {
   children: React.ReactNode;
 }
 
-// 활성 배틀이 있는 유저를 해당 배틀 페이지로 리다이렉트
+// 배틀 중인 유저를 해당 배틀 페이지로 리다이렉트
 function BattleGuard({ children }: BattleGuardProps) {
   const navigate = useNavigate();
-  const location = useLocation();
   const user = useUserStore((state) => state.user);
+  const isLeavingRoom = useUserStore((state) => state.isLeavingRoom);
 
   useEffect(() => {
-    if (user?.currentRoomId) {
-      const currentPath = location.pathname;
-      const targetPath = `/room/${user.currentRoomId}`;
-
-      // 현재 경로가 타겟 경로와 다르고, 결과 페이지가 아닐 때만 이동
-      if (currentPath !== targetPath && !currentPath.startsWith('/result')) {
-        navigate(targetPath, { replace: true });
-      }
+    // 배틀 중이고 이탈 중이 아닐 때만 리다이렉트
+    if (user?.currentRoomId && !isLeavingRoom) {
+      navigate(`/room/${user.currentRoomId}`, { replace: true });
     }
-  }, [user?.currentRoomId, location.pathname, navigate]);
+  }, [user?.currentRoomId, isLeavingRoom, navigate]);
+
+  // 리다이렉트 전 깜빡임 방지
+  if (user?.currentRoomId && !isLeavingRoom) {
+    return null;
+  }
 
   return <>{children}</>;
 }
