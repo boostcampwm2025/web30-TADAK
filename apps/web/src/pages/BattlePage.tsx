@@ -29,6 +29,7 @@ function BattlePage() {
   const unsubscribeRoomAvailability = useBattleSocketStore(
     (state) => state.unsubscribeRoomAvailability,
   );
+  const requestRoomAvailability = useBattleSocketStore((state) => state.requestRoomAvailability);
   const setProblem = useBattleProblemStore((state) => state.setProblem);
   const setTimeOffset = useBattleProblemStore((state) => state.setTimeOffset);
   const user = useUserStore((state) => state.user);
@@ -103,6 +104,14 @@ function BattlePage() {
       socket.off(BATTLE_EVENTS.BATTLE_ENDED, handleBattleEnded);
     };
   }, [connect, navigate, resetProgresses, roomId]);
+
+  useEffect(() => {
+    subscribeRoomAvailability(roomId);
+    requestRoomAvailability({ roomId }).catch(() => {});
+    return () => {
+      unsubscribeRoomAvailability();
+    };
+  }, [requestRoomAvailability, roomId, subscribeRoomAvailability, unsubscribeRoomAvailability]);
 
   useEffect(() => {
     const desiredRole = isSpectator ? 'spectator' : 'player';
