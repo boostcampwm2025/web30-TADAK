@@ -35,6 +35,15 @@ function BattlePage() {
 
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
 
+  // 페이지 나갈 때 배틀 상태 초기화
+  useEffect(() => {
+    return () => {
+      useRoomStore.getState().clearRoom();
+      useBattleProblemStore.getState().clearProblem();
+      useBattleProgressStore.getState().resetProgresses();
+    };
+  }, []);
+
   // 배틀 종료 이벤트 리스너 분리
   useEffect(() => {
     const socket = connect();
@@ -67,7 +76,7 @@ function BattlePage() {
       if (isLeaving) {
         navigate('/');
       } else if (data.battleId) {
-        navigate(`/result/${data.battleId}`);
+        navigate(`/result/${data.battleId}`, { replace: true });
       } else {
         console.error('[BattlePage] battleId missing in BATTLE_ENDED payload');
       }

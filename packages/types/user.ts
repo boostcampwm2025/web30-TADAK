@@ -1,10 +1,11 @@
 export type UserRole = 'player' | 'spectator';
+export type TierType = 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Ruby' | 'Master';
 
 export interface UserStats {
   wins: number;
   losses: number;
   rating: number;
-  tier: { tier: string; division: number };
+  tier: { tier: TierType; division: number };
 }
 
 // 방에 들어가지 않은 사용자
