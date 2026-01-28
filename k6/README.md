@@ -7,19 +7,38 @@
 ### k6 설치
 
 - **macOS**: `brew install k6`
-- **Windows**: `winget install k6`
+- **Windows**: `winget install k6 --source winget`
 - **Linux**: [k6 공식 문서](https://grafana.com/oss/k6/) 참조
 
 ---
 
 ## 2. 인증 토큰 준비 (Authentication)
 
-테스트 실행 전, 아래 API를 통해 테스트용 JWT 토큰을 발급받아 `k6/config.js`의 `JWT_TOKEN` 항목에 업데이트해야 합니다.
+테스트 실행 전, 아래 API를 통해 테스트용 JWT 토큰을 발급받아 `k6/config.js`의 `TOKEN` 항목에 업데이트해야 합니다.
 
 1. **토큰 발급 (Postman 또는 curl)**
    ```bash
    # API 호출을 통해 토큰 획득
    POST http://localhost:3000/api/auth/test-token
+   ```
+2. **`config.js`에 업데이트**
+
+   ```js
+   const TOKEN = 'accessToken'; // 여기에 업데이트!!!
+
+   export const CONFIG = {
+     // API 서버 주소
+     BASE_URL: __ENV.BASE_URL || 'http://localhost:3000',
+
+     // JWT 인증 토큰 (환경변수 또는 하드코딩)
+     JWT_TOKEN: __ENV.JWT_TOKEN || TOKEN || 'PUT_YOUR_JWT_TOKEN_HERE',
+
+     // 테스트할 문제 ID
+     PROBLEM_ID: __ENV.PROBLEM_ID || 'beta_easy_1',
+
+     // 테스트용 소켓 ID (실제 소켓 연결 없이 테스트용)
+     SOCKET_ID: __ENV.SOCKET_ID || 'k6-load-test-socket',
+   };
    ```
 
 ## 3. 테스트 실행
@@ -32,17 +51,24 @@
   # 최소 테스트
   k6 run -e PRESET=smoke submission-load-test.js
 
-  ...
+  # 소규모 테스트
+  k6 run -e PRESET=small submission-load-test.js
 
-  ## 대규모 테스트
+  # 중규모 테스트
+  k6 run -e PRESET=medium submission-load-test.js
+
+  # 대규모 테스트
   k6 run -e PRESET=large submission-load-test.js
+
+  # 전체 테스트
+  k6 run -e PRESET=full submission-load-test.js
   ```
 
 2. **고부하 동시성 테스트**
 
 - 50명의 유저가 동시에 접속하는 상황을 확인합니다.
   ```bash
-  k6 run submission-load-test.js
+  k6 run concurrency-test.js
   ```
 
 3. **스파이크 테스트**
