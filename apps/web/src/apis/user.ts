@@ -6,6 +6,7 @@ export interface UserProfile {
   id: string;
   username: string;
   avatarUrl: string;
+  currentRoomId?: string | null;
 }
 
 export const getUserProfile = async () => {
