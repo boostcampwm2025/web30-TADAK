@@ -82,10 +82,12 @@ function BattlePage() {
 
     // 플레이어가 배틀 중이면 배틀 포기
     if (battleId && me?.userId) {
+      useUserStore.getState().setIsLeavingRoom(true);
       leaveBattle(roomId, battleId, me.userId);
       useUserStore.getState().clearCurrentRoomId();
       if (blocker.state === 'blocked') blocker.proceed?.();
     } else {
+      useUserStore.getState().setIsLeavingRoom(true);
       leaveRoom(roomId);
       if (blocker.state === 'blocked') blocker.proceed?.();
       else navigate('/');
@@ -131,6 +133,9 @@ function BattlePage() {
       clearProblem();
       clearRoom();
       resetProgresses();
+      if (isLeaving) {
+        useUserStore.getState().setIsLeavingRoom(true);
+      }
       useUserStore.getState().clearCurrentRoomId();
       useBattleSocketStore.setState({ isLeavingBattle: false });
       try {

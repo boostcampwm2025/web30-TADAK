@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 
-import BattleGuard from '@/components/Guards/BattleGuard';
 import { useUserStore } from '@/stores/userStore';
 
 function App() {
@@ -13,11 +12,7 @@ function App() {
     }
   }, [fetchUser]);
 
-  return (
-    <BattleGuard>
-      <Outlet />
-    </BattleGuard>
-  );
+  return <Outlet />;
 }
 
 export default App;
