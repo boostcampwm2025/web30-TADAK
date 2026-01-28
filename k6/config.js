@@ -2,8 +2,7 @@
  * k6 부하 테스트 설정
  */
 
-const TOKEN =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Ims2LWxvYWQtdGVzdC11c2VyIiwic3ViIjoiMzEyZmQ2MzQtOTI2MC00MzhjLWFlZjQtMGQyY2Q3OTcwZGE2IiwiaWF0IjoxNzY5NTA4NDgyLCJleHAiOjE3Njk1OTQ4ODJ9.c1B1G83ZTDev6vXK6zKbcSPsTwyhccBYKfMU9DNThxw';
+const TOKEN = '';
 
 export const CONFIG = {
   // API 서버 주소
