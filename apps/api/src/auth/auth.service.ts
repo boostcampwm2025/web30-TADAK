@@ -59,4 +59,31 @@ export class AuthService {
   async logout(userId: string) {
     await this.userService.removeRefreshToken(userId);
   }
+
+  /**
+   * k6 부하 테스트용 토큰 생성 (개발 환경 전용)
+   * 실제 DB에 테스트 사용자를 생성하고 유효한 토큰 발급
+   */
+  async createTestToken() {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Test token is not available in production');
+    }
+
+    // 테스트 사용자 생성 또는 조회
+    const testGithubId = 'k6-load-test-github-id';
+    let user = await this.userService.findByGithubId(testGithubId);
+
+    if (!user) {
+      user = await this.userService.create({
+        githubId: testGithubId,
+        username: 'k6-load-test-user',
+        avatarUrl: 'https://github.com/ghost.png',
+      });
+    }
+
+    const payload = { username: user.username, sub: user.id };
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '24h' });
+
+    return { accessToken, userId: user.id };
+  }
 }

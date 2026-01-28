@@ -32,7 +32,6 @@ export class DockerRunnerService {
 
   async runSubmission(options: DockerRunOptions): Promise<DockerRunResult> {
     const args = this.buildRunArgs(options);
-    this.logger.debug(`ARGS: ${args.join(' ')}`);
     return this.spawnDocker(args);
   }
 

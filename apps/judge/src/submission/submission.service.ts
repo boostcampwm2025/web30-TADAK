@@ -37,7 +37,7 @@ export class SubmissionService {
 
     // 이미 파일이 있으면 건너뜀
     if (this.problemDataExists(problemId)) {
-      this.logger.debug(`Problem data already exists for ${problemId}`);
+      // this.logger.debug(`Problem data already exists for ${problemId}`);
       return;
     }
 

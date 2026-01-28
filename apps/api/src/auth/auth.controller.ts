@@ -47,4 +47,10 @@ export class AuthController {
     res.clearCookie('refreshToken', { path: '/' });
     res.status(200).json({ message: 'Logged out successfully' });
   }
+
+  // k6 부하 테스트용 토큰 발급 (개발 환경 전용)
+  @Post('test-token')
+  createTestToken() {
+    return this.authService.createTestToken();
+  }
 }
