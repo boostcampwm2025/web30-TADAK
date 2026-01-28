@@ -1,13 +1,15 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { ProblemDataPayload } from '@shared/types/problem';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
+import BattleFinishOverlay from '@/components/Battle/BattleFinishOverlay';
 import BattleHeader from '@/components/Battle/BattleHeader';
 import BattlePlayer from '@/components/Battle/Player/BattlePlayer';
 import BattleSpectator from '@/components/Battle/Spectator/BattleSpectator';
 import { useTheme } from '@/hooks/useTheme';
+import { playCountdownSound } from '@/lib/sound';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
@@ -34,6 +36,8 @@ function BattlePage() {
   const user = useUserStore((state) => state.user);
   const me = useRoomStore((state) => state.me);
   const resetProgresses = useBattleProgressStore((state) => state.resetProgresses);
+
+  const [showFinishOverlay, setShowFinishOverlay] = useState(false);
 
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
 
@@ -91,7 +95,11 @@ function BattlePage() {
       resetProgresses();
 
       if (data.battleId) {
-        navigate(`/result/${data.battleId}`, { replace: true });
+        setShowFinishOverlay(true);
+        playCountdownSound('end');
+        setTimeout(() => {
+          navigate(`/result/${data.battleId}`, { replace: true });
+        }, 3000);
       } else {
         console.error('[BattlePage] battleId missing in BATTLE_ENDED payload');
       }
@@ -174,6 +182,7 @@ function BattlePage() {
           {isSpectator ? <BattleSpectator /> : <BattlePlayer />}
         </div>
       </div>
+      <BattleFinishOverlay isVisible={showFinishOverlay} />
     </div>
   );
 }
