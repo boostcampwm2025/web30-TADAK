@@ -92,6 +92,27 @@ export class RoomGateway {
     const resolvedUsername = username ?? `User-${resolvedUserId.slice(-4)}`;
     const resolvedAvatar = avatarUrl;
 
+    // 플레이어 권한 검증
+    if (requestedRole === 'player') {
+      if (!userId) {
+        client.emit(SOCKET_EVENT.ERROR, {
+          code: SOCKET_ERROR.INVALID_ROLE,
+          message: '참가자만 배틀에 입장할 수 있습니다.',
+        });
+        return;
+      }
+
+      // 방의 플레이어 목록에 userId가 있어야 참가 허용
+      const isAuthorizedPlayer = room.currentPlayers.some((player) => player.userId === userId);
+      if (!isAuthorizedPlayer) {
+        client.emit(SOCKET_EVENT.ERROR, {
+          code: SOCKET_ERROR.INVALID_ROLE,
+          message: '참가자만 배틀에 입장할 수 있습니다.',
+        });
+        return;
+      }
+    }
+
     // 기존 유저 재접속 처리: 동일 userId가 있으면 socketId만 교체
     const existingPlayer = room.currentPlayers.find((u) => u.userId === resolvedUserId);
     const existingSpectator = room.currentSpectators.find((u) => u.userId === resolvedUserId);
