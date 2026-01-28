@@ -24,6 +24,7 @@ interface PlayerCardProps {
 function PlayerCard({ player, isWinner, isSelected, onClick }: PlayerCardProps) {
   const { username, avatarUrl, tier, division, rate, score, totalScore, time, ratingChange } =
     player;
+  const isPositiveChange = ratingChange >= 0;
 
   return (
     <button
@@ -51,15 +52,17 @@ function PlayerCard({ player, isWinner, isSelected, onClick }: PlayerCardProps) 
 
       <div className="flex rounded-2xl bg-bg-layer-1/20 border border-border-soft p-2.5">
         <div className="flex flex-6 justify-center items-center gap-3">
-          <div className={`rounded-full p-2 ${isWinner ? 'bg-green-01' : 'bg-pink-01'}`}>
-            {isWinner ? (
+          <div className={`rounded-full p-2 ${isPositiveChange ? 'bg-green-01' : 'bg-pink-01'}`}>
+            {isPositiveChange ? (
               <ArrowUp className="h-5 w-5 text-green-06" />
             ) : (
               <ArrowDown className="h-5 w-5 text-pink-05" />
             )}
           </div>
           <div>
-            <div className={`text-3xl font-bold ${isWinner ? 'text-green-05' : 'text-pink-05'}`}>
+            <div
+              className={`text-3xl font-bold ${isPositiveChange ? 'text-green-05' : 'text-pink-05'}`}
+            >
               {ratingChange > 0 ? '+' : ''}
               {ratingChange}
             </div>
