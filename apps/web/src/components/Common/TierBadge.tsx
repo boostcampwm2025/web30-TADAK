@@ -1,6 +1,8 @@
 import type { TierType } from '@shared/types/user';
 import { Crown, Diamond, Medal, Shield, Star, Trophy } from 'lucide-react';
 
+import { toRomanNumeral } from '@/lib/tier';
+
 interface TierBadgeProps {
   tier: TierType;
   division?: number;
@@ -49,7 +51,7 @@ function TierBadge({ tier, division }: TierBadgeProps) {
       <Icon size={12} className={`${config.fillClass} ${config.colorClass}`} />
       <span className={`font-semibold ${config.colorClass} text-sm`}>
         {tier}
-        {division !== undefined && ` ${division}`}
+        {division !== undefined && ` ${toRomanNumeral(division)}`}
       </span>
     </div>
   );

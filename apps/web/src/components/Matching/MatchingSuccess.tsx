@@ -2,6 +2,7 @@ import { Check } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import TierBadge from '@/components/Common/TierBadge';
 import { playBattleCountdownSound } from '@/lib/sound';
 import { useMatchingStore } from '@/stores/matchingStore';
 import { useUserStore } from '@/stores/userStore';
@@ -73,12 +74,8 @@ export default function MatchingSuccess() {
           </div>
           <div className="flex flex-col items-center">
             <p className="text-2xl font-bold">{user.username}</p>
-            <div className="mt-2 flex items-center justify-center gap-1 text-sm">
-              <span>🏆</span>
-              <span className="font-semibold text-base-secondary capitalize">
-                {myTier.tier}
-                {myTier.division ? ` ${myTier.division}` : ''}
-              </span>
+            <div className="mt-2">
+              <TierBadge tier={myTier.tier} division={myTier.division} />
             </div>
             <p className="mt-1 text-base text-base-secondary">승률: {myRate.winRate.toFixed(0)}%</p>
           </div>
@@ -97,12 +94,8 @@ export default function MatchingSuccess() {
           </div>
           <div className="flex flex-col items-center">
             <p className="text-2xl font-bold">{opponent.username}</p>
-            <div className="mt-2 flex items-center justify-center gap-1 text-sm">
-              <span>🏆</span>
-              <span className="font-semibold text-base-secondary capitalize">
-                {opponent.tier.tier}
-                {opponent.tier.division ? ` ${opponent.tier.division}` : ''}
-              </span>
+            <div className="mt-2">
+              <TierBadge tier={opponent.tier.tier} division={opponent.tier.division} />
             </div>
             <p className="mt-1 text-base text-base-secondary">
               승률: {opponent.rate.winRate.toFixed(0)}%
