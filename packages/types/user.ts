@@ -1,5 +1,5 @@
 export type UserRole = 'player' | 'spectator';
-export type TierType = 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Ruby' | 'Master';
+export type TierType = 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Master';
 
 export interface UserStats {
   wins: number;

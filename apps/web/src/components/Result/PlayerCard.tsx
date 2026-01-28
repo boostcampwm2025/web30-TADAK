@@ -1,3 +1,4 @@
+import type { TierType } from '@shared/types/user';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 
 import TierBadge from '@/components/Common/TierBadge';
@@ -6,7 +7,7 @@ interface PlayerCardProps {
   player: {
     username: string;
     avatarUrl: string;
-    tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Ruby' | 'Master';
+    tier: TierType;
     rate: number;
     score: number;
     totalScore: number;
