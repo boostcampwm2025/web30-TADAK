@@ -7,6 +7,7 @@ interface UserStore {
   isLoading: boolean;
   fetchUser: () => Promise<void>;
   clearUser: () => void;
+  clearCurrentRoomId: () => void;
 }
 
 export const useUserStore = create<UserStore>((set) => ({
@@ -24,4 +25,8 @@ export const useUserStore = create<UserStore>((set) => ({
     }
   },
   clearUser: () => set({ user: null }),
+  clearCurrentRoomId: () =>
+    set((state) => ({
+      user: state.user ? { ...state.user, currentRoomId: null } : null,
+    })),
 }));
