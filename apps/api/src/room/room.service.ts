@@ -237,13 +237,23 @@ export class RoomService {
 
   // 클라이언트에 노출할 때 socketId 등 민감 정보를 제거한 방 데이터
 
-  toPublicRooms(rooms: Room[]): PublicRoom[] {
-    return rooms
-      .filter((room) => room.status === 'in-battle')
-      .map((room) => ({
-        ...room,
-        currentPlayers: room.currentPlayers.map(({ socketId: _socketId, ...rest }) => rest),
-        currentSpectators: room.currentSpectators.map(({ socketId: _socketId, ...rest }) => rest),
-      }));
+  async toPublicRooms(rooms: Room[]): Promise<PublicRoom[]> {
+    const battleRooms = rooms.filter((room) => room.status === 'in-battle');
+
+    return Promise.all(
+      battleRooms.map(async (room) => {
+        const battle = await this.BattleService.getBattleByRoomId(room.roomId);
+        const progressMap = new Map(battle?.users.map((u) => [u.userId, u.progress]) ?? []);
+
+        return {
+          ...room,
+          currentPlayers: room.currentPlayers.map(({ socketId: _socketId, ...rest }) => ({
+            ...rest,
+            progress: progressMap.get(rest.userId),
+          })),
+          currentSpectators: room.currentSpectators.map(({ socketId: _socketId, ...rest }) => rest),
+        };
+      }),
+    );
   }
 }

@@ -91,9 +91,9 @@ function RoomCardList({ rooms, onSpectate, joiningRoomId }: Props) {
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-base-muted">
                     <div
-                      className="h-full rounded-full"
+                      className="h-full rounded-full transition-all duration-300"
                       style={{
-                        width: `${idx === 0 ? 75 : 60}%`,
+                        width: `${p.progress && p.progress.totalCount > 0 ? Math.round((p.progress.passedCount / p.progress.totalCount) * 100) : 0}%`,
                         backgroundColor: idx === 0 ? '#00e074' : '#ff6584',
                       }}
                     />

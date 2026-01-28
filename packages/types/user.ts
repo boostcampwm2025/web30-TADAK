@@ -22,4 +22,5 @@ export interface RoomUser extends User {
   role: UserRole;
   joinedAt: Date;
   stats?: UserStats;
+  progress?: { passedCount: number; totalCount: number };
 }
