@@ -27,6 +27,7 @@ import { UserService } from '@/user/user.service';
 @Injectable()
 export class BattleService {
   private readonly logger = new Logger(BattleService.name);
+  private readonly disconnectTimers = new Map<string, NodeJS.Timeout>();
 
   constructor(
     @Inject(REDIS_CLIENT) private readonly redisClient: Redis,
@@ -204,6 +205,50 @@ export class BattleService {
     const socketId = await this.redisClient.hget(RedisKeys.matchingUser(userId), 'socketId');
 
     return socketId;
+  }
+
+  // 플레이어 disconnect 시 타이머 시작
+  // 10초 내 재접속하지 않으면 배틀 포기 처리
+  startDisconnectTimer(
+    userId: string,
+    roomId: string,
+    battleId: string,
+    onForfeit: (roomId: string, battleId: string, winnerId: string | null) => Promise<void>,
+  ): void {
+    // 이미 타이머가 있으면 중복 방지
+    if (this.disconnectTimers.has(userId)) return;
+
+    this.logger.warn(
+      `[DisconnectTimer] 시작 - userId: ${userId}, battleId: ${battleId} (${BATTLE_CONFIG.DISCONNECT_TIMEOUT_MS / 1000}초)`,
+    );
+
+    const timer = setTimeout(() => {
+      this.disconnectTimers.delete(userId);
+      void this.forfeitBattle(battleId, userId)
+        .then((battle) => onForfeit(roomId, battle.id, battle.winnerId))
+        .then(() => {
+          this.logger.warn(
+            `[DisconnectTimer] 타임아웃 → 배틀 포기 처리 완료 - userId: ${userId}, battleId: ${battleId}`,
+          );
+        })
+        .catch((error) => {
+          this.logger.error(`[DisconnectTimer] forfeit 실패 - userId: ${userId}`, error);
+        });
+    }, Number(BATTLE_CONFIG.DISCONNECT_TIMEOUT_MS));
+
+    this.disconnectTimers.set(userId, timer);
+  }
+
+  // 플레이어 재접속 시 disconnect 타이머 취소
+  cancelDisconnectTimer(userId: string): boolean {
+    const timer = this.disconnectTimers.get(userId);
+    if (timer) {
+      clearTimeout(timer);
+      this.disconnectTimers.delete(userId);
+      this.logger.log(`[DisconnectTimer] 취소 (재접속) - userId: ${userId}`);
+      return true;
+    }
+    return false;
   }
 
   /**
