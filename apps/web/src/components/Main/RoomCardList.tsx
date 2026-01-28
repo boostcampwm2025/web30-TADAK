@@ -1,5 +1,8 @@
 import type { Room } from '@shared/types/room';
 import { Eye } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+import TierBadge from '@/components/Common/TierBadge';
 
 type Props = {
   rooms: Room[];
@@ -9,7 +12,31 @@ type Props = {
 
 const getInitial = (name?: string) => name?.trim().charAt(0)?.toUpperCase() ?? '?';
 
+const difficultyColor: Record<string, { bg: string; text: string }> = {
+  Bronze: { bg: 'bg-tier-bronze/20', text: 'text-tier-bronze' },
+  Silver: { bg: 'bg-tier-silver/20', text: 'text-tier-silver' },
+  Gold: { bg: 'bg-tier-gold/20', text: 'text-tier-gold' },
+  Platinum: { bg: 'bg-tier-platinum/20', text: 'text-tier-platinum' },
+  Diamond: { bg: 'bg-tier-diamond/20', text: 'text-tier-diamond' },
+  Master: { bg: 'bg-tier-master/20', text: 'text-tier-master' },
+};
+
+function formatElapsed(createdAt: Date): string {
+  const elapsed = Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000));
+  const minutes = Math.floor(elapsed / 60);
+  const seconds = elapsed % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
 function RoomCardList({ rooms, onSpectate, joiningRoomId }: Props) {
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    if (rooms.length === 0) return;
+    const interval = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(interval);
+  }, [rooms.length]);
+
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {rooms.map((room) => {
@@ -22,7 +49,7 @@ function RoomCardList({ rooms, onSpectate, joiningRoomId }: Props) {
             <div className="mb-4 flex items-center justify-between text-xs text-base-secondary">
               <div className="flex items-center gap-2">
                 <span className="flex items-center font-semibold text-red-01">● LIVE</span>
-                <span className="text-blue-03">12:34</span>
+                <span className="text-blue-03">{formatElapsed(room.createdAt)}</span>
               </div>
               <div className="inline-flex items-center gap-1.5 text-blue-03 text-sm font-medium">
                 <Eye className="h-4 w-4 text-blue-03" strokeWidth={1.5} />
@@ -31,9 +58,13 @@ function RoomCardList({ rooms, onSpectate, joiningRoomId }: Props) {
             </div>
             <div className="flex items-center gap-2">
               <h3 className="text-xl font-bold text-base-primary">{room.title}</h3>
-              <span className="rounded-full bg-green-01 px-2 py-1 text-[10px] font-bold text-green-06">
-                Gold
-              </span>
+              {room.difficulty && (
+                <span
+                  className={`rounded-full px-2 py-1 text-[10px] font-bold ${difficultyColor[room.difficulty]?.bg ?? 'bg-base-faint'} ${difficultyColor[room.difficulty]?.text ?? 'text-base-secondary'}`}
+                >
+                  {room.difficulty}
+                </span>
+              )}
             </div>
 
             <div className="mt-4 space-y-4">
@@ -53,7 +84,9 @@ function RoomCardList({ rooms, onSpectate, joiningRoomId }: Props) {
                     </div>
                     <div className="flex flex-col">
                       <span className="text-sm font-semibold text-base-primary">{p.username}</span>
-                      <span className="text-xs text-base-secondary">🏆 Gold III</span>
+                      {p.stats?.tier && (
+                        <TierBadge tier={p.stats.tier.tier} division={p.stats.tier.division} />
+                      )}
                     </div>
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-base-muted">
