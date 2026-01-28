@@ -1,5 +1,5 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
-import { SOCKET_EVENT } from '@shared/constants/socket-event';
+import { SOCKET_ERROR, SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { ProblemDataPayload } from '@shared/types/problem';
 import { useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -119,13 +119,21 @@ function BattlePage() {
     const attempt = async () => {
       await resumeSession({ roomId, roleHint: desiredRole }).catch(() => {});
       if (!useRoomStore.getState().me) {
-        await joinRoom({
-          roomId,
-          requestedRole: desiredRole,
-          userId: user?.id,
-          username: user?.username,
-          avatarUrl: user?.avatarUrl,
-        }).catch(() => {});
+        try {
+          await joinRoom({
+            roomId,
+            requestedRole: desiredRole,
+            userId: user?.id,
+            username: user?.username,
+            avatarUrl: user?.avatarUrl,
+          });
+        } catch (error) {
+          const code = (error as Error & { code?: string }).code;
+          if (code === SOCKET_ERROR.INVALID_ROLE) {
+            alert('참가자만 배틀에 입장할 수 있습니다.');
+            navigate('/', { replace: true });
+          }
+        }
       }
     };
     attempt();
@@ -156,7 +164,13 @@ function BattlePage() {
               userId: user?.id,
               username: user?.username,
               avatarUrl: user?.avatarUrl,
-            }).catch(() => {});
+            }).catch((error) => {
+              const code = (error as Error & { code?: string }).code;
+              if (code === SOCKET_ERROR.INVALID_ROLE) {
+                alert('참가자만 배틀에 입장할 수 있습니다.');
+                navigate('/', { replace: true });
+              }
+            });
           }
         });
     };
