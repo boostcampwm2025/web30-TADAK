@@ -58,8 +58,12 @@ interface BattleSocketState {
   rooms: Room[];
   availabilityListener: ((payload: RoomAvailabilityResponseDTO) => void) | null;
   roomListListener: ((rooms: Room[]) => void) | null;
-  joinedListener: ((payload: { playerCount: number }) => void) | null;
-  leftListener: ((payload: { playerCount: number }) => void) | null;
+  joinedListener:
+    | ((payload: { roomId: string; playerCount: number; spectatorCount?: number }) => void)
+    | null;
+  leftListener:
+    | ((payload: { roomId: string; playerCount: number; spectatorCount?: number }) => void)
+    | null;
   connect: () => Socket;
   disconnect: () => void;
   requestRoomAvailability: (
@@ -237,30 +241,38 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
       });
     };
 
-    const handleJoined = (payload: { playerCount: number; spectatorCount?: number }) => {
-      set((state) => {
-        if (!state.roomAvailability) return state;
-        return {
-          roomAvailability: {
-            ...state.roomAvailability,
-            playerCount: payload.playerCount,
-          },
-          spectatorCount: payload.spectatorCount ?? state.spectatorCount,
-        };
-      });
+    const handleJoined = (payload: {
+      roomId: string;
+      playerCount: number;
+      spectatorCount?: number;
+    }) => {
+      if (payload.roomId !== roomId) return;
+      set((state) => ({
+        roomAvailability: state.roomAvailability
+          ? {
+              ...state.roomAvailability,
+              playerCount: payload.playerCount,
+            }
+          : state.roomAvailability,
+        spectatorCount: payload.spectatorCount ?? state.spectatorCount,
+      }));
     };
 
-    const handleLeft = (payload: { playerCount: number; spectatorCount?: number }) => {
-      set((state) => {
-        if (!state.roomAvailability) return state;
-        return {
-          roomAvailability: {
-            ...state.roomAvailability,
-            playerCount: payload.playerCount,
-          },
-          spectatorCount: payload.spectatorCount ?? state.spectatorCount,
-        };
-      });
+    const handleLeft = (payload: {
+      roomId: string;
+      playerCount: number;
+      spectatorCount?: number;
+    }) => {
+      if (payload.roomId !== roomId) return;
+      set((state) => ({
+        roomAvailability: state.roomAvailability
+          ? {
+              ...state.roomAvailability,
+              playerCount: payload.playerCount,
+            }
+          : state.roomAvailability,
+        spectatorCount: payload.spectatorCount ?? state.spectatorCount,
+      }));
     };
 
     socket.off(SOCKET_EVENT.ROOM_AVAILABILITY);
