@@ -50,7 +50,7 @@ export class BattleService {
     const battleId = `battle-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
     // 임시 문제 선택
-    const problem = await this.problemService.findFirst();
+    const problem = await this.problemService.findRandomByDifficulty('Bronze');
     if (!problem) {
       throw new Error('No problems available.');
     }
