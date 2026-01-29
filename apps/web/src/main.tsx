@@ -8,6 +8,7 @@ import App from '@/App.tsx';
 import BattleGuard from '@/components/Guards/BattleGuard.tsx';
 import BattlePage from '@/pages/BattlePage.tsx';
 import LoginErrorPage from '@/pages/Error/LoginErrorPage';
+import LandingPage from '@/pages/LandingPage.tsx';
 import LoginPage from '@/pages/LoginPage.tsx';
 import MainPage from '@/pages/MainPage.tsx';
 import MatchingPage from '@/pages/MatchingPage.tsx';
@@ -34,6 +35,14 @@ const router = createBrowserRouter([
             element: <MatchingPage />,
           },
         ],
+      },
+      {
+        path: '/landing',
+        element: <LandingPage />,
+      },
+      {
+        path: '/matching',
+        element: <MatchingPage />,
       },
       {
         path: '/room/:roomId',

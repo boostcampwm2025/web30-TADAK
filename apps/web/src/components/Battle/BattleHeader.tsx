@@ -1,25 +1,31 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
 import { motion } from 'framer-motion';
-import { Eye, Moon, Sun, Timer } from 'lucide-react';
+import { Eye, Moon, Settings, Sun, Timer, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import logo from '@/assets/logo.png';
 import { playCountdownSound } from '@/lib/sound';
+import { playPreviewSound } from '@/lib/sound';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
+import { useSoundStore } from '@/stores/soundStore';
 
 interface BattleHeaderProps {
   theme: 'light' | 'dark';
-  onToggleTheme: () => void;
+  toggleTheme: () => void;
   onLeaveClick: () => void;
 }
 
-function BattleHeader({ theme, onToggleTheme, onLeaveClick }: BattleHeaderProps) {
+function BattleHeader({ theme, toggleTheme, onLeaveClick }: BattleHeaderProps) {
   const { roomId } = useParams<{ roomId: string }>();
   const spectatorCount = useBattleSocketStore((state) => state.spectatorCount);
   const problem = useBattleProblemStore((state) => state.problem);
   const timeOffset = useBattleProblemStore((state) => state.timeOffset);
+
+  const { volume, isMuted, setVolume, toggleMute } = useSoundStore();
+  const [isSettingOpen, setIsSettingOpen] = useState(false);
+  const settingRef = useRef<HTMLDivElement>(null);
 
   const battleId = problem?.battleId;
   const duration = problem?.duration;
@@ -70,7 +76,7 @@ function BattleHeader({ theme, onToggleTheme, onLeaveClick }: BattleHeaderProps)
   };
 
   return (
-    <header className="flex w-full items-center justify-between rounded-2xl px-5 text-base-primary backdrop-blur dark:shadow-slate-950/40">
+    <header className="relative z-50 flex w-full items-center justify-between rounded-2xl px-5 text-base-primary backdrop-blur dark:shadow-slate-950/40">
       <div className="flex items-center gap-3">
         <img src={logo} alt="TADAK 로고" className="h-12 w-auto" />
         <span className="text-2xl font-black tracking-tight">TADAK</span>
@@ -103,19 +109,63 @@ function BattleHeader({ theme, onToggleTheme, onLeaveClick }: BattleHeaderProps)
           <span className="text-base-primary">{spectatorCount}</span>
         </div>
         <button
-          type="button"
-          onClick={onToggleTheme}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-base-faint text-base-primary transition hover:brightness-110"
-          aria-label="테마 전환"
-        >
-          {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-        </button>
-        <button
           onClick={onLeaveClick}
           className="inline-flex h-10 w-20 items-center justify-center rounded-full bg-base-faint text-sm font-bold text-base-primary transition hover:brightness-110"
         >
           나가기
         </button>
+        <div className="relative" ref={settingRef}>
+          <button
+            onClick={() => setIsSettingOpen(!isSettingOpen)}
+            className="rounded-full bg-base-faint p-2 text-ink shadow-sm transition hover:scale-110 active:scale-95"
+          >
+            <Settings size={24} className="text-slate-400" />
+          </button>
+          {isSettingOpen && (
+            <div className="absolute right-0 mt-3 w-48 origin-top-right rounded-24 bg-bg-layer-2 p-2 shadow-2xl focus:outline-none transition-all duration-200 ease-out z-[100]">
+              <div className="flex flex-col gap-1">
+                <button
+                  onClick={toggleTheme}
+                  className="flex items-center gap-3 rounded-24 px-4 py-2 text-sm text-ink transition hover:bg-base-muted"
+                  aria-label="Toggle theme"
+                >
+                  {theme === 'dark' ? (
+                    <>
+                      <Sun size={18} />
+                      <span>라이트 모드</span>
+                    </>
+                  ) : (
+                    <>
+                      <Moon size={18} />
+                      <span>다크 모드</span>
+                    </>
+                  )}
+                </button>
+                <div className="my-1 h-[1px] bg-border-soft" />
+                <div className="flex items-center gap-3 px-4 py-2">
+                  <button
+                    onClick={toggleMute}
+                    className="text-ink transition hover:text-brand"
+                    aria-label={isMuted ? 'Unmute' : 'Mute'}
+                  >
+                    {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                  </button>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={volume}
+                    onChange={(e) => setVolume(parseFloat(e.target.value))}
+                    onMouseUp={playPreviewSound}
+                    onTouchEnd={playPreviewSound}
+                    className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-border-soft accent-brand"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

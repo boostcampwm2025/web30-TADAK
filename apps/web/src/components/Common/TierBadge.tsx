@@ -1,6 +1,6 @@
 import type { TierType } from '@shared/types/user';
-import { Crown, Diamond, Medal, Shield, Star, Trophy } from 'lucide-react';
 
+import { tierConfig } from '@/constants/tier';
 import { toRomanNumeral } from '@/lib/tier';
 
 interface TierBadgeProps {
@@ -8,42 +8,9 @@ interface TierBadgeProps {
   division?: number;
 }
 
-// TODO: 티어별 임시 아이콘
-const tierConfig = {
-  Bronze: {
-    icon: Medal,
-    colorClass: 'text-tier-bronze',
-    fillClass: 'fill-tier-bronze',
-  },
-  Silver: {
-    icon: Shield,
-    colorClass: 'text-tier-silver',
-    fillClass: 'fill-tier-silver',
-  },
-  Gold: {
-    icon: Trophy,
-    colorClass: 'text-tier-gold',
-    fillClass: 'fill-tier-gold',
-  },
-  Platinum: {
-    icon: Star,
-    colorClass: 'text-tier-platinum',
-    fillClass: 'fill-tier-platinum',
-  },
-  Diamond: {
-    icon: Diamond,
-    colorClass: 'text-tier-diamond',
-    fillClass: 'fill-tier-diamond',
-  },
-  Master: {
-    icon: Crown,
-    colorClass: 'text-tier-master',
-    fillClass: 'fill-tier-master',
-  },
-};
-
 function TierBadge({ tier, division }: TierBadgeProps) {
   const config = tierConfig[tier];
+  if (!config) return null;
   const Icon = config.icon;
 
   return (
