@@ -167,7 +167,6 @@ const LandingPage = () => {
       <BattleStep />
       <SpectatingStep />
       <ResultsStep />
-
       <TierStep />
 
       {/* Final CTA */}
