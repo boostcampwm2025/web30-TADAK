@@ -65,7 +65,7 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="flex items-center transition hover:opacity-80 active:scale-95"
+                  className="cursor-pointer flex items-center transition hover:opacity-80 active:scale-95"
                 >
                   <UserProfile
                     username={user.username}
@@ -78,14 +78,14 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
                 {isMenuOpen && (
                   <div className="absolute mt-3 w-48 origin-top-right rounded-24 bg-bg-layer-2 p-2 shadow-2xl focus:outline-none transition-all duration-200 ease-out z-50">
                     <div className="flex flex-col gap-1">
-                      <button className="flex items-center gap-3 rounded-24 px-4 py-2 text-sm text-ink transition hover:bg-base-muted">
+                      <button className="cursor-pointer flex items-center gap-3 rounded-24 px-4 py-2 text-sm text-ink transition hover:bg-base-muted">
                         <UserIcon size={18} className="text-slate-400" />
                         마이페이지
                       </button>
                       <div className="my-1 h-[1px] bg-border-soft" />
                       <button
                         onClick={handleLogout}
-                        className="flex items-center gap-3 rounded-24 px-4 py-2 text-sm text-red-500 transition hover:bg-red-50"
+                        className="cursor-pointer flex items-center gap-3 rounded-24 px-4 py-2 text-sm text-red-500 transition hover:bg-red-50"
                       >
                         <LogOut size={18} />
                         로그아웃
@@ -106,7 +106,7 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
           <div className="relative" ref={settingRef}>
             <button
               onClick={() => setIsSettingOpen(!isSettingOpen)}
-              className="rounded-full bg-base-muted p-2 text-ink shadow-sm transition hover:scale-110 active:scale-95"
+              className="cursor-pointer rounded-full bg-base-muted p-2 text-ink shadow-sm transition hover:scale-110 active:scale-95"
             >
               <Settings size={24} className="text-slate-400" />
             </button>
@@ -115,7 +115,7 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
                 <div className="flex flex-col gap-1">
                   <button
                     onClick={toggleTheme}
-                    className="flex items-center gap-3 rounded-24 px-4 py-2 text-sm text-ink transition hover:bg-base-muted"
+                    className="cursor-pointer flex items-center gap-3 rounded-24 px-4 py-2 text-sm text-ink transition hover:bg-base-muted"
                     aria-label="Toggle theme"
                   >
                     {theme === 'dark' ? (
@@ -134,7 +134,7 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
                   <div className="flex items-center gap-3 px-4 py-2">
                     <button
                       onClick={toggleMute}
-                      className="text-ink transition hover:text-brand"
+                      className="cursor-pointer text-ink transition hover:text-brand"
                       aria-label={isMuted ? 'Unmute' : 'Mute'}
                     >
                       {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}

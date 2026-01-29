@@ -110,7 +110,7 @@ function MainPage() {
             <button
               type="button"
               onClick={handleStartBattle}
-              className="ml-auto rounded-3xl bg-brand px-6 py-3 text-lg font-semibold shadow-md transition hover:scale-[1.02]"
+              className="cursor-pointer ml-auto rounded-3xl bg-brand px-6 py-3 text-lg font-semibold shadow-md transition hover:scale-[1.02]"
             >
               게임 시작하기
             </button>
