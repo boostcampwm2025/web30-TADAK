@@ -1,3 +1,6 @@
+import type { SubmissionDetail } from '@shared/types/submission';
+import type { SubmissionHistoryItem } from '@shared/types/user';
+
 import { axiosInstance } from './axios';
 
 export type SubmissionRequest = {
@@ -32,5 +35,15 @@ export const createDryRun = async (payload: SubmissionRequest, socketId: string)
       },
     },
   );
+  return response.data;
+};
+
+export const getMySubmissions = async () => {
+  const response = await axiosInstance.get<SubmissionHistoryItem[]>('/users/me/submissions');
+  return response.data;
+};
+
+export const getSubmissionDetail = async (submissionId: string) => {
+  const response = await axiosInstance.get<SubmissionDetail>(`/submissions/${submissionId}`);
   return response.data;
 };

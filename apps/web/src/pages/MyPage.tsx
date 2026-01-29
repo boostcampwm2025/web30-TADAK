@@ -7,7 +7,6 @@ import { getMySubmissions, getSubmissionDetail } from '@/apis/submission';
 import { getUserProfile, type UserProfile } from '@/apis/user';
 import BaseCodeEditor from '@/components/Common/BaseCodeEditor';
 import Header from '@/components/Header/Header';
-import { MyPageActivityMap } from '@/components/MyPage/MyPageActivityMap';
 import { MyPageBattleHistory } from '@/components/MyPage/MyPageBattleHistory';
 import { MyPageModal, MyPageModalPane } from '@/components/MyPage/MyPageModal';
 import { MyPageProfileCard } from '@/components/MyPage/MyPageProfileCard';
@@ -95,7 +94,6 @@ export default function MyPage() {
         <div className="page-layout grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-10">
           <aside className="sidebar flex flex-col gap-6">
             <MyPageProfileCard user={user} />
-            <MyPageActivityMap activities={user.activities} />
           </aside>
 
           <main className="main-content flex flex-col gap-8">
