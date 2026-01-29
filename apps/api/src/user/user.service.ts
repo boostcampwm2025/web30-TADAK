@@ -1,12 +1,16 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { clampRating, getTierFromRating, RATING_CONFIG } from '@packages/constants/rating';
+import { BattleHistoryItem } from '@packages/types/user';
 import { Glicko2, newProcedure } from 'glicko2.ts';
 import Redis from 'ioredis';
 import { Repository } from 'typeorm';
 
+import { Battle } from '@/battle/battle.entity';
+import { Problem } from '@/problem/problem.entity';
 import { REDIS_CLIENT } from '@/redis/redis.module';
 import { RedisKeys } from '@/redis/redis-key.constant';
+import { Submission } from '@/submission/submission.entity';
 
 import { User } from './user.entity';
 
@@ -35,6 +39,12 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(Battle)
+    private readonly battleRepository: Repository<Battle>,
+    @InjectRepository(Submission)
+    private readonly submissionRepository: Repository<Submission>,
+    @InjectRepository(Problem)
+    private readonly problemRepository: Repository<Problem>,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {
     this.glicko2 = new Glicko2({
@@ -154,5 +164,68 @@ export class UserService {
       this.logger.error(`Error fetching user room status: ${userId}`, error);
       return null;
     }
+  }
+
+  // 사용자 배틀 기록 조회
+  async getBattleHistory(userId: string): Promise<BattleHistoryItem[]> {
+    const battles = await this.battleRepository
+      .createQueryBuilder('battle')
+      .where('FIND_IN_SET(:userId, battle.playerIds) > 0', { userId })
+      .orderBy('battle.createdAt', 'DESC')
+      .getMany();
+
+    const historyWithDetails = await Promise.all(
+      battles.map(async (battle) => {
+        // 결과 판별
+        let result: 'WIN' | 'LOSS' | 'DRAW' = 'DRAW';
+        if (battle.winnerId) {
+          result = battle.winnerId === userId ? 'WIN' : 'LOSS';
+        }
+
+        // 상대방 이름
+        const opponentId = battle.playerIds.find((id) => id !== userId);
+        const opponent = opponentId
+          ? await this.userRepository.findOne({ where: { id: opponentId }, select: ['username'] })
+          : null;
+
+        // 문제 정보
+        const problem = await this.problemRepository.findOne({
+          where: { id: battle.problemId },
+          select: ['title', 'difficulty', 'testcases'],
+        });
+
+        // 내 최종 제출 정보
+        const mySubmission = await this.submissionRepository.findOne({
+          where: { userId, battleId: battle.id },
+          order: { createdAt: 'DESC' },
+        });
+
+        // 점수 변화량
+        const playerIndex = battle.playerIds.indexOf(userId);
+        const ratingChange =
+          playerIndex === 0 ? battle.player1RatingChange : battle.player2RatingChange;
+
+        return {
+          id: battle.id,
+          result,
+          opponentName: opponent?.username || '알 수 없는 유저',
+          problem: {
+            title: problem?.title || '삭제된 문제',
+            difficulty: problem?.difficulty || 'Unknown',
+          },
+          submission: mySubmission
+            ? {
+                language: mySubmission.language,
+                passedTestCases: mySubmission.passedTestCases,
+                totalTestCases: mySubmission.totalTestCases ?? (problem?.testcases?.length || 0),
+              }
+            : null,
+          ratingChange: ratingChange || 0,
+          createdAt: battle.createdAt,
+        };
+      }),
+    );
+
+    return historyWithDetails;
   }
 }
