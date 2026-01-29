@@ -1,6 +1,6 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
 import { motion } from 'framer-motion';
-import { AlertCircle, Eye, Moon, Settings, Sun, Timer, Volume2, VolumeX } from 'lucide-react';
+import { Eye, Moon, Settings, Sun, Timer, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -9,17 +9,15 @@ import { playCountdownSound } from '@/lib/sound';
 import { playPreviewSound } from '@/lib/sound';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
-import { useRoomStore } from '@/stores/roomStore';
 import { useSoundStore } from '@/stores/soundStore';
 
 interface BattleHeaderProps {
   theme: 'light' | 'dark';
   toggleTheme: () => void;
-  showLeaveConfirm?: boolean;
+  onLeaveClick: () => void;
 }
 
-function BattleHeader({ theme, toggleTheme, showLeaveConfirm = true }: BattleHeaderProps) {
-  const navigate = useNavigate();
+function BattleHeader({ theme, toggleTheme, onLeaveClick }: BattleHeaderProps) {
   const { roomId } = useParams<{ roomId: string }>();
   const spectatorCount = useBattleSocketStore((state) => state.spectatorCount);
   const problem = useBattleProblemStore((state) => state.problem);
@@ -111,7 +109,7 @@ function BattleHeader({ theme, toggleTheme, showLeaveConfirm = true }: BattleHea
           <span className="text-base-primary">{spectatorCount}</span>
         </div>
         <button
-          onClick={handleLeaveClick}
+          onClick={onLeaveClick}
           className="inline-flex h-10 w-20 items-center justify-center rounded-full bg-base-faint text-sm font-bold text-base-primary transition hover:brightness-110"
         >
           나가기

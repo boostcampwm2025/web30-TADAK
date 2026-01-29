@@ -1,7 +1,6 @@
 import type { TierType } from '@shared/types/user';
 
 import { tierConfig } from '@/constants/tier';
-
 import { toRomanNumeral } from '@/lib/tier';
 
 interface TierBadgeProps {
@@ -9,7 +8,7 @@ interface TierBadgeProps {
   division?: number;
 }
 
-export function TierBadge({ tier }: TierBadgeProps) {
+function TierBadge({ tier, division }: TierBadgeProps) {
   const config = tierConfig[tier];
   if (!config) return null;
   const Icon = config.icon;

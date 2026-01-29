@@ -335,7 +335,7 @@ function BattlePage() {
   return (
     <div className="min-h-svh overflow-auto xl:h-screen xl:overflow-hidden">
       <div className="flex min-h-svh flex-col gap-3 px-3 py-3 xl:h-full xl:w-full xl:gap-4 xl:px-6 xl:py-4">
-        <BattleHeader theme={theme} toggleTheme={toggleTheme} showLeaveConfirm={!isSpectator} />
+        <BattleHeader theme={theme} toggleTheme={toggleTheme} onLeaveClick={handleLeaveClick} />
         <div className="flex-1 min-h-0 overflow-visible xl:overflow-hidden">
           {isSpectatorView ? <BattleSpectator /> : <BattlePlayer />}
         </div>
