@@ -1,4 +1,6 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
+import { SOCKET_ERROR } from '@shared/constants/socket-event';
+import { AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
@@ -6,6 +8,7 @@ import BattleFinishOverlay from '@/components/Battle/BattleFinishOverlay';
 import BattleHeader from '@/components/Battle/BattleHeader';
 import BattlePlayer from '@/components/Battle/Player/BattlePlayer';
 import BattleSpectator from '@/components/Battle/Spectator/BattleSpectator';
+import Modal from '@/components/Common/Modal';
 import { useTheme } from '@/hooks/useTheme';
 import { playCountdownSound } from '@/lib/sound';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
@@ -19,25 +22,43 @@ function BattlePage() {
   const { roomId: roomIdParam } = useParams<{ roomId?: string }>();
   const [searchParams] = useSearchParams();
   const isSpectator = searchParams.get('mode') === 'spectator';
+  const desiredRole = isSpectator ? 'spectator' : 'player';
   const { theme, toggleTheme } = useTheme();
   const resumeSession = useBattleSocketStore((state) => state.resumeSession);
   const connect = useBattleSocketStore((state) => state.connect);
   const joinRoom = useBattleSocketStore((state) => state.joinRoom);
+  const leaveRoom = useBattleSocketStore((state) => state.leaveRoom);
   const subscribeRoomAvailability = useBattleSocketStore(
     (state) => state.subscribeRoomAvailability,
   );
   const unsubscribeRoomAvailability = useBattleSocketStore(
     (state) => state.unsubscribeRoomAvailability,
   );
+  const requestRoomAvailability = useBattleSocketStore((state) => state.requestRoomAvailability);
   const clearProblem = useBattleProblemStore((state) => state.clearProblem);
   const clearRoom = useRoomStore((state) => state.clearRoom);
   const user = useUserStore((state) => state.user);
   const me = useRoomStore((state) => state.me);
   const resetProgresses = useBattleProgressStore((state) => state.resetProgresses);
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [roleModalReason, setRoleModalReason] = useState<
+    'player-to-spectator' | 'spectator-to-player' | 'not-authorized-player' | null
+  >(null);
 
   const [showFinishOverlay, setShowFinishOverlay] = useState(false);
 
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
+  const effectiveRole =
+    me && me.roomId === roomId ? me.role : (desiredRole as 'player' | 'spectator');
+  const isSpectatorView = effectiveRole === 'spectator';
+  const isRoleMismatch = Boolean(me && me.roomId === roomId && me.role !== desiredRole);
+  const mismatchReason = isRoleMismatch
+    ? me?.role === 'player'
+      ? 'player-to-spectator'
+      : 'spectator-to-player'
+    : null;
+  const modalReason = roleModalReason ?? mismatchReason;
+  const shouldShowRoleModal = isRoleModalOpen || isRoleMismatch;
 
   // 페이지 나갈 때 배틀 상태 초기화
   useEffect(() => {
@@ -98,38 +119,57 @@ function BattlePage() {
   }, [connect, navigate, resetProgresses, clearProblem, clearRoom, roomId]);
 
   useEffect(() => {
-    const desiredRole = isSpectator ? 'spectator' : 'player';
-    if (me && me.roomId === roomId && me.role === desiredRole) return;
-    const attempt = async () => {
-      await resumeSession({ roomId, roleHint: desiredRole }).catch(() => {});
-      if (!useRoomStore.getState().me) {
-        await joinRoom({
-          roomId,
-          requestedRole: desiredRole,
-          userId: user?.id,
-          username: user?.username,
-          avatarUrl: user?.avatarUrl,
-        }).catch(() => {});
-      }
-    };
-    attempt();
-  }, [me, resumeSession, joinRoom, roomId, isSpectator, user?.avatarUrl, user?.id, user?.username]);
-
-  // 관전자 수 및 인원 변동을 수신하기 위한 구독
-  useEffect(() => {
-    if (!roomId) return;
-
     subscribeRoomAvailability(roomId);
+    requestRoomAvailability({ roomId }).catch(() => {});
     return () => {
       unsubscribeRoomAvailability();
     };
-  }, [roomId, subscribeRoomAvailability, unsubscribeRoomAvailability]);
+  }, [requestRoomAvailability, roomId, subscribeRoomAvailability, unsubscribeRoomAvailability]);
+
+  useEffect(() => {
+    if (isRoleModalOpen || isRoleMismatch) return;
+    if (me && me.roomId === roomId) {
+      return;
+    }
+    const attempt = async () => {
+      await resumeSession({ roomId, roleHint: desiredRole }).catch(() => {});
+      if (!useRoomStore.getState().me) {
+        try {
+          await joinRoom({
+            roomId,
+            requestedRole: desiredRole,
+            userId: user?.id,
+            username: user?.username,
+            avatarUrl: user?.avatarUrl,
+          });
+        } catch (error) {
+          const code = (error as Error & { code?: string }).code;
+          if (code === SOCKET_ERROR.INVALID_ROLE) {
+            setRoleModalReason('not-authorized-player');
+            setIsRoleModalOpen(true);
+          }
+        }
+      }
+    };
+    attempt();
+  }, [
+    isRoleModalOpen,
+    isRoleMismatch,
+    me,
+    resumeSession,
+    joinRoom,
+    roomId,
+    desiredRole,
+    user?.avatarUrl,
+    user?.id,
+    user?.username,
+  ]);
 
   useEffect(() => {
     const socket = connect();
     const handleReconnect = () => {
+      if (isRoleMismatch) return;
       // 소켓 재연결 시 저장된 세션 기준으로 다시 JOIN_ROOM 시도
-      const desiredRole = isSpectator ? 'spectator' : 'player';
       resumeSession({ roleHint: desiredRole })
         .catch(() => {})
         .then(() => {
@@ -140,7 +180,13 @@ function BattlePage() {
               userId: user?.id,
               username: user?.username,
               avatarUrl: user?.avatarUrl,
-            }).catch(() => {});
+            }).catch((error) => {
+              const code = (error as Error & { code?: string }).code;
+              if (code === SOCKET_ERROR.INVALID_ROLE) {
+                setRoleModalReason('not-authorized-player');
+                setIsRoleModalOpen(true);
+              }
+            });
           }
         });
     };
@@ -153,20 +199,95 @@ function BattlePage() {
     resumeSession,
     joinRoom,
     roomId,
-    isSpectator,
+    desiredRole,
+    isRoleMismatch,
     user?.avatarUrl,
     user?.id,
     user?.username,
   ]);
 
+  const handleRoleDenied = () => {
+    setIsRoleModalOpen(false);
+    setRoleModalReason(null);
+
+    if (modalReason === 'player-to-spectator') {
+      navigate(`/room/${roomId}`, { replace: true });
+      return;
+    }
+
+    if (modalReason === 'spectator-to-player') {
+      navigate(`/room/${roomId}?mode=spectator`, { replace: true });
+      return;
+    }
+
+    if (me?.roomId === roomId) {
+      leaveRoom(roomId);
+    }
+    try {
+      sessionStorage.removeItem('battle-session');
+    } catch {
+      // ignore
+    }
+    navigate('/', { replace: true });
+  };
+
+  const roleModalTitle =
+    modalReason === 'player-to-spectator'
+      ? '참가자는 관전자로 전환할 수 없습니다'
+      : modalReason === 'spectator-to-player'
+        ? '관전자는 참가자로 전환할 수 없습니다'
+        : '참가자 전용 방입니다';
+
+  const roleModalDescription =
+    modalReason === 'player-to-spectator' ? (
+      <>
+        참가자 화면으로 이동합니다.
+        <br />
+        URL을 변경해도 역할은 바뀌지 않습니다.
+      </>
+    ) : modalReason === 'spectator-to-player' ? (
+      <>
+        관전 화면으로 이동합니다.
+        <br />
+        참가자 권한이 있어야 입장할 수 있습니다.
+      </>
+    ) : (
+      <>
+        해당 방의 참가자가 아닙니다.
+        <br />
+        메인 페이지로 이동합니다.
+      </>
+    );
+
   return (
     <div className="min-h-svh overflow-auto xl:h-screen xl:overflow-hidden">
       <div className="flex min-h-svh flex-col gap-3 px-3 py-3 xl:h-full xl:w-full xl:gap-4 xl:px-6 xl:py-4">
-        <BattleHeader theme={theme} onToggleTheme={toggleTheme} showLeaveConfirm={!isSpectator} />
+        <BattleHeader
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          showLeaveConfirm={!isSpectatorView}
+        />
         <div className="flex-1 min-h-0 overflow-visible xl:overflow-hidden">
-          {isSpectator ? <BattleSpectator /> : <BattlePlayer />}
+          {isSpectatorView ? <BattleSpectator /> : <BattlePlayer />}
         </div>
       </div>
+      <Modal
+        isOpen={shouldShowRoleModal}
+        onClose={handleRoleDenied}
+        icon={AlertCircle}
+        iconColor="text-error-01"
+        iconBgColor="bg-error-01/20"
+        title={roleModalTitle}
+        description={roleModalDescription}
+        buttons={[
+          {
+            label: '확인',
+            onClick: handleRoleDenied,
+            variant: 'black',
+          },
+        ]}
+        closeOnBackdrop={false}
+      />
       <BattleFinishOverlay isVisible={showFinishOverlay} />
     </div>
   );
