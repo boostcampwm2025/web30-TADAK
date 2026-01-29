@@ -12,6 +12,7 @@ import LandingPage from '@/pages/LandingPage.tsx';
 import LoginPage from '@/pages/LoginPage.tsx';
 import MainPage from '@/pages/MainPage.tsx';
 import MatchingPage from '@/pages/MatchingPage.tsx';
+import MyPage from '@/pages/MyPage.tsx';
 import ResultPage from '@/pages/ResultPage.tsx';
 
 const router = createBrowserRouter([
@@ -55,6 +56,10 @@ const router = createBrowserRouter([
       {
         path: '/login',
         element: <LoginPage />,
+      },
+      {
+        path: '/mypage',
+        element: <MyPage />,
       },
       {
         path: '/error',
