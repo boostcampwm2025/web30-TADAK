@@ -9,13 +9,13 @@ import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useUserStore } from '@/stores/userStore';
 
 const tierFilters = [
-  { label: '전체', color: 'bg-green-05' },
-  { label: '브론즈', color: 'bg-tier-bronze' },
-  { label: '실버', color: 'bg-tier-silver' },
-  { label: '골드', color: 'bg-tier-gold' },
-  { label: '플래티넘', color: 'bg-tier-platinum' },
-  { label: '다이아몬드', color: 'bg-tier-diamond' },
-  { label: '마스터', color: 'bg-tier-master' },
+  { label: '전체', value: null, color: 'bg-green-05' },
+  { label: '브론즈', value: 'Bronze', color: 'bg-tier-bronze' },
+  { label: '실버', value: 'Silver', color: 'bg-tier-silver' },
+  { label: '골드', value: 'Gold', color: 'bg-tier-gold' },
+  { label: '플래티넘', value: 'Platinum', color: 'bg-tier-platinum' },
+  { label: '다이아몬드', value: 'Diamond', color: 'bg-tier-diamond' },
+  { label: '마스터', value: 'Master', color: 'bg-tier-master' },
 ];
 
 function MainPage() {
@@ -30,6 +30,7 @@ function MainPage() {
   const socket = useBattleSocketStore((state) => state.socket);
 
   const [joiningRoomId, setJoiningRoomId] = useState<string | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
   const [showLoginModal, setShowLoginModal] = useState(false);
 
@@ -57,15 +58,23 @@ function MainPage() {
     };
   }, [subscribeRoomList, requestRoomList, ensureSocketReady, unsubscribeRoomList]);
 
+  const filteredRooms = useMemo(() => {
+    if (!selectedFilter) return rooms;
+    return rooms.filter((room) => room.difficulty === selectedFilter);
+  }, [rooms, selectedFilter]);
+
   const stats = useMemo(() => {
-    const totalBattles = rooms.length;
-    const totalSpectators = rooms.reduce(
+    const totalBattles = filteredRooms.length;
+    const totalSpectators = filteredRooms.reduce(
       (sum, room) => sum + (room.currentSpectators?.length ?? 0),
       0,
     );
-    const totalPlayers = rooms.reduce((sum, room) => sum + (room.currentPlayers?.length ?? 0), 0);
+    const totalPlayers = filteredRooms.reduce(
+      (sum, room) => sum + (room.currentPlayers?.length ?? 0),
+      0,
+    );
     return { totalBattles, totalSpectators, totalPlayers };
-  }, [rooms]);
+  }, [filteredRooms]);
 
   const handleStartBattle = () => {
     if (!user?.id) {
@@ -111,20 +120,24 @@ function MainPage() {
           </p>
         </div>
 
-        {/* 티어 필터 (동작 없음, UI만) */}
+        {/* 티어 필터 */}
         <div className="flex flex-wrap gap-2">
-          {tierFilters.map((tier, idx) => (
-            <button
-              key={tier.label}
-              type="button"
-              className={`rounded-full px-4 py-2 text-xs font-semibold text-base-primary shadow-sm ${
-                idx === 0 ? 'bg-green-01 text-green-06' : 'bg-base-faint text-base-secondary'
-              }`}
-            >
-              <span className={`mr-2 inline-block h-2 w-2 rounded-full ${tier.color}`} />
-              {tier.label}
-            </button>
-          ))}
+          {tierFilters.map((tier) => {
+            const isSelected = selectedFilter === tier.value;
+            return (
+              <button
+                key={tier.label}
+                type="button"
+                onClick={() => setSelectedFilter(tier.value)}
+                className={`cursor-pointer rounded-full px-4 py-2 text-xs font-semibold shadow-sm transition ${
+                  isSelected ? 'bg-green-01 text-green-06' : 'bg-base-faint text-base-secondary'
+                }`}
+              >
+                <span className={`mr-2 inline-block h-2 w-2 rounded-full ${tier.color}`} />
+                {tier.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* 통계 카드 */}
@@ -145,13 +158,13 @@ function MainPage() {
         </div>
 
         {/* 방 카드 리스트 */}
-        {rooms.length === 0 ? (
+        {filteredRooms.length === 0 ? (
           <div className="rounded-2xl bg-bg-layer-2 border border-border-soft px-6 py-8 text-center text-base-secondary shadow-sm">
-            현재 진행 중인 배틀이 없습니다.
+            {selectedFilter ? '해당 난이도의 배틀이 없습니다.' : '현재 진행 중인 배틀이 없습니다.'}
           </div>
         ) : (
           <RoomCardList
-            rooms={rooms}
+            rooms={filteredRooms}
             onSpectate={handleJoinSpectator}
             joiningRoomId={joiningRoomId}
           />
