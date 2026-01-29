@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { MATCHING_CONFIG } from '@packages/constants/matching';
 import { MatchingUser } from '@packages/types/matching';

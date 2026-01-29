@@ -1,4 +1,14 @@
-import { Body, Controller, Headers, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  NotFoundException,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
 import { User } from '../user/user.entity';
@@ -29,5 +39,18 @@ export class SubmissionController {
   ) {
     const userId = req.user.id;
     return this.submissionService.executeTest(dto, userId, socketId);
+  }
+
+  @Get(':submissionId')
+  @UseGuards(AuthGuard('jwt'))
+  async getSubmissionDetail(
+    @Req() req: { user: User },
+    @Param('submissionId') submissionId: string,
+  ) {
+    const detail = await this.submissionService.getSubmissionDetail(submissionId, req.user.id);
+    if (!detail) {
+      throw new NotFoundException('존재하지 않는 데이터이거나 내 기록이 아닙니다.');
+    }
+    return detail;
   }
 }

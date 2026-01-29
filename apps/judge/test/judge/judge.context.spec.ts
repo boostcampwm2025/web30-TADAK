@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/unbound-method */
 import { JudgeChecker } from '../../src/judge/judge.checker';
 import { JudgeContext } from '../../src/judge/judge.context';
 import { JudgeReader } from '../../src/judge/judge.reader';
