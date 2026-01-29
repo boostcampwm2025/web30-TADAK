@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { clampRating, getTierFromRating, RATING_CONFIG } from '@packages/constants/rating';
-import { BattleHistoryItem } from '@packages/types/user';
+import { BattleHistoryItem, SubmissionHistoryItem } from '@packages/types/user';
 import { Glicko2, newProcedure } from 'glicko2.ts';
 import Redis from 'ioredis';
 import { Repository } from 'typeorm';
@@ -227,5 +227,48 @@ export class UserService {
     );
 
     return historyWithDetails;
+  }
+
+  // 마이페이지 제출 이력 조회
+  async getSubmissionHistory(userId: string): Promise<SubmissionHistoryItem[]> {
+    const submissions = await this.submissionRepository
+      .createQueryBuilder('submission')
+      .innerJoin(Problem, 'problem', 'submission.problemId = problem.id')
+      .select([
+        'submission.id AS id',
+        'submission.problemId AS problemId',
+        'submission.createdAt AS createdAt',
+        'problem.title AS problemTitle',
+        'problem.difficulty AS difficulty',
+      ])
+      .where('submission.userId = :userId', { userId })
+      .andWhere((qb) => {
+        const subQuery = qb
+          .subQuery()
+          .select('MAX(innerSub.id)')
+          .from(Submission, 'innerSub')
+          .where('innerSub.userId = :userId')
+          .groupBy('innerSub.battleId')
+          .getQuery();
+        return `submission.id IN ${subQuery}`;
+      })
+      .orderBy('submission.createdAt', 'DESC')
+      .getRawMany();
+
+    return submissions.map(
+      (sub: {
+        id: string;
+        problemId: string;
+        problemTitle: string;
+        difficulty: string;
+        createdAt: string;
+      }) => ({
+        id: sub.id,
+        problemId: sub.problemId,
+        problemTitle: sub.problemTitle,
+        difficulty: sub.difficulty,
+        createdAt: new Date(sub.createdAt),
+      }),
+    );
   }
 }
