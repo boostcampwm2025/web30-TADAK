@@ -124,11 +124,16 @@ function MainPage() {
           </div>
           <p className="text-sm text-base-primary flex items-center gap-2">
             현재 진행 중인 배틀을 관전하고 고수들의 코딩을 배워보세요
-            <Info
-              size={16}
-              onClick={() => navigate('/landing')}
-              className="text-base-secondary transition hover:text-brand"
-            />
+            <div className="group relative flex items-center">
+              <Info
+                size={16}
+                onClick={() => navigate('/landing')}
+                className="cursor-pointer text-base-secondary transition hover:text-brand"
+              />
+              <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-bg-layer-2 border border-border-soft px-2 py-1 text-[10px] font-bold text-ink opacity-0 transition-all group-hover:opacity-100 shadow-sm">
+                서비스 소개
+              </span>
+            </div>
           </p>
         </div>
 
