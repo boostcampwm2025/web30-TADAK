@@ -23,4 +23,10 @@ export class UserController {
   async getMyBattles(@Req() req: { user: User }) {
     return this.userService.getBattleHistory(req.user.id);
   }
+
+  @Get('me/submissions')
+  @UseGuards(AuthGuard('jwt'))
+  async getMySubmissions(@Req() req: { user: User }) {
+    return this.userService.getSubmissionHistory(req.user.id);
+  }
 }
