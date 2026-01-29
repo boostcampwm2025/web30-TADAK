@@ -17,4 +17,10 @@ export class UserController {
       currentRoomId,
     };
   }
+
+  @Get('me/battles')
+  @UseGuards(AuthGuard('jwt'))
+  async getMyBattles(@Req() req: { user: User }) {
+    return this.userService.getBattleHistory(req.user.id);
+  }
 }
