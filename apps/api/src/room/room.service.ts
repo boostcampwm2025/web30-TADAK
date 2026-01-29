@@ -107,6 +107,7 @@ export class RoomService {
           duration: BATTLE_CONFIG.DURATION,
         },
         users: [user1.userId, user2.userId],
+        userRatings: [user1.rating, user2.rating],
       });
 
       const problemEntity = await this.problemService.findOne(battle.problemId);

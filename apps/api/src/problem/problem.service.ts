@@ -88,10 +88,16 @@ export class ProblemService implements OnModuleInit {
 
   // 문제 난이도에 따른 랜덤 문제 조회
   async findRandomByDifficulty(difficulty: string): Promise<Problem | null> {
+    // ORDER BY RAND()는 메모리 문제 발생 가능 - 개수 세고 랜덤 offset 사용
+    const count = await this.problemRepository.count({ where: { difficulty } });
+    if (count === 0) return null;
+
+    const randomOffset = Math.floor(Math.random() * count);
     return await this.problemRepository
       .createQueryBuilder('problem')
       .where('problem.difficulty = :difficulty', { difficulty })
-      .orderBy('RAND()')
+      .offset(randomOffset)
+      .limit(1)
       .getOne();
   }
 

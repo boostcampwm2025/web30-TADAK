@@ -1,6 +1,7 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BATTLE_CONFIG } from '@packages/constants/battle';
+import { getTierFromRating } from '@packages/constants/rating';
 import {
   Battle,
   BattleResultResponse,
@@ -50,8 +51,13 @@ export class BattleService {
     // 배틀 ID 생성 로직 추가
     const battleId = `battle-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
-    // 임시 문제 선택
-    const problem = await this.problemService.findRandomByDifficulty('Bronze');
+    // 매칭된 유저들의 평균 rating으로 문제 난이도 결정
+    const avgRating =
+      dto.userRatings && dto.userRatings.length > 0
+        ? dto.userRatings.reduce((sum, r) => sum + r, 0) / dto.userRatings.length
+        : 1500;
+    const difficulty = getTierFromRating(avgRating).tier;
+    const problem = await this.problemService.findRandomByDifficulty(difficulty);
     if (!problem) {
       throw new Error('No problems available.');
     }
