@@ -33,6 +33,13 @@ function MainPage() {
 
   const [showLoginModal, setShowLoginModal] = useState(false);
 
+  useEffect(() => {
+    const visited = localStorage.getItem('tadak-visited');
+    if (!visited) {
+      navigate('/landing', { replace: true });
+    }
+  }, [navigate]);
+
   const ensureSocketReady = useCallback(async () => {
     const activeSocket = socket ?? connect();
     if (!activeSocket.connected) {
