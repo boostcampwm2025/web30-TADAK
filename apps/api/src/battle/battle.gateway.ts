@@ -162,9 +162,9 @@ export class BattleGateway implements OnGatewayDisconnect {
       if (roomIdFromClient) {
         this.server.to(roomIdFromClient).emit(BATTLE_EVENTS.BATTLE_ENDED, { battleId });
 
-        // 방 상태 정리 및 목록 업데이트 시도
+        // 방 삭제 및 목록 업데이트 시도
         try {
-          await this.roomService.completeBattleRoom(roomIdFromClient);
+          await this.roomService.deleteRoom(roomIdFromClient);
           await this.broadcastRoomList();
         } catch (e) {
           console.error('[BattleGateway] Failed to cleanup room on error:', e);
@@ -197,7 +197,7 @@ export class BattleGateway implements OnGatewayDisconnect {
       if (roomId) {
         this.server.to(roomId).emit(BATTLE_EVENTS.BATTLE_ENDED, { battleId });
         try {
-          await this.roomService.completeBattleRoom(roomId);
+          await this.roomService.deleteRoom(roomId);
           await this.broadcastRoomList();
         } catch (e) {
           console.error('[BattleGateway] Failed to cleanup room on error:', e);
@@ -213,9 +213,8 @@ export class BattleGateway implements OnGatewayDisconnect {
       winnerId,
     });
 
-    // 방 상태 업데이트 및 목록 브로드캐스트
+    // 방 목록 브로드캐스트 (endBattle에서 이미 삭제됨)
     try {
-      await this.roomService.completeBattleRoom(roomId);
       await this.broadcastRoomList();
     } catch (error) {
       console.error('[BattleGateway] Failed to update room list after battle end:', error);
