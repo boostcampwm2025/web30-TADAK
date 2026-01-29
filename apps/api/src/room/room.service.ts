@@ -41,6 +41,7 @@ export class RoomService {
     const newRoom: Room = {
       roomId,
       title: params.title || `배틀룸 ${roomId.substring(8)}`,
+      difficulty: params.difficulty,
       hostId: params.hostId || 'system',
       status: params.status || 'waiting',
       createdAt: new Date(),
@@ -75,6 +76,12 @@ export class RoomService {
         role: 'player',
         avatarUrl: user1.avatarUrl,
         joinedAt: now,
+        stats: {
+          wins: user1.myRate.win,
+          losses: user1.myRate.lose,
+          rating: user1.rating,
+          tier: { tier: user1.tier.tier, division: user1.tier.division ?? 4 },
+        },
       };
 
       const player2: RoomUser = {
@@ -85,6 +92,12 @@ export class RoomService {
         role: 'player',
         avatarUrl: user2.avatarUrl,
         joinedAt: now,
+        stats: {
+          wins: user2.myRate.win,
+          losses: user2.myRate.lose,
+          rating: user2.rating,
+          tier: { tier: user2.tier.tier, division: user2.tier.division ?? 4 },
+        },
       };
 
       // 배틀 생성
@@ -105,6 +118,7 @@ export class RoomService {
       const room = await this.createRoom({
         roomId,
         title: problemEntity.title,
+        difficulty: problemEntity.difficulty,
         status: 'waiting',
         currentPlayers: [player1, player2],
       });
@@ -223,13 +237,23 @@ export class RoomService {
 
   // 클라이언트에 노출할 때 socketId 등 민감 정보를 제거한 방 데이터
 
-  toPublicRooms(rooms: Room[]): PublicRoom[] {
-    return rooms
-      .filter((room) => room.status === 'in-battle')
-      .map((room) => ({
-        ...room,
-        currentPlayers: room.currentPlayers.map(({ socketId: _socketId, ...rest }) => rest),
-        currentSpectators: room.currentSpectators.map(({ socketId: _socketId, ...rest }) => rest),
-      }));
+  async toPublicRooms(rooms: Room[]): Promise<PublicRoom[]> {
+    const battleRooms = rooms.filter((room) => room.status === 'in-battle');
+
+    return Promise.all(
+      battleRooms.map(async (room) => {
+        const battle = await this.BattleService.getBattleByRoomId(room.roomId);
+        const progressMap = new Map(battle?.users.map((u) => [u.userId, u.progress]) ?? []);
+
+        return {
+          ...room,
+          currentPlayers: room.currentPlayers.map(({ socketId: _socketId, ...rest }) => ({
+            ...rest,
+            progress: progressMap.get(rest.userId),
+          })),
+          currentSpectators: room.currentSpectators.map(({ socketId: _socketId, ...rest }) => rest),
+        };
+      }),
+    );
   }
 }

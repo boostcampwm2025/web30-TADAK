@@ -1,6 +1,7 @@
 export const BATTLE_CONFIG = {
   DURATION: 30 * 60, // 기본 배틀 시간: 30분 (초 단위)
   DEFAULT_LANGUAGE: 'javascript',
+  DISCONNECT_TIMEOUT_MS: 10_000, // 재접속 대기 시간: 10초
 } as const;
 
 export const DEFAULT_CODE_TEMPLATE = `function solution(input) {

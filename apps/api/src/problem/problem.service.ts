@@ -86,6 +86,15 @@ export class ProblemService implements OnModuleInit {
     });
   }
 
+  // 문제 난이도에 따른 랜덤 문제 조회
+  async findRandomByDifficulty(difficulty: string): Promise<Problem | null> {
+    return await this.problemRepository
+      .createQueryBuilder('problem')
+      .where('problem.difficulty = :difficulty', { difficulty })
+      .orderBy('RAND()')
+      .getOne();
+  }
+
   async findOne(id: string): Promise<Problem | null> {
     return this.problemRepository.findOne({ where: { id } });
   }

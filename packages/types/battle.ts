@@ -1,3 +1,5 @@
+import type { TierType } from './user';
+
 export type BattleStatus = 'running' | 'completed';
 
 export type BattleResult = 'win' | 'lose' | 'draw';
@@ -85,7 +87,8 @@ export interface BattleResultResponse {
     userId: string;
     username: string;
     avatarUrl: string;
-    tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Ruby' | 'Master';
+    tier: TierType;
+    division: number;
     rate: number;
     score: number;
     totalScore: number;

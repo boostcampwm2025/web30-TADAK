@@ -67,7 +67,12 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                   className="flex items-center transition hover:opacity-80 active:scale-95"
                 >
-                  <UserProfile username={user.username} tier="Gold" avatarUrl={user.avatarUrl} />
+                  <UserProfile
+                    username={user.username}
+                    tier={user.tier?.tier}
+                    division={user.tier?.division}
+                    avatarUrl={user.avatarUrl}
+                  />
                 </button>
 
                 {isMenuOpen && (

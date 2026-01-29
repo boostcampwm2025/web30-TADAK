@@ -2,10 +2,9 @@ import { BATTLE_EVENTS } from '@shared/constants/battle';
 import { motion } from 'framer-motion';
 import { AlertCircle, Eye, Moon, Settings, Sun, Timer, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import logo from '@/assets/logo.png';
-import Modal from '@/components/Common/Modal';
 import { playCountdownSound } from '@/lib/sound';
 import { playPreviewSound } from '@/lib/sound';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
@@ -22,12 +21,9 @@ interface BattleHeaderProps {
 function BattleHeader({ theme, toggleTheme, showLeaveConfirm = true }: BattleHeaderProps) {
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId: string }>();
-  const leaveRoom = useBattleSocketStore((state) => state.leaveRoom);
-  const leaveBattle = useBattleSocketStore((state) => state.leaveBattle);
   const spectatorCount = useBattleSocketStore((state) => state.spectatorCount);
   const problem = useBattleProblemStore((state) => state.problem);
   const timeOffset = useBattleProblemStore((state) => state.timeOffset);
-  const me = useRoomStore((state) => state.me);
 
   const { volume, isMuted, setVolume, toggleMute } = useSoundStore();
   const [isSettingOpen, setIsSettingOpen] = useState(false);
@@ -38,7 +34,6 @@ function BattleHeader({ theme, toggleTheme, showLeaveConfirm = true }: BattleHea
   const startedAt = problem?.startedAt;
 
   const [timeLeft, setTimeLeft] = useState<number>(0);
-  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [hasEmittedEnd, setHasEmittedEnd] = useState(false);
   const hasPlayedCountdownRef = useRef(false);
 
@@ -80,34 +75,6 @@ function BattleHeader({ theme, toggleTheme, showLeaveConfirm = true }: BattleHea
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handleLeaveClick = () => {
-    if (showLeaveConfirm) {
-      setIsLeaveModalOpen(true);
-    } else {
-      handleConfirmLeave();
-    }
-  };
-
-  const handleConfirmLeave = () => {
-    if (!roomId) {
-      navigate('/');
-      return;
-    }
-
-    // 플레이어가 배틀 중이면 배틀 포기
-    if (showLeaveConfirm && battleId && me?.userId) {
-      // BATTLE_ENDED 이벤트에서 정리 및 페이지 이동 처리
-      leaveBattle(roomId, battleId, me.userId);
-    } else {
-      leaveRoom(roomId);
-      navigate('/');
-    }
-  };
-
-  const handleCancelLeave = () => {
-    setIsLeaveModalOpen(false);
   };
 
   return (
@@ -202,31 +169,6 @@ function BattleHeader({ theme, toggleTheme, showLeaveConfirm = true }: BattleHea
           )}
         </div>
       </div>
-
-      {showLeaveConfirm && (
-        <Modal
-          isOpen={isLeaveModalOpen}
-          onClose={handleCancelLeave}
-          icon={AlertCircle}
-          iconColor="text-error-01"
-          iconBgColor="bg-error-01/20"
-          title="대결에서 나가시겠습니까?"
-          description="진행 중인 문제 풀이가 모두 사라집니다."
-          buttons={[
-            {
-              label: '취소',
-              onClick: handleCancelLeave,
-              variant: 'muted',
-            },
-            {
-              label: '나가기',
-              onClick: handleConfirmLeave,
-              variant: 'black',
-            },
-          ]}
-          closeOnBackdrop={false}
-        />
-      )}
     </header>
   );
 }

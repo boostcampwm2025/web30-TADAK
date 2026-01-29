@@ -1,8 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { clampRating, getTierFromRating, RATING_CONFIG } from '@packages/constants/rating';
 import { Glicko2, newProcedure } from 'glicko2.ts';
+import Redis from 'ioredis';
 import { Repository } from 'typeorm';
+
+import { REDIS_CLIENT } from '@/redis/redis.module';
+import { RedisKeys } from '@/redis/redis-key.constant';
 
 import { User } from './user.entity';
 
@@ -31,6 +35,7 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {
     this.glicko2 = new Glicko2({
       tau: RATING_CONFIG.TAU,
@@ -132,5 +137,22 @@ export class UserService {
         tier: loserNewTier,
       },
     };
+  }
+
+  // 유저의 현재 활성 방 ID 조회
+  async getUserCurrentRoomId(userId: string): Promise<string | null> {
+    try {
+      const status = await this.redis.hget(RedisKeys.matchingUser(userId), 'status');
+      const roomId = await this.redis.hget(RedisKeys.matchingUser(userId), 'roomId');
+
+      // 방에 있는 상태(IN_ROOM)이거나 배틀 중인 상태에서 리다이렉트
+      if (status === 'IN_ROOM' && roomId) {
+        return roomId;
+      }
+      return null;
+    } catch (error) {
+      this.logger.error(`Error fetching user room status: ${userId}`, error);
+      return null;
+    }
   }
 }

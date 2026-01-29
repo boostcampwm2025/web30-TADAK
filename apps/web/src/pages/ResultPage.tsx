@@ -83,7 +83,13 @@ function ResultPage() {
               username={selectedPlayer.username}
               avatarUrl={selectedPlayer.avatarUrl}
               code={selectedPlayer.code}
-              isWinner={selectedPlayer.userId === battle.winnerId}
+              result={
+                !battle.winnerId
+                  ? 'draw'
+                  : selectedPlayer.userId === battle.winnerId
+                    ? 'win'
+                    : 'lose'
+              }
             />
           </div>
         </div>

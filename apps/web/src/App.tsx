@@ -12,11 +12,7 @@ function App() {
     }
   }, [fetchUser]);
 
-  return (
-    <>
-      <Outlet />
-    </>
-  );
+  return <Outlet />;
 }
 
 export default App;
