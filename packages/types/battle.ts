@@ -44,6 +44,7 @@ export interface CreateBattleDTO {
     duration?: number;
   };
   users: string[];
+  userRatings: number[];
 }
 
 export interface UpdateBattleUserDTO {
