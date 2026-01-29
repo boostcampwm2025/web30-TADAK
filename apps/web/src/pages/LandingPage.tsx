@@ -35,13 +35,13 @@ const LandingPage = () => {
   return (
     <div className="bg-surface text-ink transition-colors duration-300 min-h-screen">
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
+      <section className="relative min-h-svh flex items-center justify-center overflow-hidden">
         {/* Blobs */}
         <div className="absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-brand rounded-full blur-[80px] opacity-20 dark:opacity-30 pointer-events-none"></div>
         <div className="absolute bottom-0 right-0 translate-x-1/3 translate-y-1/3 w-80 h-80 bg-blue-400 rounded-full blur-[80px] opacity-20 dark:opacity-30 pointer-events-none"></div>
 
         <motion.div
-          className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center"
+          className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-20"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
