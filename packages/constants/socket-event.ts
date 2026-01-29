@@ -21,6 +21,7 @@ export const SOCKET_EVENT = {
   LEAVE_ROOM: 'leave-room', // 방 나가기
   SEND_CHAT: 'send-chat', // 관전자 채팅 전송
   ROOM_LIST_REQUEST: 'room-list-request', // 방 목록 요청
+  CHEAT_WARNING: 'cheat-warning', // 부정행위(화면 이탈/붙여넣기) 경고 알림
 
   // --- Server -> Client (응답/알림) ---
   ROOM_AVAILABILITY: 'room-availability', // 방 인원 확인 결과
