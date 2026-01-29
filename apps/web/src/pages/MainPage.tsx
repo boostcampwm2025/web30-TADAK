@@ -15,7 +15,6 @@ const tierFilters = [
   { label: '골드', color: 'bg-tier-gold' },
   { label: '플래티넘', color: 'bg-tier-platinum' },
   { label: '다이아몬드', color: 'bg-tier-diamond' },
-  { label: '루비', color: 'bg-tier-ruby' },
   { label: '마스터', color: 'bg-tier-master' },
 ];
 

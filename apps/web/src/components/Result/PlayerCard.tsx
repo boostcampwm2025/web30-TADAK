@@ -1,3 +1,4 @@
+import type { TierType } from '@shared/types/user';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 
 import TierBadge from '@/components/Common/TierBadge';
@@ -6,7 +7,8 @@ interface PlayerCardProps {
   player: {
     username: string;
     avatarUrl: string;
-    tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Ruby' | 'Master';
+    tier: TierType;
+    division: number;
     rate: number;
     score: number;
     totalScore: number;
@@ -20,7 +22,9 @@ interface PlayerCardProps {
 }
 
 function PlayerCard({ player, isWinner, isSelected, onClick }: PlayerCardProps) {
-  const { username, avatarUrl, tier, rate, score, totalScore, time, ratingChange } = player;
+  const { username, avatarUrl, tier, division, rate, score, totalScore, time, ratingChange } =
+    player;
+  const isPositiveChange = ratingChange >= 0;
 
   return (
     <button
@@ -38,7 +42,7 @@ function PlayerCard({ player, isWinner, isSelected, onClick }: PlayerCardProps) 
         </div>
         <div className="flex-1">
           <h3 className="font-bold text-base-primary text-left">{username}</h3>
-          <TierBadge tier={tier} />
+          <TierBadge tier={tier} division={division} />
         </div>
         <div className="text-right">
           <div className="text-3xl font-bold text-base-primary">{rate}</div>
@@ -48,15 +52,17 @@ function PlayerCard({ player, isWinner, isSelected, onClick }: PlayerCardProps) 
 
       <div className="flex rounded-2xl bg-bg-layer-1/20 border border-border-soft p-2.5">
         <div className="flex flex-6 justify-center items-center gap-3">
-          <div className={`rounded-full p-2 ${isWinner ? 'bg-green-01' : 'bg-pink-01'}`}>
-            {isWinner ? (
+          <div className={`rounded-full p-2 ${isPositiveChange ? 'bg-green-01' : 'bg-pink-01'}`}>
+            {isPositiveChange ? (
               <ArrowUp className="h-5 w-5 text-green-06" />
             ) : (
               <ArrowDown className="h-5 w-5 text-pink-05" />
             )}
           </div>
           <div>
-            <div className={`text-3xl font-bold ${isWinner ? 'text-green-05' : 'text-pink-05'}`}>
+            <div
+              className={`text-3xl font-bold ${isPositiveChange ? 'text-green-05' : 'text-pink-05'}`}
+            >
               {ratingChange > 0 ? '+' : ''}
               {ratingChange}
             </div>

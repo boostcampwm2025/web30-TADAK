@@ -46,7 +46,7 @@ export class RoomGateway {
   @SubscribeMessage(SOCKET_EVENT.ROOM_LIST_REQUEST)
   async handleRoomListRequest(@ConnectedSocket() client: Socket) {
     const rooms = await this.roomService.listRooms();
-    const publicRooms = this.roomService.toPublicRooms(rooms);
+    const publicRooms = await this.roomService.toPublicRooms(rooms);
     client.emit(SOCKET_EVENT.ROOM_LIST, publicRooms);
   }
 
@@ -279,7 +279,7 @@ export class RoomGateway {
     await this.roomService.saveRoom(room);
 
     const rooms = await this.roomService.listRooms();
-    const publicRooms = this.roomService.toPublicRooms(rooms);
+    const publicRooms = await this.roomService.toPublicRooms(rooms);
     this.server.emit(SOCKET_EVENT.ROOM_LIST, publicRooms);
   }
 

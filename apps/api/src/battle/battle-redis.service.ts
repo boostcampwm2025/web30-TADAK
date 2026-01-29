@@ -56,5 +56,7 @@ export class BattleRedisService {
     const key = RedisKeys.battle(battleId);
     const roomKey = RedisKeys.battleByRoom(roomId);
     await this.redis.del(key, roomKey);
+
+    await this.redis.srem(RedisKeys.activeBattles(), battleId);
   }
 }

@@ -5,6 +5,7 @@ export type RoomStatus = 'waiting' | 'in-battle' | 'completed';
 export interface Room {
   roomId: string;
   title: string;
+  difficulty?: string;
   hostId: string;
   status: RoomStatus;
   createdAt: Date;

@@ -20,6 +20,7 @@ type ProgressMap = Record<string, PlayerProgress>;
 type State = {
   progresses: ProgressMap;
   upsertProgress: (userId: string, progress: { passed: number; total: number }) => void;
+  syncProgress: (userId: string, progress: { passed: number; total: number }) => void;
   addActivityLog: (
     userId: string,
     log: { type: 'TEST' | 'SUBMIT'; passed: number; total: number },
@@ -48,6 +49,20 @@ export const useBattleProgressStore = create<State>()(
                 ...progress,
                 codeLines: current?.codeLines ?? 0,
                 activityLogs: [...(current?.activityLogs ?? []), newLog],
+              },
+            },
+          };
+        }),
+      syncProgress: (userId, progress) =>
+        set((s) => {
+          const current = s.progresses[userId];
+          return {
+            progresses: {
+              ...s.progresses,
+              [userId]: {
+                ...progress,
+                codeLines: current?.codeLines ?? 0,
+                activityLogs: current?.activityLogs ?? [],
               },
             },
           };
