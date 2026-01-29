@@ -1,7 +1,8 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
-import { SOCKET_ERROR } from '@shared/constants/socket-event';
+import { SOCKET_ERROR, SOCKET_EVENT } from '@shared/constants/socket-event';
+import type { ChatMessage } from '@shared/types/chat';
 import { AlertCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useBlocker, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import BattleFinishOverlay from '@/components/Battle/BattleFinishOverlay';
@@ -9,6 +10,7 @@ import BattleHeader from '@/components/Battle/BattleHeader';
 import BattlePlayer from '@/components/Battle/Player/BattlePlayer';
 import BattleSpectator from '@/components/Battle/Spectator/BattleSpectator';
 import Modal from '@/components/Common/Modal';
+import Toast from '@/components/Common/Toast';
 import { useTheme } from '@/hooks/useTheme';
 import { playCountdownSound } from '@/lib/sound';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
@@ -46,6 +48,8 @@ function BattlePage() {
   const [roleModalReason, setRoleModalReason] = useState<
     'player-to-spectator' | 'spectator-to-player' | 'not-authorized-player' | null
   >(null);
+  const [systemToastMessage, setSystemToastMessage] = useState<string | null>(null);
+  const lastCheatSentAtRef = useRef(0);
 
   const [showFinishOverlay, setShowFinishOverlay] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
@@ -198,6 +202,55 @@ function BattlePage() {
       unsubscribeRoomAvailability();
     };
   }, [requestRoomAvailability, roomId, subscribeRoomAvailability, unsubscribeRoomAvailability]);
+
+  useEffect(() => {
+    if (effectiveRole !== 'player') return;
+    if (!roomId) return;
+
+    const socket = connect();
+    const emitCheatWarning = (type: 'FOCUS_OUT' | 'PASTE') => {
+      if (!socket?.connected) return;
+      const now = Date.now();
+      if (now - lastCheatSentAtRef.current < 1000) return;
+      lastCheatSentAtRef.current = now;
+      socket.emit(SOCKET_EVENT.CHEAT_WARNING, { roomId, type });
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        emitCheatWarning('FOCUS_OUT');
+      }
+    };
+
+    const handleBlur = () => {
+      emitCheatWarning('FOCUS_OUT');
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleBlur);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [connect, effectiveRole, roomId]);
+
+  useEffect(() => {
+    const socket = connect();
+    const handleSystemMessage = (message: ChatMessage) => {
+      if (effectiveRole !== 'player') return;
+      if (message.type !== 'SYSTEM') return;
+      if (!message.message.includes('부정행위 경고') && !message.message.includes('패배 처리')) {
+        return;
+      }
+      setSystemToastMessage(message.message);
+    };
+
+    socket.on(SOCKET_EVENT.RECEIVE_CHAT, handleSystemMessage);
+    return () => {
+      socket.off(SOCKET_EVENT.RECEIVE_CHAT, handleSystemMessage);
+    };
+  }, [connect, effectiveRole]);
 
   useEffect(() => {
     if (isRoleModalOpen || isRoleMismatch) return;
@@ -381,6 +434,9 @@ function BattlePage() {
         ]}
         closeOnBackdrop={false}
       />
+      {systemToastMessage && (
+        <Toast message={systemToastMessage} onClose={() => setSystemToastMessage(null)} />
+      )}
     </div>
   );
 }
