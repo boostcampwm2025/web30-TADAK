@@ -2,7 +2,7 @@ import { BATTLE_EVENTS } from '@shared/constants/battle';
 import { SOCKET_ERROR } from '@shared/constants/socket-event';
 import { AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useBlocker, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import BattleFinishOverlay from '@/components/Battle/BattleFinishOverlay';
 import BattleHeader from '@/components/Battle/BattleHeader';
@@ -28,6 +28,7 @@ function BattlePage() {
   const connect = useBattleSocketStore((state) => state.connect);
   const joinRoom = useBattleSocketStore((state) => state.joinRoom);
   const leaveRoom = useBattleSocketStore((state) => state.leaveRoom);
+  const leaveBattle = useBattleSocketStore((state) => state.leaveBattle);
   const subscribeRoomAvailability = useBattleSocketStore(
     (state) => state.subscribeRoomAvailability,
   );
@@ -37,6 +38,7 @@ function BattlePage() {
   const requestRoomAvailability = useBattleSocketStore((state) => state.requestRoomAvailability);
   const clearProblem = useBattleProblemStore((state) => state.clearProblem);
   const clearRoom = useRoomStore((state) => state.clearRoom);
+  const problem = useBattleProblemStore((state) => state.problem);
   const user = useUserStore((state) => state.user);
   const me = useRoomStore((state) => state.me);
   const resetProgresses = useBattleProgressStore((state) => state.resetProgresses);
@@ -46,8 +48,11 @@ function BattlePage() {
   >(null);
 
   const [showFinishOverlay, setShowFinishOverlay] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
 
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
+  const battleId = problem?.battleId;
+  const isLeavingBattle = useBattleSocketStore((state) => state.isLeavingBattle);
   const effectiveRole =
     me && me.roomId === roomId ? me.role : (desiredRole as 'player' | 'spectator');
   const isSpectatorView = effectiveRole === 'spectator';
@@ -60,8 +65,72 @@ function BattlePage() {
   const modalReason = roleModalReason ?? mismatchReason;
   const shouldShowRoleModal = isRoleModalOpen || isRoleMismatch;
 
-  // 페이지 나갈 때 배틀 상태 초기화
+  // 뒤로가기 차단 (플레이어 + 배틀 중 + 나가기 미확인 시)
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      !isSpectator &&
+      !!battleId &&
+      !isLeavingBattle &&
+      currentLocation.pathname !== nextLocation.pathname,
+  );
+
+  const isLeaveModalOpen = blocker.state === 'blocked' || showLeaveModal;
+
+  // 나가기 버튼 클릭 핸들러
+  const handleLeaveClick = () => {
+    if (isSpectator) {
+      if (roomId) {
+        leaveRoom(roomId);
+      }
+      navigate('/');
+    } else {
+      setShowLeaveModal(true);
+    }
+  };
+
+  // 모달에서 나가기 확인
+  const handleConfirmLeave = () => {
+    setShowLeaveModal(false);
+
+    if (!roomId) {
+      if (blocker.state === 'blocked') blocker.proceed?.();
+      else navigate('/');
+      return;
+    }
+
+    // 플레이어가 배틀 중이면 배틀 포기
+    if (battleId && me?.userId) {
+      useUserStore.getState().setIsLeavingRoom(true);
+      leaveBattle(roomId, battleId, me.userId);
+      useUserStore.getState().clearCurrentRoomId();
+      if (blocker.state === 'blocked') blocker.proceed?.();
+    } else {
+      useUserStore.getState().setIsLeavingRoom(true);
+      leaveRoom(roomId);
+      if (blocker.state === 'blocked') blocker.proceed?.();
+      else navigate('/');
+    }
+
+    try {
+      sessionStorage.removeItem('battle-session');
+      sessionStorage.removeItem('battle-progress');
+    } catch {
+      // ignore
+    }
+  };
+
+  // 모달에서 취소
+  const handleCancelLeave = () => {
+    setShowLeaveModal(false);
+    if (blocker.state === 'blocked') {
+      blocker.reset?.();
+    }
+  };
+
+  // 페이지 진입/나갈 때 상태 초기화
   useEffect(() => {
+    useBattleSocketStore.setState({ isLeavingBattle: false });
+
     return () => {
       useRoomStore.getState().clearRoom();
       useBattleProblemStore.getState().clearProblem();
@@ -89,6 +158,10 @@ function BattlePage() {
       clearProblem();
       clearRoom();
       resetProgresses();
+      if (isLeaving) {
+        useUserStore.getState().setIsLeavingRoom(true);
+      }
+      useUserStore.getState().clearCurrentRoomId();
       useBattleSocketStore.setState({ isLeavingBattle: false });
       try {
         sessionStorage.removeItem('battle-session');
@@ -262,11 +335,7 @@ function BattlePage() {
   return (
     <div className="min-h-svh overflow-auto xl:h-screen xl:overflow-hidden">
       <div className="flex min-h-svh flex-col gap-3 px-3 py-3 xl:h-full xl:w-full xl:gap-4 xl:px-6 xl:py-4">
-        <BattleHeader
-          theme={theme}
-          onToggleTheme={toggleTheme}
-          showLeaveConfirm={!isSpectatorView}
-        />
+        <BattleHeader theme={theme} onToggleTheme={toggleTheme} onLeaveClick={handleLeaveClick} />
         <div className="flex-1 min-h-0 overflow-visible xl:overflow-hidden">
           {isSpectatorView ? <BattleSpectator /> : <BattlePlayer />}
         </div>
@@ -289,6 +358,29 @@ function BattlePage() {
         closeOnBackdrop={false}
       />
       <BattleFinishOverlay isVisible={showFinishOverlay} />
+
+      <Modal
+        isOpen={isLeaveModalOpen}
+        onClose={handleCancelLeave}
+        icon={AlertCircle}
+        iconColor="text-error-01"
+        iconBgColor="bg-error-01/20"
+        title="대결에서 나가시겠습니까?"
+        description="진행 중인 문제 풀이가 모두 사라집니다."
+        buttons={[
+          {
+            label: '취소',
+            onClick: handleCancelLeave,
+            variant: 'muted',
+          },
+          {
+            label: '나가기',
+            onClick: handleConfirmLeave,
+            variant: 'black',
+          },
+        ]}
+        closeOnBackdrop={false}
+      />
     </div>
   );
 }

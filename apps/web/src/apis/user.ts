@@ -8,6 +8,7 @@ export interface UserProfile {
   id: string;
   username: string;
   avatarUrl: string;
+  currentRoomId?: string | null;
   tier: { tier: TierType; division: number };
   rating: number;
   wins: number;

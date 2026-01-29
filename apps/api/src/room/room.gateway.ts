@@ -133,6 +133,8 @@ export class RoomGateway {
       existingPlayer.socketId = client.id;
       existingPlayer.username = resolvedUsername;
       existingPlayer.avatarUrl = resolvedAvatar;
+      // 재접속 시 disconnect 타이머 취소
+      this.battleService.cancelDisconnectTimer(resolvedUserId);
     } else if (existingSpectator) {
       existingSpectator.socketId = client.id;
       existingSpectator.username = resolvedUsername;

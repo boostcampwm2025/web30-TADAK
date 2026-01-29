@@ -1,7 +1,8 @@
-import { forwardRef, Inject } from '@nestjs/common';
+import { forwardRef, Inject, Logger } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
+  OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -18,19 +19,51 @@ import { type ChatMessage } from '@packages/types/chat';
 import { Server, Socket } from 'socket.io';
 
 import { BattleService } from '@/battle/battle.service';
+import { BattleRedisService } from '@/battle/battle-redis.service';
 import { RoomService } from '@/room/room.service';
 
 @WebSocketGateway({
   namespace: SOCKET_NAMESPACE.GAME,
 })
-export class BattleGateway {
+export class BattleGateway implements OnGatewayDisconnect {
   @WebSocketServer() server: Server;
+  private readonly logger = new Logger(BattleGateway.name);
 
   constructor(
     private readonly battleService: BattleService,
+    private readonly battleRedisService: BattleRedisService,
     @Inject(forwardRef(() => RoomService))
     private readonly roomService: RoomService,
   ) {}
+
+  async handleDisconnect(client: Socket) {
+    try {
+      // 모든 room을 순회하여 disconnect된 소켓이 배틀 중인 플레이어인지 확인
+      const rooms = await this.roomService.listRooms();
+
+      for (const room of rooms) {
+        const player = room.currentPlayers.find((u) => u.socketId === client.id);
+        if (!player) continue;
+
+        // 해당 방에 진행 중인 배틀이 있는지 확인
+        const battleId = await this.battleRedisService.getBattleIdByRoomId(room.roomId);
+        if (!battleId) continue;
+
+        // 배틀 중인 플레이어가 disconnect → 타이머 시작
+        this.battleService.startDisconnectTimer(
+          player.userId,
+          room.roomId,
+          battleId,
+          async (roomId, bId, winnerId) => {
+            await this.emitBattleEnd(roomId, bId, winnerId);
+          },
+        );
+        break;
+      }
+    } catch (error) {
+      this.logger.error('[handleDisconnect] error:', error);
+    }
+  }
 
   @SubscribeMessage(BATTLE_EVENTS.CODE_CHANGE)
   async handleChangeCode(@ConnectedSocket() client: Socket, @MessageBody() dto: UpdateUserCodeDTO) {
