@@ -123,4 +123,40 @@ describe('UserService', () => {
       expect(result[0].submission).toBeNull();
     });
   });
+
+  describe('getSubmissionHistory', () => {
+    it('사용자의 최종 제출 이력을 정상적으로 반환해야 한다 (중복 제거 확인)', async () => {
+      const userId = 'user-1';
+      const mockSubmissions = [
+        {
+          id: 'sub-2',
+          problemId: 'prob-1',
+          problemTitle: 'Problem 1',
+          difficulty: 'Gold',
+          createdAt: new Date(),
+        },
+      ];
+
+      const queryBuilder: any = {
+        innerJoin: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getRawMany: jest.fn().mockResolvedValue(mockSubmissions),
+        subQuery: jest.fn().mockReturnThis(),
+        from: jest.fn().mockReturnThis(),
+        groupBy: jest.fn().mockReturnThis(),
+        getQuery: jest.fn().mockReturnValue('(SELECT MAX(id) FROM submission GROUP BY battleId)'),
+      };
+
+      submissionRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+      const result = await service.getSubmissionHistory(userId);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('sub-2');
+      expect(result[0].problemTitle).toBe('Problem 1');
+    });
+  });
 });
