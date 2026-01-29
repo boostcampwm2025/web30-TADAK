@@ -1,12 +1,15 @@
-import Gold from '@/components/Bedge/Gold';
+import type { TierType } from '@shared/types/user';
+
+import TierBadge from '@/components/Common/TierBadge';
 
 interface UserProfileProps {
   username: string;
-  tier?: string;
+  tier?: TierType;
+  division?: number;
   avatarUrl?: string;
 }
 
-export function UserProfile({ username, tier = 'Gold', avatarUrl }: UserProfileProps) {
+export function UserProfile({ username, tier, division, avatarUrl }: UserProfileProps) {
   return (
     <div className="flex items-center gap-3 px-4">
       <div className="relative flex h-10 w-10 items-center justify-center">
@@ -26,7 +29,7 @@ export function UserProfile({ username, tier = 'Gold', avatarUrl }: UserProfileP
 
       <div className="flex flex-col">
         <span className="text-base font-bold text-base-primary">{username}</span>
-        <Gold tier={tier} />
+        {tier && <TierBadge tier={tier} division={division} />}
       </div>
     </div>
   );

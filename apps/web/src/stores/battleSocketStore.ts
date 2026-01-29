@@ -61,8 +61,12 @@ interface BattleSocketState {
   isLeavingBattle: boolean;
   availabilityListener: ((payload: RoomAvailabilityResponseDTO) => void) | null;
   roomListListener: ((rooms: Room[]) => void) | null;
-  joinedListener: ((payload: { playerCount: number }) => void) | null;
-  leftListener: ((payload: { playerCount: number }) => void) | null;
+  joinedListener:
+    | ((payload: { roomId: string; playerCount: number; spectatorCount?: number }) => void)
+    | null;
+  leftListener:
+    | ((payload: { roomId: string; playerCount: number; spectatorCount?: number }) => void)
+    | null;
   connect: () => Socket;
   disconnect: () => void;
   requestRoomAvailability: (
@@ -220,7 +224,11 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
         if (error?.code === SOCKET_ERROR.ROOM_NOT_FOUND) {
           clearSession();
         }
-        reject(new Error(error?.message ?? 'JOIN_ROOM_FAILED'));
+        const err = new Error(error?.message ?? 'JOIN_ROOM_FAILED');
+        if (error?.code) {
+          (err as Error & { code?: string }).code = error.code;
+        }
+        reject(err);
       };
 
       socket.on(SOCKET_EVENT.ROOM_STATE_ROLE, handleSync);
@@ -265,30 +273,38 @@ export const useBattleSocketStore = create<BattleSocketState>((set, get) => ({
       });
     };
 
-    const handleJoined = (payload: { playerCount: number; spectatorCount?: number }) => {
-      set((state) => {
-        if (!state.roomAvailability) return state;
-        return {
-          roomAvailability: {
-            ...state.roomAvailability,
-            playerCount: payload.playerCount,
-          },
-          spectatorCount: payload.spectatorCount ?? state.spectatorCount,
-        };
-      });
+    const handleJoined = (payload: {
+      roomId: string;
+      playerCount: number;
+      spectatorCount?: number;
+    }) => {
+      if (payload.roomId !== roomId) return;
+      set((state) => ({
+        roomAvailability: state.roomAvailability
+          ? {
+              ...state.roomAvailability,
+              playerCount: payload.playerCount,
+            }
+          : state.roomAvailability,
+        spectatorCount: payload.spectatorCount ?? state.spectatorCount,
+      }));
     };
 
-    const handleLeft = (payload: { playerCount: number; spectatorCount?: number }) => {
-      set((state) => {
-        if (!state.roomAvailability) return state;
-        return {
-          roomAvailability: {
-            ...state.roomAvailability,
-            playerCount: payload.playerCount,
-          },
-          spectatorCount: payload.spectatorCount ?? state.spectatorCount,
-        };
-      });
+    const handleLeft = (payload: {
+      roomId: string;
+      playerCount: number;
+      spectatorCount?: number;
+    }) => {
+      if (payload.roomId !== roomId) return;
+      set((state) => ({
+        roomAvailability: state.roomAvailability
+          ? {
+              ...state.roomAvailability,
+              playerCount: payload.playerCount,
+            }
+          : state.roomAvailability,
+        spectatorCount: payload.spectatorCount ?? state.spectatorCount,
+      }));
     };
 
     socket.off(SOCKET_EVENT.ROOM_AVAILABILITY);

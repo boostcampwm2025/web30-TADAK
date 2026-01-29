@@ -46,7 +46,7 @@ export class RoomGateway {
   @SubscribeMessage(SOCKET_EVENT.ROOM_LIST_REQUEST)
   async handleRoomListRequest(@ConnectedSocket() client: Socket) {
     const rooms = await this.roomService.listRooms();
-    const publicRooms = this.roomService.toPublicRooms(rooms);
+    const publicRooms = await this.roomService.toPublicRooms(rooms);
     client.emit(SOCKET_EVENT.ROOM_LIST, publicRooms);
   }
 
@@ -91,6 +91,27 @@ export class RoomGateway {
     const resolvedUserId = userId ?? client.id;
     const resolvedUsername = username ?? `User-${resolvedUserId.slice(-4)}`;
     const resolvedAvatar = avatarUrl;
+
+    // 플레이어 권한 검증
+    if (requestedRole === 'player') {
+      if (!userId) {
+        client.emit(SOCKET_EVENT.ERROR, {
+          code: SOCKET_ERROR.INVALID_ROLE,
+          message: '참가자만 배틀에 입장할 수 있습니다.',
+        });
+        return;
+      }
+
+      // 방의 플레이어 목록에 userId가 있어야 참가 허용
+      const isAuthorizedPlayer = room.currentPlayers.some((player) => player.userId === userId);
+      if (!isAuthorizedPlayer) {
+        client.emit(SOCKET_EVENT.ERROR, {
+          code: SOCKET_ERROR.INVALID_ROLE,
+          message: '참가자만 배틀에 입장할 수 있습니다.',
+        });
+        return;
+      }
+    }
 
     // 기존 유저 재접속 처리: 동일 userId가 있으면 socketId만 교체
     const existingPlayer = room.currentPlayers.find((u) => u.userId === resolvedUserId);
@@ -177,6 +198,7 @@ export class RoomGateway {
 
     // 방의 모든 사람에게 새 유저 입장 알림 (본인 포함)
     this.server.to(roomId).emit(SOCKET_EVENT.ROOM_USER_JOINED, {
+      roomId,
       playerCount: room.currentPlayers.length,
       spectatorCount: room.currentSpectators.length,
     });
@@ -259,7 +281,7 @@ export class RoomGateway {
     await this.roomService.saveRoom(room);
 
     const rooms = await this.roomService.listRooms();
-    const publicRooms = this.roomService.toPublicRooms(rooms);
+    const publicRooms = await this.roomService.toPublicRooms(rooms);
     this.server.emit(SOCKET_EVENT.ROOM_LIST, publicRooms);
   }
 
@@ -269,7 +291,6 @@ export class RoomGateway {
     @MessageBody() data: { roomId: string },
   ) {
     const { roomId } = data;
-    const userId = client.id;
 
     const room = await this.roomService.getRoom(roomId);
 
@@ -281,20 +302,30 @@ export class RoomGateway {
       return;
     }
 
-    // 참가자인지 확인
-    const isPlayer = room.currentPlayers.some((player) => player.userId === userId);
+    const participant =
+      room.currentPlayers.find((user) => user.socketId === client.id) ??
+      room.currentSpectators.find((user) => user.socketId === client.id);
+
+    if (!participant) {
+      await client.leave(roomId);
+      return;
+    }
+
+    const participantUserId = participant.userId;
+    const isPlayer = participant.role === 'player';
 
     // 참가자일 경우 배틀에서도 제거
     if (isPlayer) {
-      await this.battleService.leaveBattle(roomId, userId);
+      await this.battleService.leaveBattle(roomId, participantUserId);
     }
 
     // 방에서 사용자 제거
-    const updatedRoom = await this.roomService.removeUser(roomId, userId);
+    const updatedRoom = await this.roomService.removeUser(roomId, participantUserId);
 
     if (updatedRoom) {
       // 방의 모든 사람에게 유저 퇴장 알림 (본인 제외)
       client.to(roomId).emit(SOCKET_EVENT.ROOM_USER_LEFT, {
+        roomId,
         playerCount: updatedRoom.currentPlayers.length,
         spectatorCount: updatedRoom.currentSpectators.length,
       });

@@ -51,7 +51,7 @@ export class BattleService {
     const battleId = `battle-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
     // 임시 문제 선택
-    const problem = await this.problemService.findFirst();
+    const problem = await this.problemService.findRandomByDifficulty('Bronze');
     if (!problem) {
       throw new Error('No problems available.');
     }
@@ -389,6 +389,9 @@ export class BattleService {
     await this.redisClient.srem(RedisKeys.activeBattles(), battle.battleId);
     this.logger.log(`[endBattle] 진행 중인 배틀 목록에서 제거 완료`);
 
+    // 6.5. 방 삭제
+    await this.roomService.deleteRoom(battle.roomId);
+
     // 7. 참가자들의 매칭 상태 초기화 (재매칭 가능하도록)
     this.logger.log(
       `[endBattle] 매칭 상태 초기화 시작 - users: ${battle.users.map((u) => u.userId).join(', ')}`,
@@ -565,6 +568,7 @@ export class BattleService {
       }
 
       const tier = (user?.tier?.tier || 'Bronze') as Tier;
+      const division = user?.tier?.division ?? 4;
 
       const ratingChange =
         index === 0 ? battle.player1RatingChange || 0 : battle.player2RatingChange || 0;
@@ -574,6 +578,7 @@ export class BattleService {
         username: user?.username || 'Unknown',
         avatarUrl: user?.avatarUrl || '',
         tier,
+        division,
         rate: user?.rating || 0,
         score: submission?.passedTestCases || 0,
         totalScore: submission?.totalTestCases || 20,

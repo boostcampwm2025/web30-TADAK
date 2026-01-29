@@ -225,7 +225,7 @@ export class BattleGateway implements OnGatewayDisconnect {
   // 방 목록을 모든 클라이언트에게 브로드캐스트
   private async broadcastRoomList(): Promise<void> {
     const rooms = await this.roomService.listRooms();
-    const publicRooms = this.roomService.toPublicRooms(rooms);
+    const publicRooms = await this.roomService.toPublicRooms(rooms);
     this.server.emit(SOCKET_EVENT.ROOM_LIST, publicRooms);
   }
 }
