@@ -41,3 +41,11 @@ export interface BattleHistoryItem {
   ratingChange: number;
   createdAt: Date;
 }
+
+export interface SubmissionHistoryItem {
+  id: string;
+  problemId: string;
+  problemTitle: string;
+  difficulty: string;
+  createdAt: Date;
+}
