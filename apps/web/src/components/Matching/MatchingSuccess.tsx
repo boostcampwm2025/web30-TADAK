@@ -1,19 +1,34 @@
 import { Check } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { playBattleCountdownSound } from '@/lib/sound';
 import { useMatchingStore } from '@/stores/matchingStore';
 import { useUserStore } from '@/stores/userStore';
 
 export default function MatchingSuccess() {
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(5);
+  const hasPlayedReadyRef = useRef(false);
+  const hasPlayedStartRef = useRef(false);
 
   const matchResult = useMatchingStore((state) => state.matchResult);
   const user = useUserStore((state) => state.user);
   const setAllowNavigation = useMatchingStore((s) => s.setAllowNavigation);
 
-  // 카운트다운 로직
+  // 효과음 재생 로직
+  useEffect(() => {
+    if (countdown === 5 && !hasPlayedReadyRef.current) {
+      hasPlayedReadyRef.current = true;
+      playBattleCountdownSound('tick');
+    }
+    if (countdown === 0 && !hasPlayedStartRef.current) {
+      hasPlayedStartRef.current = true;
+      playBattleCountdownSound('end');
+    }
+  }, [countdown]);
+
+  // 카운트다운 타이머 로직
   useEffect(() => {
     if (countdown === 0) {
       if (matchResult?.roomId) {

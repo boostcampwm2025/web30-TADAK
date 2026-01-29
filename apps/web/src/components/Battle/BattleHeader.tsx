@@ -1,12 +1,15 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
+import { motion } from 'framer-motion';
 import { AlertCircle, Eye, Moon, Sun, Timer } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import logo from '@/assets/logo.png';
 import Modal from '@/components/Common/Modal';
+import { playCountdownSound } from '@/lib/sound';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
+import { useRoomStore } from '@/stores/roomStore';
 
 interface BattleHeaderProps {
   theme: 'light' | 'dark';
@@ -18,9 +21,11 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId: string }>();
   const leaveRoom = useBattleSocketStore((state) => state.leaveRoom);
+  const leaveBattle = useBattleSocketStore((state) => state.leaveBattle);
   const spectatorCount = useBattleSocketStore((state) => state.spectatorCount);
   const problem = useBattleProblemStore((state) => state.problem);
   const timeOffset = useBattleProblemStore((state) => state.timeOffset);
+  const me = useRoomStore((state) => state.me);
 
   const battleId = problem?.battleId;
   const duration = problem?.duration;
@@ -29,6 +34,7 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [hasEmittedEnd, setHasEmittedEnd] = useState(false);
+  const hasPlayedCountdownRef = useRef(false);
 
   useEffect(() => {
     if (!startedAt || !duration) return;
@@ -41,6 +47,12 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
       const now = Date.now() + timeOffset;
       const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
       setTimeLeft(remaining);
+
+      // 5초 시점에 효과음 시작 (한 번만)
+      if (remaining === 5 && !hasPlayedCountdownRef.current) {
+        hasPlayedCountdownRef.current = true;
+        playCountdownSound('tick');
+      }
 
       if (remaining <= 0 && !hasEmittedEnd) {
         // 타이머 종료 처리
@@ -73,8 +85,18 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
   };
 
   const handleConfirmLeave = () => {
-    if (roomId) {
+    if (!roomId) {
+      navigate('/');
+      return;
+    }
+
+    // 플레이어가 배틀 중이면 배틀 포기
+    if (showLeaveConfirm && battleId && me?.userId) {
+      // BATTLE_ENDED 이벤트에서 정리 및 페이지 이동 처리
+      leaveBattle(roomId, battleId, me.userId);
+    } else {
       leaveRoom(roomId);
+      navigate('/');
     }
     try {
       sessionStorage.removeItem('battle-session');
@@ -97,10 +119,24 @@ function BattleHeader({ theme, onToggleTheme, showLeaveConfirm = true }: BattleH
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 rounded-3xl bg-green-01 px-4 py-1 text-lg font-bold text-green-06 shadow-[1px_1px_4px_rgba(0,0,0,0.05)]">
+        <motion.div
+          animate={
+            timeLeft <= 5 && timeLeft > 0
+              ? {
+                  scale: [1, 1.05, 1],
+                  transition: { repeat: Infinity, duration: 0.8 },
+                }
+              : { scale: 1 }
+          }
+          className={`flex items-center gap-2 rounded-3xl px-4 py-1 text-lg font-bold shadow-[1px_1px_4px_rgba(0,0,0,0.05)] transition-colors duration-300 ${
+            timeLeft <= 5 && timeLeft > 0
+              ? 'bg-red-50 text-error-01 dark:bg-error-01/10'
+              : 'bg-green-01 text-green-06'
+          }`}
+        >
           <Timer className="h-5 w-5" strokeWidth={2.5} />
           <span className="font-bold leading-7">{formatTime(timeLeft)}</span>
-        </div>
+        </motion.div>
       </div>
 
       <div className="flex items-center gap-3">

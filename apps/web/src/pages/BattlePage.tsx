@@ -5,11 +5,13 @@ import { AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
+import BattleFinishOverlay from '@/components/Battle/BattleFinishOverlay';
 import BattleHeader from '@/components/Battle/BattleHeader';
 import BattlePlayer from '@/components/Battle/Player/BattlePlayer';
 import BattleSpectator from '@/components/Battle/Spectator/BattleSpectator';
 import Modal from '@/components/Common/Modal';
 import { useTheme } from '@/hooks/useTheme';
+import { playCountdownSound } from '@/lib/sound';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
@@ -36,6 +38,8 @@ function BattlePage() {
   const requestRoomAvailability = useBattleSocketStore((state) => state.requestRoomAvailability);
   const setProblem = useBattleProblemStore((state) => state.setProblem);
   const setTimeOffset = useBattleProblemStore((state) => state.setTimeOffset);
+  const clearProblem = useBattleProblemStore((state) => state.clearProblem);
+  const clearRoom = useRoomStore((state) => state.clearRoom);
   const user = useUserStore((state) => state.user);
   const me = useRoomStore((state) => state.me);
   const resetProgresses = useBattleProgressStore((state) => state.resetProgresses);
@@ -43,6 +47,8 @@ function BattlePage() {
   const [roleModalReason, setRoleModalReason] = useState<
     'player-to-spectator' | 'spectator-to-player' | 'not-authorized-player' | null
   >(null);
+
+  const [showFinishOverlay, setShowFinishOverlay] = useState(false);
 
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
   const effectiveRole =
@@ -66,28 +72,6 @@ function BattlePage() {
     };
   }, []);
 
-  useEffect(() => {
-    const socket = connect();
-    const handleProblemInfo = (payload: ProblemDataPayload) => {
-      if (payload?.id) {
-        setProblem(payload);
-
-        if (payload.serverTime) {
-          const serverTime = new Date(payload.serverTime).getTime();
-          const clientTime = Date.now();
-          const offset = serverTime - clientTime;
-          setTimeOffset(offset);
-        }
-      }
-    };
-
-    socket.on(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
-
-    return () => {
-      socket.off(SOCKET_EVENT.PROBLEM_INFO, handleProblemInfo);
-    };
-  }, [connect, setProblem, setTimeOffset]);
-
   // 배틀 종료 이벤트 리스너 분리
   useEffect(() => {
     const socket = connect();
@@ -101,17 +85,30 @@ function BattlePage() {
         return;
       }
 
-      // 배틀 종료 시 세션 스토리지 정리
+      // 본인이 나가기 버튼을 눌렀는지 확인
+      const isLeaving = useBattleSocketStore.getState().isLeavingBattle;
+
+      // 배틀 종료 시 모든 상태 정리
+      clearProblem();
+      clearRoom();
+      resetProgresses();
+      useBattleSocketStore.setState({ isLeavingBattle: false });
       try {
         sessionStorage.removeItem('battle-session');
         sessionStorage.removeItem('battle-progress');
       } catch {
         // ignore cleanup failures
       }
-      resetProgresses();
 
-      if (data.battleId) {
-        navigate(`/result/${data.battleId}`, { replace: true });
+      // 본인이 포기한 경우 메인으로, 아니면 결과 페이지로
+      if (isLeaving) {
+        navigate('/');
+      } else if (data.battleId) {
+        setShowFinishOverlay(true);
+        playCountdownSound('end');
+        setTimeout(() => {
+          navigate(`/result/${data.battleId}`, { replace: true });
+        }, 3000);
       } else {
         console.error('[BattlePage] battleId missing in BATTLE_ENDED payload');
       }
@@ -122,7 +119,7 @@ function BattlePage() {
     return () => {
       socket.off(BATTLE_EVENTS.BATTLE_ENDED, handleBattleEnded);
     };
-  }, [connect, navigate, resetProgresses, roomId]);
+  }, [connect, navigate, resetProgresses, clearProblem, clearRoom, roomId]);
 
   useEffect(() => {
     subscribeRoomAvailability(roomId);
@@ -294,6 +291,7 @@ function BattlePage() {
         ]}
         closeOnBackdrop={false}
       />
+      <BattleFinishOverlay isVisible={showFinishOverlay} />
     </div>
   );
 }

@@ -13,3 +13,6 @@ node_modules
 .env.test
 .env.dev
 /judge-data
+
+# k6
+k6/logs

@@ -51,9 +51,9 @@ export class PubsubSubscriberService implements OnModuleInit {
   }
 
   private async handleTestcaseUpdate(message: TestcaseUpdateMessage) {
-    this.logger.log(
-      `[TESTCASE_UPDATE] Submission ${message.submissionId} - TC ${message.testcase.index}: ${message.testcase.status}`,
-    );
+    // this.logger.log(
+    //   `[TESTCASE_UPDATE] Submission ${message.submissionId} - TC ${message.testcase.index}: ${message.testcase.status}`,
+    // );
 
     const socketId =
       (message.socketId as string) ?? (await this.getSocketIdBySubmissionId(message.submissionId));

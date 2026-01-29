@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { Battle } from './battle/battle.entity';
 import { BattleModule } from './battle/battle.module';
+import { HealthController } from './health/health.controller';
 import { MatchingModule } from './matching/matching.module';
 import { Problem } from './problem/problem.entity';
 import { ProblemModule } from './problem/problem.module';
@@ -66,7 +67,7 @@ import { UserModule } from './user/user.module';
     AuthModule,
     PubsubModule,
   ],
-  controllers: [],
+  controllers: [HealthController],
   providers: [],
 })
 export class AppModule {}

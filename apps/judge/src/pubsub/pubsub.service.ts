@@ -16,9 +16,9 @@ export class PubsubService {
     try {
       const payload = JSON.stringify(message);
       await this.redisPublisher.publish(this.CHANNEL, payload);
-      this.logger.log(
-        `Published TESTCASE_UPDATE for submission ${message.submissionId}: TC#${message.testcase.index} ${message.testcase.status} (${message.progress.completed}/${message.progress.total})`,
-      );
+      // this.logger.log(
+      //   `Published TESTCASE_UPDATE for submission ${message.submissionId}: TC#${message.testcase.index} ${message.testcase.status} (${message.progress.completed}/${message.progress.total})`,
+      // );
     } catch (error) {
       this.logger.error(
         `Failed to publish testcase update for submission ${message.submissionId}`,
