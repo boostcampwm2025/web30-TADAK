@@ -1,6 +1,5 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
-import { SOCKET_ERROR, SOCKET_EVENT } from '@shared/constants/socket-event';
-import type { ProblemDataPayload } from '@shared/types/problem';
+import { SOCKET_ERROR } from '@shared/constants/socket-event';
 import { AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -36,8 +35,6 @@ function BattlePage() {
     (state) => state.unsubscribeRoomAvailability,
   );
   const requestRoomAvailability = useBattleSocketStore((state) => state.requestRoomAvailability);
-  const setProblem = useBattleProblemStore((state) => state.setProblem);
-  const setTimeOffset = useBattleProblemStore((state) => state.setTimeOffset);
   const clearProblem = useBattleProblemStore((state) => state.clearProblem);
   const clearRoom = useRoomStore((state) => state.clearRoom);
   const user = useUserStore((state) => state.user);
