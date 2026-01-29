@@ -24,3 +24,20 @@ export interface RoomUser extends User {
   stats?: UserStats;
   progress?: { passedCount: number; totalCount: number };
 }
+
+export interface BattleHistoryItem {
+  id: string;
+  result: 'WIN' | 'LOSS' | 'DRAW';
+  opponentName: string;
+  problem: {
+    title: string;
+    difficulty: string;
+  };
+  submission: {
+    language: string;
+    passedTestCases: number;
+    totalTestCases: number;
+  } | null;
+  ratingChange: number;
+  createdAt: Date;
+}
