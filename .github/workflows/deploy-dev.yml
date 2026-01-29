@@ -1,0 +1,66 @@
+name: Deploy to Dev
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Build check
+        run: pnpm run build
+
+  cd:
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /root/web30-boostcamp
+            # 1. dev 브랜치 강제 동기화
+            git fetch origin dev
+            git checkout -f dev
+            git reset --hard origin/dev
+            
+            # 2. 의존성 설치
+            pnpm install --frozen-lockfile
+            
+            # 3. 프론트엔드 강제 빌드 (환경 변수 직접 주입)
+            echo "Building frontend with domain URL..."
+            VITE_API_BASE_URL=https://www.tadak.site npx turbo run build --filter=web --force
+            
+            # 4. 정적 파일 동기화 및 권한 최적화
+            echo "Syncing files to /var/www/port30/web/"
+            sudo mkdir -p /var/www/port30/web
+            sudo rsync -av --delete ./apps/web/dist/ /var/www/port30/web/
+            sudo chown -R www-data:www-data /var/www/port30/web
+            
+            # 5. 백엔드 및 기타 서비스 재실행
+            docker compose -f docker-compose.prod.yml up -d --build
+            
+            # 6. Nginx 설정 정합성 확인 및 반영
+            sudo nginx -t && sudo systemctl reload nginx

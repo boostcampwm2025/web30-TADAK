@@ -1,17 +1,140 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
-  --color-brand: #6d28d9;
-  --color-brand-foreground: #f5f3ff;
-  --color-surface: #f8fafc;
-  --color-ink: #0f172a;
-  --font-sans: "Inter", "Pretendard Variable", system-ui, -apple-system, sans-serif;
+  /* --- Primitives (Blue Scale) --- */
+  --color-blue-01: #f1f7fb;
+  --color-blue-02: #e2e8f0;
+  --color-blue-03: #b8c2d3;
+  --color-blue-04: #555775;
+  --color-blue-05: #3d4759;
+  --color-blue-06: #161a32;
+  --color-blue-07: #0f172a;
+
+  /* --- Primitives (Green Scale - Main) --- */
+  --color-green-01: #99f3c7;
+  --color-green-02: #99f3c7;
+  --color-green-03: #66ecac;
+  --color-green-04: #33e690;
+  --color-green-05: #00e074;
+  --color-green-06: #16a34a;
+
+  /* --- Primitives (Pink Scale - Main) --- */
+  --color-pink-01: #ffd1d9;
+  --color-pink-02: #ffd1d9;
+  --color-pink-03: #ffa3b2;
+  --color-pink-04: #ff748c;
+  --color-pink-05: #ff3b5c;
+
+  /* --- Primitives (Tier) --- */
+  --color-tier-bronze: #a16207;
+  --color-tier-silver: #6b7280;
+  --color-tier-gold: #eab308;
+  --color-tier-platinum: #06b6d4;
+  --color-tier-diamond: #60a5fa;
+  --color-tier-ruby: #f43f5e;
+  --color-tier-master: #a855f7;
+
+  /* --- Primitives (Etc) --- */
+  --color-red-01: #ff3b5c;
+  --color-error-01: #f74f3b;
+  --color-neon-01: #00ffcc;
+  --color-gray-light: #f3f4f6;
+
+  --color-white-static: #ffffff;
+  --color-black-static: #000000;
+
+  /* --- Semantic Tokens (Themed) --- */
+  --color-white: var(--white);
+  --color-black: var(--black);
+
+  --color-base-primary: var(--base-primary);
+  --color-base-secondary: var(--base-secondary);
+  --color-base-tertiary: var(--base-tertiary);
+  --color-base-muted: var(--base-muted);
+  --color-base-faint: var(--base-faint);
+  --color-base-faint-inverse: var(--base-faint-inverse);
+
+  --color-bg-layer-1: var(--bg-layer-1);
+  --color-bg-layer-2: var(--bg-layer-2);
+
+  /* --- App Specific Colors (Restored) --- */
+  --color-brand: var(--color-green-05);
+
+  /* 전체 배경, 글씨, 테두리 색상 */
+  --color-surface: var(--bg-layer-1);
+  --color-ink: var(--black);
+  --color-border-soft: var(--base-muted);
+
+  /* --- Radius --- */
+  --radius-24: 1.5rem; /* 24px */
+
+  /* Typography System */
+  --font-sans:
+    'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto,
+    'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic',
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+  --font-mono:
+    'Fira Code', 'D2Coding', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, monospace;
+
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.25rem;
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 2.5rem;
 }
 
+/* --- Theme Variables --- */
+/* Light Mode (Default) */
 :root {
+  --base-primary: var(--color-blue-06);
+  --base-secondary: var(--color-blue-04);
+  --base-tertiary: var(--color-blue-03);
+  --base-muted: var(--color-blue-02);
+
+  --base-faint: var(--color-white-static);
+  --base-faint-inverse: var(--color-blue-05);
+
+  --bg-layer-1: var(--color-blue-02);
+  --bg-layer-2: var(--color-white);
+  --background-light: var(--color-gray-light);
+
+  --white: var(--color-white-static);
+  --black: var(--color-black-static);
+
+  /* Global Defaults */
   font-family: var(--font-sans);
-  background-color: var(--color-surface);
+  background-color: var(--bg-layer-1);
   color: var(--color-ink);
+  border-color: var(--color-border-soft);
+}
+
+/* Dark Mode */
+.dark {
+  --base-primary: var(--color-white-static);
+  --base-secondary: var(--color-blue-02);
+  --base-tertiary: var(--color-blue-03);
+  --base-muted: var(--color-blue-04);
+  --base-faint: var(--color-blue-05);
+  --base-faint-inverse: var(--color-white-static);
+
+  --bg-layer-1: var(--color-blue-07);
+  --bg-layer-2: var(--color-blue-06);
+  --background-light: var(--color-blue-05);
+
+  --white: var(--color-black-static);
+  --black: var(--color-white-static);
 }
 
 * {
@@ -20,4 +143,57 @@
 
 body {
   margin: 0;
+}
+
+.border-soft {
+  border-color: var(--color-border-soft);
+}
+
+.fade-slide-in {
+  animation: fade-slide-in 200ms ease-out;
+}
+
+@keyframes fade-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scroll Bar */
+.chat-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #475569 transparent; /* firefox */
+}
+
+.code-scroll::-webkit-scrollbar {
+  width: 0.625rem;
+  height: 0.625rem;
+}
+
+.code-scroll::-webkit-scrollbar-button {
+  display: none;
+}
+
+.code-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.code-scroll::-webkit-scrollbar-thumb {
+  background: rgba(85, 87, 117, 0.3);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.code-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(85, 87, 117, 0.5);
+}
+
+.code-scroll::-webkit-scrollbar-thumb:active {
+  background: rgba(85, 87, 117, 0.6);
 }

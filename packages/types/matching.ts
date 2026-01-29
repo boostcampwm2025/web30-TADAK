@@ -1,0 +1,52 @@
+export type MatchingStatus = 'WAITING' | 'MATCHED' | 'IN_ROOM' | 'CANCELED';
+export type Tier = 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Master';
+export type TierDivision = 1 | 2 | 3 | 4;
+export interface UserTier {
+  tier: Tier;
+  division?: TierDivision;
+}
+
+export interface UserRate {
+  win: number;
+  lose: number;
+  draw?: number;
+  winRate: number;
+}
+
+export interface MatchingUser {
+  userId: string;
+  username: string;
+  rating: number;
+  tier: UserTier;
+  status: MatchingStatus;
+  waitingSince: Date;
+  socketId: string;
+
+  myRate: UserRate;
+  avatarUrl?: string;
+}
+
+export interface MatchingStartRequest {
+  userId: string;
+  socketId: string;
+  // rating, username은 서버에서 세션 조회나 DB 조회
+}
+
+export interface MatchingCancelRequest {
+  userId: string;
+}
+
+export interface MatchingSuccessResponse {
+  roomId: string;
+  battleId: string;
+  myRate: UserRate;
+
+  opponent: {
+    userId: string;
+    username: string;
+    avatarUrl: string;
+    rating: number;
+    tier: UserTier;
+    rate: UserRate;
+  };
+}

@@ -5,15 +5,16 @@
 ```bash
 # 1. 환경 변수 설정
 cp .env.dev.example .env.dev
+# Windows(WSL): .env.dev의 JUDGE_HOST_PATH를 /mnt/c/.../judge-data로 설정
 
 # 2. Docker 실행 (빌드 + 백그라운드)
-docker compose -f docker-compose.dev.yml up --build -d
+docker compose --env-file .env.dev -f docker-compose.dev.yml up --build -d
 
 # 3. 로그 확인
-docker compose -f docker-compose.dev.yml logs -f
+docker compose --env-file .env.dev -f docker-compose.dev.yml logs -f
 
 # 4. 종료
-docker compose -f docker-compose.dev.yml down
+docker compose --env-file .env.dev -f docker-compose.dev.yml down
 ```
 
 ### 서비스 접속
@@ -38,20 +39,31 @@ docker compose -p web30-prod -f docker-compose.prod.yml up -d
 docker compose -f docker-compose.prod.yml down
 ```
 
+```bash
+# redis 데이터 초기화
+# 1. 종료
+docker compose -f docker-compose.prod.yml down redis
+# 2. redis 빌드
+docker compose -f docker-compose.prod.yml build redis
+# 3. redis 재기동
+docker compose -f docker-compose.prod.yml up -d redis
+
+```
+
 ## 주요 명령어
 
 ```bash
 # 컨테이너 상태 확인
-docker compose -f docker-compose.dev.yml ps
+docker compose --env-file .env.dev -f docker-compose.dev.yml ps
 
 # 데이터베이스 초기화 (볼륨 삭제)
-docker compose -f docker-compose.dev.yml down -v
+docker compose --env-file .env.dev -f docker-compose.dev.yml down -v
 
 # MySQL 접속
-docker compose -f docker-compose.dev.yml exec mysql mysql -u web30 -p
+docker compose --env-file .env.dev -f docker-compose.dev.yml exec mysql mysql -u web30 -p
 
 # Redis 접속
-docker compose -f docker-compose.dev.yml exec redis redis-cli
+docker compose --env-file .env.dev -f docker-compose.dev.yml exec redis redis-cli
 ```
 
 ## 참고사항

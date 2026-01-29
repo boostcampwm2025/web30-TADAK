@@ -50,17 +50,42 @@ services:
     networks:
       - app-network
 
-  # 프론트엔드 (React + Vite + Nginx)
-  web:
+  # 채점 서버 (NestJS)
+  judge:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
+      dockerfile: apps/judge/Dockerfile
       target: production
     restart: always
     depends_on:
-      - api
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env.production
+    environment:
+      - NODE_ENV=production
+      - JUDGE_VOLUME=/judge-data
+      - JUDGE_HOST_PATH=/srv/judge-data
+      - JUDGE_PROBLEMS_PATH=/judge-data
+      - JUDGE_SUBMISSIONS_PATH=/judge-data/submissions
     ports:
-      - "80:80"
+      - "4000:4000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /srv/judge-data:/judge-data
+    networks:
+      - app-network
+
+  # 채점 러너 이미지 빌드
+  judge-runner:
+    build:
+      context: apps/judge/runner
+      dockerfile: Dockerfile
+    image: judge-javascript
+    restart: "no"
+    command: ["sh", "-c", "exit 0"]
     networks:
       - app-network
 

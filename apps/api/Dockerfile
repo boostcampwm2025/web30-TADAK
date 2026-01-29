@@ -35,14 +35,18 @@ FROM node:22-alpine AS production
 RUN corepack enable && corepack prepare pnpm@10.20.0 --activate
 WORKDIR /app
 
+# Docker에서는 Husky CI 필요없음
+ENV HUSKY=0
+
 # 프로덕션 의존성만 설치
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json ./apps/api/
-RUN pnpm install --prod --frozen-lockfile
+COPY packages ./packages
+RUN pnpm install --prod --frozen-lockfile --ignore-scripts
 
 # 빌드된 파일 복사
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 
 WORKDIR /app/apps/api
 EXPOSE 3000
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/apps/api/src/main.js"]

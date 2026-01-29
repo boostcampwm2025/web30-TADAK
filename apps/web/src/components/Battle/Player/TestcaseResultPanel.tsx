@@ -1,0 +1,120 @@
+import type { TestcaseStatus, TestcaseUpdateMessage } from '@shared/types/pubsub';
+import { useEffect, useRef } from 'react';
+
+type TestcaseResult = TestcaseUpdateMessage['testcase'] & {
+  results?: TestcaseUpdateMessage['results'];
+};
+
+type TestcaseResultPanelProps = {
+  testcaseResults: TestcaseResult[];
+  mode?: 'TEST' | 'SUBMISSION' | null;
+};
+
+function getStatusColor(status: TestcaseStatus) {
+  switch (status) {
+    case 'ACCEPTED':
+      return 'font-bold text-green-05';
+    case 'WRONG_ANSWER':
+      return 'font-bold text-pink-05';
+    case 'TIME_LIMIT_EXCEEDED':
+    case 'MEMORY_LIMIT_EXCEEDED':
+    case 'RUNTIME_ERROR':
+    case 'COMPILE_ERROR':
+    case 'INTERNAL_ERROR':
+      return 'font-bold text-orange-05';
+    default:
+      return 'font-bold text-base-secondary';
+  }
+}
+
+function TestcaseResultPanel({ testcaseResults, mode }: TestcaseResultPanelProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [testcaseResults]);
+
+  return (
+    <div className="border-t border-base-muted bg-(bg-layer-2) px-4 py-3 text-xs">
+      {testcaseResults.length === 0 ? (
+        <div className="rounded-md bg-base-primary/5 px-3 py-2 text-xs text-base-secondary">
+          아직 수신된 결과가 없습니다.
+        </div>
+      ) : (
+        <>
+          {mode !== 'TEST' && (
+            <div className="grid grid-cols-[64px_1fr_72px_72px] gap-2 px-2 pb-1 text-[11px] text-base-secondary">
+              <span>케이스</span>
+              <span>결과</span>
+              <span className="text-right">시간</span>
+              <span className="text-right">메모리</span>
+            </div>
+          )}
+          <div ref={scrollRef} className="max-h-36 space-y-1.5 overflow-y-auto pr-1">
+            {testcaseResults.map((testcase) => (
+              <div
+                key={testcase.index}
+                className="overflow-hidden rounded-md border border-base-tertiary text-[11px]"
+              >
+                {mode === 'TEST' ? (
+                  <div className="flex items-center justify-between bg-(--background-light) px-2 py-1.5">
+                    <span className="text-base-faint-inverse font-bold">
+                      테스트 {testcase.index}
+                    </span>
+                    {testcase.status === 'ACCEPTED' ? (
+                      <span className="rounded bg-green-05/20 px-2 py-0.5 text-green-05 font-bold">
+                        성공
+                      </span>
+                    ) : (
+                      <span className="rounded bg-pink-05/20 px-2 py-0.5 text-pink-05 font-bold">
+                        실패
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-[64px_1fr_72px_72px] items-center gap-2 bg-(--background-light) px-2 py-1.5">
+                    <span className="text-base-faint-inverse font-bold">
+                      테스트 {testcase.index}
+                    </span>
+                    <span className={getStatusColor(testcase.status)}>{testcase.status}</span>
+                    <span className="text-right">{testcase.time}ms</span>
+                    <span className="text-right">{testcase.memory}MB</span>
+                  </div>
+                )}
+
+                {mode === 'TEST' && testcase.results && (
+                  <div className="space-y-1.5 bg-(--primary) p-2 text-[11px] border-t border-base-tertiary">
+                    <div className="grid grid-cols-[64px_1fr] items-start gap-2">
+                      <div className="text-base-secondary">입력</div>
+                      <div className="rounded-md border border-base-tertiary bg-(--background-light) px-2 py-1 font-mono text-base-faint-inverse whitespace-pre-wrap break-all">
+                        {testcase.results.input}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-[64px_1fr] items-start gap-2">
+                      <div className="text-base-secondary">예상 출력</div>
+                      <div className="rounded-md border border-base-tertiary bg-(--background-light) px-2 py-1 font-mono text-base-faint-inverse whitespace-pre-wrap break-all">
+                        {testcase.results.expectedOutput}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-[64px_1fr] items-start gap-2">
+                      <div className="text-base-secondary">실제 출력</div>
+                      <div className="rounded-md border border-base-tertiary bg-(--background-light) px-2 py-1 font-mono text-base-faint-inverse whitespace-pre-wrap break-all">
+                        {testcase.results.output}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+export default TestcaseResultPanel;

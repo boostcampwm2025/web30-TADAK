@@ -1,11 +1,22 @@
+import 'tsconfig-paths/register';
+
+import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.setGlobalPrefix('api');
+  app.use(cookieParser());
+  app.useGlobalPipes(new ValidationPipe());
+  app.enableCors({
+    origin: ['http://localhost:5173', 'https://www.tadak.site', 'https://tadak.site'],
+    credentials: true,
+  });
 
   // ConfigService를 사용하여 환경변수 가져오기
   const configService = app.get(ConfigService);

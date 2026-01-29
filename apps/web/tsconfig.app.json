@@ -22,7 +22,15 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@shared/types": ["../../packages/types"],
+      "@shared/types/*": ["../../packages/types/*"],
+      "@shared/constants": ["../../packages/constants"],
+      "@shared/constants/*": ["../../packages/constants/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src", "src/apis/api.ts", "src/apis/axios.ts"]
 }
