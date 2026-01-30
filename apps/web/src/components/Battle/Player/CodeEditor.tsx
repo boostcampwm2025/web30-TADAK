@@ -1,3 +1,4 @@
+import type { OnMount } from '@monaco-editor/react';
 import { BATTLE_CONFIG, BATTLE_EVENTS, DEFAULT_CODE_TEMPLATE } from '@shared/constants/battle';
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { FinalResultMessage, TestcaseUpdateMessage } from '@shared/types/pubsub';
@@ -9,6 +10,7 @@ import { createDryRun, createSubmission } from '@/apis/submission';
 import EditorFooter from '@/components/Battle/Player/EditorFooter';
 import TestcaseResultPanel from '@/components/Battle/Player/TestcaseResultPanel';
 import BaseCodeEditor from '@/components/Common/BaseCodeEditor';
+import Toast from '@/components/Common/Toast';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
@@ -56,11 +58,15 @@ function CodeEditor() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [testcaseResults, setTestcaseResults] = useState<TestcaseResult[]>([]);
   const [mode, setMode] = useState<'TEST' | 'SUBMISSION' | null>(null);
+  const [pasteToastMessage, setPasteToastMessage] = useState<string | null>(null);
 
   const executionRef = useRef<ExecutionState | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasEditedRef = useRef(false);
   const hasSyncedRef = useRef(false);
+  const editorDomRef = useRef<HTMLElement | null>(null);
+  const pasteHandlerRef = useRef<((event: ClipboardEvent) => void) | null>(null);
+  const lastPasteAtRef = useRef(0);
   const problemId = useBattleProblemStore((state) => state.problem?.id ?? null);
   const battleId = useBattleProblemStore((state) => state.problem?.battleId ?? null);
 
@@ -78,6 +84,11 @@ function CodeEditor() {
   useEffect(() => {
     return () => {
       clearExecutionTimeout();
+      const dom = editorDomRef.current;
+      const handler = pasteHandlerRef.current;
+      if (dom && handler) {
+        dom.removeEventListener('paste', handler, true);
+      }
     };
   }, []);
 
@@ -342,6 +353,29 @@ function CodeEditor() {
 
   const progressLabel = progress ? `${progress.passed}/${progress.total}` : '0/0';
 
+  const handleEditorMount: OnMount = (editor) => {
+    const domNode = editor.getDomNode();
+    if (!domNode) return;
+
+    editorDomRef.current = domNode;
+    const handlePaste = (event: ClipboardEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const now = Date.now();
+      if (now - lastPasteAtRef.current < 1000) return;
+      lastPasteAtRef.current = now;
+      setPasteToastMessage('외부 코드 붙여넣기는 금지되어 있습니다! 🚫');
+
+      const activeSocket = socket ?? connect();
+      if (activeSocket?.connected) {
+        activeSocket.emit(SOCKET_EVENT.CHEAT_WARNING, { roomId, type: 'PASTE' });
+      }
+    };
+
+    pasteHandlerRef.current = handlePaste;
+    domNode.addEventListener('paste', handlePaste, true);
+  };
+
   return (
     <>
       <section className="flex flex-col overflow-hidden rounded-2xl bg-(--bg-layer-2) border border-border-soft text-base-primary xl:h-full xl:min-h-0">
@@ -356,6 +390,7 @@ function CodeEditor() {
           <BaseCodeEditor
             value={code}
             onChange={(value) => handleChange(value || '')}
+            onMount={handleEditorMount}
             options={{
               quickSuggestions: false, // 자동 완성 비활성화
               suggestOnTriggerCharacters: false, // 트리거 문자 입력 시 자동 완성 비활성화
@@ -374,6 +409,9 @@ function CodeEditor() {
         />
         <TestcaseResultPanel testcaseResults={testcaseResults} mode={mode} />
       </section>
+      {pasteToastMessage && (
+        <Toast message={pasteToastMessage} onClose={() => setPasteToastMessage(null)} />
+      )}
     </>
   );
 }

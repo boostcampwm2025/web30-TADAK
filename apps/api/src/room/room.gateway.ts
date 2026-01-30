@@ -33,6 +33,8 @@ export class RoomGateway {
   @WebSocketServer() server: Server;
   private rateLimitMap: Map<string, { count: number; windowStart: number; blockedUntil: number }> =
     new Map();
+  private cheatWarningMap: Map<string, number> = new Map();
+  private cheatCountMap: Map<string, number> = new Map();
   private readonly chatAuthErrorMessage = '로그인 후 채팅을 이용할 수 있습니다.';
 
   constructor(
@@ -420,6 +422,85 @@ export class RoomGateway {
     this.server.to(roomId).emit(SOCKET_EVENT.RECEIVE_CHAT, chatMessage);
 
     return { success: true };
+  }
+
+  @SubscribeMessage(SOCKET_EVENT.CHEAT_WARNING)
+  async handleCheatWarning(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { roomId: string; type?: 'FOCUS_OUT' | 'PASTE' },
+  ) {
+    const { roomId, type } = data ?? {};
+    if (!roomId) return;
+
+    const room = await this.roomService.getRoom(roomId);
+    if (!room) return;
+
+    const participant =
+      room.currentPlayers.find((user) => user.socketId === client.id) ??
+      room.currentSpectators.find((user) => user.socketId === client.id);
+
+    if (!participant || participant.role !== 'player') {
+      return;
+    }
+
+    const now = Date.now();
+    const throttleKey = `${roomId}:${participant.userId}`;
+    const lastSent = this.cheatWarningMap.get(throttleKey) ?? 0;
+    if (now - lastSent < 1000) return;
+    this.cheatWarningMap.set(throttleKey, now);
+
+    const maxWarnings = 3;
+    const currentCount = this.cheatCountMap.get(throttleKey) ?? 0;
+    const nextCount = Math.min(maxWarnings, currentCount + 1);
+    this.cheatCountMap.set(throttleKey, nextCount);
+
+    const username = participant.username ?? '플레이어';
+    const reason = type === 'PASTE' ? '외부 코드 붙여넣기 시도' : '화면 이탈 감지';
+    const message = `[SYSTEM] ${username}님 부정행위 경고 ${nextCount}/${maxWarnings} (${reason})`;
+
+    const chatMessage: ChatMessage = {
+      type: CHAT_TYPE.SYSTEM,
+      nickname: 'SYSTEM',
+      message,
+      timestamp: new Date().toISOString(),
+    };
+
+    this.server.to(roomId).emit(SOCKET_EVENT.RECEIVE_CHAT, chatMessage);
+
+    if (nextCount < maxWarnings) return;
+
+    try {
+      const battle = await this.battleService.getBattleByRoomId(roomId);
+      if (!battle) {
+        return;
+      }
+
+      const result = await this.battleService.forfeitBattle(battle.battleId, participant.userId);
+
+      this.server.to(roomId).emit(BATTLE_EVENTS.BATTLE_ENDED, {
+        battleId: result.id,
+        winnerId: result.winnerId,
+      });
+
+      const finalMessage: ChatMessage = {
+        type: CHAT_TYPE.SYSTEM,
+        nickname: 'SYSTEM',
+        message: `[SYSTEM] ${username}님이 부정행위 누적으로 패배 처리되었습니다.`,
+        timestamp: new Date().toISOString(),
+      };
+      this.server.to(roomId).emit(SOCKET_EVENT.RECEIVE_CHAT, finalMessage);
+
+      await this.roomService.completeBattleRoom(roomId);
+      const rooms = await this.roomService.listRooms();
+      const publicRooms = await this.roomService.toPublicRooms(rooms);
+      this.server.emit(SOCKET_EVENT.ROOM_LIST, publicRooms);
+
+      this.cheatCountMap.delete(throttleKey);
+      this.cheatWarningMap.delete(throttleKey);
+    } catch (error) {
+      console.error('[RoomGateway] cheat forfeit error:', error);
+      // 실패 시 카운트를 유지해 다음 경고에서 재시도
+    }
   }
 
   private sanitizeMessage(message: string): string {
