@@ -1,5 +1,5 @@
 import { motion, type Variants } from 'framer-motion';
-import { Code2, Eye, Play, Swords, Zap } from 'lucide-react';
+import { ChevronDown, Code2, Eye, Play, Swords, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import LogoImage from '@/assets/logo.png';
@@ -90,11 +90,37 @@ const LandingPage = () => {
               onClick={() =>
                 document.getElementById('battle-start')?.scrollIntoView({ behavior: 'smooth' })
               }
-              className="px-8 py-4 bg-brand text-blue-950 text-lg font-bold rounded-full shadow-glow hover:scale-105 transition-transform flex items-center gap-2"
+              className="cursor-pointer px-8 py-4 bg-brand text-blue-950 text-lg font-bold rounded-full shadow-glow hover:scale-105 transition-transform flex items-center gap-2"
             >
               <Play fill="currentColor" size={24} />
               바로 시작하기
             </button>
+          </motion.div>
+        </motion.div>
+
+        {/* Scroll Indicator */}
+        <motion.div
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer z-20 group"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1, duration: 1 }}
+          onClick={() =>
+            document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })
+          }
+        >
+          <span className="text-[10px] font-bold tracking-widest text-base-tertiary uppercase group-hover:text-brand transition-colors">
+            Scroll Down
+          </span>
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            className="text-base-tertiary group-hover:text-brand transition-colors"
+          >
+            <ChevronDown size={24} />
           </motion.div>
         </motion.div>
       </section>
@@ -202,7 +228,7 @@ const LandingPage = () => {
           </motion.p>
           <motion.a
             href="#how-it-works"
-            className="inline-block mb-8 px-8 py-4 bg-bg-layer-2 text-base-secondary border border-border-soft text-lg font-bold rounded-full hover:bg-base-muted transition-colors"
+            className="cursor-pointer inline-block mb-8 px-8 py-4 bg-bg-layer-2 text-base-secondary border border-border-soft text-lg font-bold rounded-full hover:bg-base-muted transition-colors"
           >
             다시 알아보기
           </motion.a>
@@ -210,7 +236,7 @@ const LandingPage = () => {
             onClick={handleStart}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="px-10 py-5 bg-brand hover:opacity-90 text-blue-950 text-xl font-bold rounded-full shadow-glow flex items-center gap-3 mx-auto"
+            className="cursor-pointer px-10 py-5 bg-brand hover:opacity-90 text-blue-950 text-xl font-bold rounded-full shadow-glow flex items-center gap-3 mx-auto"
           >
             <Swords fill="currentColor" size={24} />
             시작하기
