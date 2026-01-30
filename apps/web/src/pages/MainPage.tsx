@@ -1,4 +1,4 @@
-import { LogIn } from 'lucide-react';
+import { Info, LogIn } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -33,6 +33,13 @@ function MainPage() {
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
   const [showLoginModal, setShowLoginModal] = useState(false);
+
+  useEffect(() => {
+    const visited = localStorage.getItem('tadak-visited');
+    if (!visited) {
+      navigate('/landing', { replace: true });
+    }
+  }, [navigate]);
 
   const ensureSocketReady = useCallback(async () => {
     const activeSocket = socket ?? connect();
@@ -115,8 +122,13 @@ function MainPage() {
               게임 시작하기
             </button>
           </div>
-          <p className="text-sm text-base-primary">
+          <p className="text-sm text-base-primary flex items-center gap-2">
             현재 진행 중인 배틀을 관전하고 고수들의 코딩을 배워보세요
+            <Info
+              size={16}
+              onClick={() => navigate('/landing')}
+              className="text-base-secondary transition hover:text-brand"
+            />
           </p>
         </div>
 

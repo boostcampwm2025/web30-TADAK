@@ -13,6 +13,11 @@ import { TierStep } from '@/components/Landing/TierStep';
 const LandingPage = () => {
   const navigate = useNavigate();
 
+  const handleStart = () => {
+    localStorage.setItem('tadak-visited', 'true');
+    navigate('/');
+  };
+
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
@@ -202,7 +207,7 @@ const LandingPage = () => {
             다시 알아보기
           </motion.a>
           <motion.button
-            onClick={() => navigate('/')}
+            onClick={handleStart}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="px-10 py-5 bg-brand hover:opacity-90 text-blue-950 text-xl font-bold rounded-full shadow-glow flex items-center gap-3 mx-auto"
