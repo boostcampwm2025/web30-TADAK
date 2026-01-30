@@ -22,6 +22,9 @@ export default function MatchingWait({ waitTime }: Props) {
           <p className="text-base-primary font-bold text-center">
             티어에서 비슷한 실력의 상대를 매칭하고 있습니다
           </p>
+          <p className="text-base-primary font-bold text-center">
+            매칭을 끊었다가 재매칭하면 대기의 후순위로 밀려납니다
+          </p>
         </div>
 
         {/* 대기 시간 */}
@@ -29,7 +32,7 @@ export default function MatchingWait({ waitTime }: Props) {
           <div className="flex flex-col items-center gap-2">
             <MatchingTimer time={waitTime} />
             <div className="min-h-6">
-              {timeoutMessage && <p className="text-sm text-base-muted">{timeoutMessage}</p>}
+              {timeoutMessage && <p className="text-sm">{timeoutMessage}</p>}
             </div>
           </div>
 
