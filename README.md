@@ -29,16 +29,16 @@
 ## 📌 목차
 
 - [프로젝트 소개](#-프로젝트-소개-introduction)
-- [핵심 기능](##-핵심-기능-key-features)
-- [인프라](##-인프라-infra-architecture)
-- [기술 스택](##-기술-스택-tech-stack)
-- [시스템 아키텍처](##-시스템-아키텍처-architecture)
-- [설계 문서](##-설계-문서-design-docs)
-- [기술적 도전](##-기술적-도전-technical-challenges)
-- [베타 테스트](##-베타-테스트-및-사용성-개선-usability-improvement)
-- [실행 방법](##-실행-방법-getting-started)
-- [AI 활용 로그](##-ai-활용-로그-ai-usage)
-- [팀 소개](##-web30---port30)
+- [핵심 기능](#-핵심-기능-key-features)
+- [인프라](#-인프라-infra-architecture)
+- [기술 스택](#-기술-스택-tech-stack)
+- [시스템 아키텍처](#-시스템-아키텍처-architecture)
+- [설계 문서](#-설계-문서-design-docs)
+- [기술적 도전](#-기술적-도전-technical-challenges)
+- [베타 테스트](#-베타-테스트-및-사용성-개선-usability-improvement)
+- [실행 방법](#-실행-방법-getting-started)
+- [AI 활용 로그](#-ai-활용-로그-ai-usage)
+- [팀 소개](#-web30---port30)
 
 <br>
 
