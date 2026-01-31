@@ -29,6 +29,7 @@
 <br>
 
 ## ✨ 핵심 기능 (Key Features)
+
 TADAK의 주요 기능들을 실제 구동 화면으로 확인해보세요.
 
 > 💡 **촬영 환경 안내**
@@ -42,7 +43,6 @@ TADAK의 주요 기능들을 실제 구동 화면으로 확인해보세요.
 
 > 레이팅 기반의 공정한 매칭 시스템을 제공합니다. 매칭 성공 시 심장을 울리는 사운드와 함께 5초 카운트다운 후 배틀이 시작됩니다.
 
-
 <table>
   <tr align="center">
     <td><strong>비슷한 실력대의 상대방과 매칭 성공</strong></td>
@@ -54,13 +54,12 @@ TADAK의 주요 기능들을 실제 구동 화면으로 확인해보세요.
   </tr>
 </table>
 
-
 <br>
 
 ### ⚔️ 실시간 1:1 배틀 & 즉각적인 피드백
+
 > 동일한 알고리즘 문제를 두고 펼치는 치열한 승부!
 > 상대방의 풀이 현황(테스트케이스 통과)이 실시간으로 중계되어 긴장감을 더하고, 제출 즉시 이어지는 화려한 채점 애니메이션으로 문제 해결의 짜릿한 손맛을 제공합니다.
-
 
 <table>
   <tr align="center">
@@ -76,6 +75,7 @@ TADAK의 주요 기능들을 실제 구동 화면으로 확인해보세요.
 <br>
 
 ### 👀 다함께 즐기는 관전 모드
+
 > 진행 중인 고수들의 배틀을 실시간으로 관전할 수 있습니다. 양쪽 플레이어의 코드를 실시간으로 확인하며 채팅으로 소통할 수 있습니다.
 
 <table>
@@ -91,10 +91,10 @@ TADAK의 주요 기능들을 실제 구동 화면으로 확인해보세요.
 
 <br>
 
-
 ### 🛡️ 클린한 승부를 위한 부정행위 방지
+
 > 실력으로만 승부하는 진정한 E-Sports 문화를 지향합니다.
- 외부 코드 붙여넣기(Paste) 방지 및 브라우저 이탈 감지 시스템을 통해 오직 자신의 코딩 실력으로만 경쟁할 수 있는 환경을 제공합니다.
+> 외부 코드 붙여넣기(Paste) 방지 및 브라우저 이탈 감지 시스템을 통해 오직 자신의 코딩 실력으로만 경쟁할 수 있는 환경을 제공합니다.
 
 <table>
   <tr align="center">
@@ -109,8 +109,8 @@ TADAK의 주요 기능들을 실제 구동 화면으로 확인해보세요.
 
 <br>
 
-
 ### 📈 결과 분석 및 코드 복기
+
 > 단순한 승패 확인을 넘어 성장의 기회를 제공합니다. 레이팅 변동을 그래프로 확인하고, 상대방이 작성한 코드를 상세히 리뷰하며 더 나은 풀이 방법을 학습할 수 있습니다.
 
 <table>
@@ -126,22 +126,27 @@ TADAK의 주요 기능들을 실제 구동 화면으로 확인해보세요.
 
 <br>
 
-
 ## 인프라 (Infra Architecture)
 
 <img width="4214" height="3034" alt="image" src="https://github.com/user-attachments/assets/3c789aae-fba8-45af-a082-ee2132b23f1f" />
 
 <br>
 
+### 채점 서버 아키텍처 (Judge Flow)
+
+<img width="4633" height="2643" alt="image" src="https://github.com/user-attachments/assets/2c28793a-2e6b-475e-8422-1b6614304329" />
+
+<br>
+
 ## 🛠 기술 스택 (Tech Stack)
 
-| 분류 | 기술 (Stack) |
-| :--- | :--- |
-| **Frontend** | ![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white) ![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white) ![Zustand](https://img.shields.io/badge/Zustand-443E38?logo=zustand&logoColor=white) ![Socket.IO](https://img.shields.io/badge/Socket.IO-010101?logo=socket.io&logoColor=white) |
-| **Backend** | ![NestJS](https://img.shields.io/badge/NestJS-E0234E?logo=nestjs&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white) ![TypeORM](https://img.shields.io/badge/TypeORM-FE0853?style=flat&logoColor=white) ![Socket.IO](https://img.shields.io/badge/Socket.IO-010101?logo=socket.io&logoColor=white) ![BullMQ](https://img.shields.io/badge/BullMQ-131417?style=flat&logoColor=white) |
-| **Database** | ![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white) ![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white) |
-| **Infra/DevOps** | ![NCP](https://img.shields.io/badge/NCP_Cloud-03C75A?logo=naver&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white) ![Docker Compose](https://img.shields.io/badge/Docker_Compose-2496ED?logo=docker&logoColor=white) ![Nginx](https://img.shields.io/badge/Nginx-009639?logo=nginx&logoColor=white) |
-| **External API** | ![GitHub](https://img.shields.io/badge/GitHub_OAuth-181717?logo=github&logoColor=white) |
+| 분류             | 기술 (Stack)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| :--------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Frontend**     | ![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white) ![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white) ![Zustand](https://img.shields.io/badge/Zustand-443E38?logo=zustand&logoColor=white) ![Socket.IO](https://img.shields.io/badge/Socket.IO-010101?logo=socket.io&logoColor=white) |
+| **Backend**      | ![NestJS](https://img.shields.io/badge/NestJS-E0234E?logo=nestjs&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white) ![TypeORM](https://img.shields.io/badge/TypeORM-FE0853?style=flat&logoColor=white) ![Socket.IO](https://img.shields.io/badge/Socket.IO-010101?logo=socket.io&logoColor=white) ![BullMQ](https://img.shields.io/badge/BullMQ-131417?style=flat&logoColor=white)                                                                                                |
+| **Database**     | ![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white) ![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                 |
+| **Infra/DevOps** | ![NCP](https://img.shields.io/badge/NCP_Cloud-03C75A?logo=naver&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white) ![Docker Compose](https://img.shields.io/badge/Docker_Compose-2496ED?logo=docker&logoColor=white) ![Nginx](https://img.shields.io/badge/Nginx-009639?logo=nginx&logoColor=white)                                                                                                                                                                                           |
+| **External API** | ![GitHub](https://img.shields.io/badge/GitHub_OAuth-181717?logo=github&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 <br>
 
@@ -163,12 +168,12 @@ TADAK의 주요 기능들을 실제 구동 화면으로 확인해보세요.
 
 프로젝트의 상세 설계 내용은 아래 문서에서 확인하실 수 있습니다.
 
-| 문서 종류         | 설명                      | 링크                                                                                                                         |
-| :---------------- | :------------------------ | :--------------------------------------------------------------------------------------------------------------------------- |
-| **User Scenario** | 사용자 흐름 및 기능 명세  | [위키 바로가기](https://github.com/boostcampwm2025/web30-TADAK/wiki/%EC%82%AC%EC%9A%A9%EC%9E%90-%EC%8B%9C%EB%82%98%EB%A6%AC%EC%98%A4) |
-| **API Docs**      | API 명세서 (Notion) | [API 문서 보기](https://www.notion.so/2cb19e920f6080259073dee8a45be4a0?source=copy_link)                                                                                              |
-| **ER Diagram**    | 데이터베이스 구조도       | [ERD 보기](https://github.com/boostcampwm2025/web30-TADAK/wiki/ERD)                                                                                                   |
-| **Figma**         | 와이어프레임 및 디자인    | [Figma 보기](https://www.figma.com/design/LOLxiJhuADZiIfZIBgd5m6/PORT-30?node-id=0-1&t=CyOqnJrTxrZL8Coy-1)                                                                                                 |
+| 문서 종류         | 설명                     | 링크                                                                                                                                  |
+| :---------------- | :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
+| **User Scenario** | 사용자 흐름 및 기능 명세 | [위키 바로가기](https://github.com/boostcampwm2025/web30-TADAK/wiki/%EC%82%AC%EC%9A%A9%EC%9E%90-%EC%8B%9C%EB%82%98%EB%A6%AC%EC%98%A4) |
+| **API Docs**      | API 명세서 (Notion)      | [API 문서 보기](https://www.notion.so/2cb19e920f6080259073dee8a45be4a0?source=copy_link)                                              |
+| **ER Diagram**    | 데이터베이스 구조도      | [ERD 보기](https://github.com/boostcampwm2025/web30-TADAK/wiki/ERD)                                                                   |
+| **Figma**         | 와이어프레임 및 디자인   | [Figma 보기](https://www.figma.com/design/LOLxiJhuADZiIfZIBgd5m6/PORT-30?node-id=0-1&t=CyOqnJrTxrZL8Coy-1)                            |
 
 <br>
 
@@ -199,11 +204,13 @@ TADAK의 주요 기능들을 실제 구동 화면으로 확인해보세요.
 - 장애 격리로 서비스 안정성 확보
 
 ### 5. 새로고침/재접속 시 소켓 상태 복구
+
 - SPA에서 새로고침 시 소켓 연결이 끊기면서 상태가 사라지는 문제 발생
 - 세션 저장(`resumeSession`) + 소켓 재연결 시 재입장 로직 추가
 - 기존 참가자/관전자 정보 복구로 일관된 실시간 상태 유지
 
 ### 6. 뒤로가기/이탈로 인한 정보 손실 방지
+
 - React Router useBlocker를 활용해 배틀 중 뒤로가기 방지
 - 의도치 않은 이탈 시 서버와 상태 불일치를 줄이기 위해 `leaveRoom`, `leaveBattle`, `sendBeacon` 기반 정리 로직 추가
 - 배틀 중간 이탈로 인한 유령 유저/관전자 수 불일치 문제 해결
@@ -215,6 +222,7 @@ TADAK의 주요 기능들을 실제 구동 화면으로 확인해보세요.
 > 실제 사용자를 대상으로 베타 테스트를 진행하며 받은 피드백을 바탕으로 서비스를 개선했습니다.
 
 설문 결과는 GitHub Releases(버전별 릴리즈 노트)에 정리했습니다.
+
 - 링크: https://github.com/boostcampwm2025/web30-TADAK/releases
 
 <br>
@@ -333,7 +341,6 @@ pnpm run dev
 
 <br>
 
-
 # Web30 - PORT:30
 
 > 안녕하세요! 부스트캠프 웹·모바일 10기 WEB-30팀 **PORT:30**입니다.
@@ -365,5 +372,3 @@ pnpm run dev
 **Process:** 매주 금요일 데모 데이 진행, 스크럼을 통한 매일의 이슈 공유
 
 [👉 자세한 그라운드 룰 보러가기](https://github.com/boostcampwm2025/web30-TADAK/wiki/%EA%B7%B8%EB%9D%BC%EC%9A%B4%EB%93%9C%EB%A3%B0)
-
-
