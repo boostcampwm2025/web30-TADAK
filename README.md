@@ -13,8 +13,6 @@
   📋 <a href="https://github.com/orgs/boostcampwm2025/projects/224">백로그</a>
 </p>
 
----
-
 ## 📖 프로젝트 소개 (Introduction)
 
 > **"코딩도 E-Sports가 될 수 있다!"**
@@ -25,6 +23,22 @@
 
 - **개발 기간:** 2024.12.08 ~ 2025.02.06 (2주 MVP / N주 고도화)
 - **배포 주소:** https://www.tadak.site/
+
+<br>
+
+## 📌 목차
+
+- [프로젝트 소개](#-프로젝트-소개-introduction)
+- [핵심 기능](#-핵심-기능-key-features)
+- [인프라](#-인프라-infra-architecture)
+- [기술 스택](#-기술-스택-tech-stack)
+- [시스템 아키텍처](#-시스템-아키텍처-architecture)
+- [설계 문서](#-설계-문서-design-docs)
+- [기술적 도전](#-기술적-도전-technical-challenges)
+- [베타 테스트](#-베타-테스트-및-사용성-개선-usability-improvement)
+- [실행 방법](#-실행-방법-getting-started)
+- [AI 활용 로그](#-ai-활용-로그-ai-usage)
+- [팀 소개](#-web30---port30)
 
 <br>
 
