@@ -33,6 +33,7 @@ function BattleHeader({ theme, toggleTheme, onLeaveClick }: BattleHeaderProps) {
     setBgmVolume,
     toggleBgmMute,
   } = useSoundStore();
+  const isBgmSilent = isBgmMuted || bgmVolume <= 0;
   const [isSettingOpen, setIsSettingOpen] = useState(false);
   const settingRef = useRef<HTMLDivElement>(null);
 
@@ -181,9 +182,9 @@ function BattleHeader({ theme, toggleTheme, onLeaveClick }: BattleHeaderProps) {
                   <button
                     onClick={toggleBgmMute}
                     className="text-ink transition hover:text-brand"
-                    aria-label={isBgmMuted ? 'Unmute background music' : 'Mute background music'}
+                    aria-label={isBgmSilent ? 'Unmute background music' : 'Mute background music'}
                   >
-                    {isBgmMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                    {isBgmSilent ? <VolumeX size={18} /> : <Volume2 size={18} />}
                   </button>
                   <input
                     type="range"

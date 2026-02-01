@@ -27,6 +27,7 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
     setBgmVolume,
     toggleBgmMute,
   } = useSoundStore();
+  const isBgmSilent = isBgmMuted || bgmVolume <= 0;
   const { user, fetchUser, clearUser } = useUserStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSettingOpen, setIsSettingOpen] = useState(false);
@@ -174,9 +175,9 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
                     <button
                       onClick={toggleBgmMute}
                       className="cursor-pointer text-ink transition hover:text-brand"
-                      aria-label={isBgmMuted ? 'Unmute background music' : 'Mute background music'}
+                      aria-label={isBgmSilent ? 'Unmute background music' : 'Mute background music'}
                     >
-                      {isBgmMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                      {isBgmSilent ? <VolumeX size={18} /> : <Volume2 size={18} />}
                     </button>
                     <input
                       type="range"
