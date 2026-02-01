@@ -17,7 +17,17 @@ interface HeaderProps {
 
 function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
-  const { volume, isMuted, setVolume, toggleMute } = useSoundStore();
+  const {
+    volume,
+    isMuted,
+    setVolume,
+    toggleMute,
+    bgmVolume,
+    isBgmMuted,
+    setBgmVolume,
+    toggleBgmMute,
+  } = useSoundStore();
+  const isBgmSilent = isBgmMuted || bgmVolume <= 0;
   const { user, fetchUser, clearUser } = useUserStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSettingOpen, setIsSettingOpen] = useState(false);
@@ -135,6 +145,9 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
                     )}
                   </button>
                   <div className="my-1 h-[1px] bg-border-soft" />
+                  <div className="px-4 pt-2 text-[11px] font-semibold text-base-secondary">
+                    효과음
+                  </div>
                   <div className="flex items-center gap-3 px-4 py-2">
                     <button
                       onClick={toggleMute}
@@ -152,6 +165,27 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
                       onChange={(e) => setVolume(parseFloat(e.target.value))}
                       onMouseUp={playPreviewSound}
                       onTouchEnd={playPreviewSound}
+                      className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-border-soft accent-brand"
+                    />
+                  </div>
+                  <div className="px-4 pt-1 text-[11px] font-semibold text-base-secondary">
+                    배경음악
+                  </div>
+                  <div className="flex items-center gap-3 px-4 py-2">
+                    <button
+                      onClick={toggleBgmMute}
+                      className="cursor-pointer text-ink transition hover:text-brand"
+                      aria-label={isBgmSilent ? 'Unmute background music' : 'Mute background music'}
+                    >
+                      {isBgmSilent ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                    </button>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={bgmVolume}
+                      onChange={(e) => setBgmVolume(parseFloat(e.target.value))}
                       className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-border-soft accent-brand"
                     />
                   </div>
