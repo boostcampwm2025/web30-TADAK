@@ -4,7 +4,7 @@ import { Eye, Moon, Settings, Sun, Timer, Volume2, VolumeX } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import logo from '@/assets/logo.png';
+import logo from '@/assets/logo.webp';
 import { playCountdownSound } from '@/lib/sound';
 import { playPreviewSound } from '@/lib/sound';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';

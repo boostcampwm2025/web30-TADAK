@@ -2,7 +2,7 @@ import { motion, type Variants } from 'framer-motion';
 import { ChevronDown, Code2, Eye, Play, Swords, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import LogoImage from '@/assets/logo.png';
+import LogoImage from '@/assets/logo.webp';
 import { Footer } from '@/components/Footer/Footer';
 import { BattleStep } from '@/components/Landing/BattleStep';
 import { MatchingStep } from '@/components/Landing/MatchingStep';
