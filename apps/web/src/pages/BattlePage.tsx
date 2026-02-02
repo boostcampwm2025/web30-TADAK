@@ -1,16 +1,16 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { ChatMessage } from '@shared/types/chat';
-import { AlertCircle } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBlocker, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 
 import BattleFinishOverlay from '@/components/Battle/BattleFinishOverlay';
 import BattleHeader from '@/components/Battle/BattleHeader';
+import LeaveBattleModal from '@/components/Battle/modals/LeaveBattleModal';
+import RoleModal from '@/components/Battle/modals/RoleModal';
 import BattlePlayer from '@/components/Battle/Player/BattlePlayer';
 import BattleSpectator from '@/components/Battle/Spectator/BattleSpectator';
-import Modal from '@/components/Common/Modal';
 import Toast from '@/components/Common/Toast';
 import { useBattleJoin } from '@/hooks/useBattleJoin';
 import { useRoleModalState } from '@/hooks/useRoleModalState';
@@ -325,34 +325,6 @@ function BattlePage() {
     navigate('/', { replace: true });
   };
 
-  const roleModalTitle =
-    modalReason === 'player-to-spectator'
-      ? '참가자는 관전자로 전환할 수 없습니다'
-      : modalReason === 'spectator-to-player'
-        ? '관전자는 참가자로 전환할 수 없습니다'
-        : '참가자 전용 방입니다';
-
-  const roleModalDescription =
-    modalReason === 'player-to-spectator' ? (
-      <>
-        참가자 화면으로 이동합니다.
-        <br />
-        URL을 변경해도 역할은 바뀌지 않습니다.
-      </>
-    ) : modalReason === 'spectator-to-player' ? (
-      <>
-        관전 화면으로 이동합니다.
-        <br />
-        참가자 권한이 있어야 입장할 수 있습니다.
-      </>
-    ) : (
-      <>
-        해당 방의 참가자가 아닙니다.
-        <br />
-        메인 페이지로 이동합니다.
-      </>
-    );
-
   return (
     <div className="min-h-svh overflow-auto xl:h-screen xl:overflow-hidden">
       <div className="flex min-h-svh flex-col gap-3 px-3 py-3 xl:h-full xl:w-full xl:gap-4 xl:px-6 xl:py-4">
@@ -361,46 +333,13 @@ function BattlePage() {
           {isSpectatorView ? <BattleSpectator /> : <BattlePlayer />}
         </div>
       </div>
-      <Modal
-        isOpen={shouldShowRoleModal}
-        onClose={handleRoleDenied}
-        icon={AlertCircle}
-        iconColor="text-error-01"
-        iconBgColor="bg-error-01/20"
-        title={roleModalTitle}
-        description={roleModalDescription}
-        buttons={[
-          {
-            label: '확인',
-            onClick: handleRoleDenied,
-            variant: 'black',
-          },
-        ]}
-        closeOnBackdrop={false}
-      />
+      <RoleModal isOpen={shouldShowRoleModal} reason={modalReason} onConfirm={handleRoleDenied} />
       <BattleFinishOverlay isVisible={showFinishOverlay} />
 
-      <Modal
+      <LeaveBattleModal
         isOpen={isLeaveModalOpen}
-        onClose={handleCancelLeave}
-        icon={AlertCircle}
-        iconColor="text-error-01"
-        iconBgColor="bg-error-01/20"
-        title="대결에서 나가시겠습니까?"
-        description="진행 중인 문제 풀이가 모두 사라집니다."
-        buttons={[
-          {
-            label: '취소',
-            onClick: handleCancelLeave,
-            variant: 'muted',
-          },
-          {
-            label: '나가기',
-            onClick: handleConfirmLeave,
-            variant: 'black',
-          },
-        ]}
-        closeOnBackdrop={false}
+        onCancel={handleCancelLeave}
+        onConfirm={handleConfirmLeave}
       />
       {systemToastMessage && (
         <Toast message={systemToastMessage} onClose={() => setSystemToastMessage(null)} />
