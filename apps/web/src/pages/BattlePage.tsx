@@ -4,6 +4,7 @@ import type { ChatMessage } from '@shared/types/chat';
 import { AlertCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useBlocker, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useShallow } from 'zustand/react/shallow';
 
 import BattleFinishOverlay from '@/components/Battle/BattleFinishOverlay';
 import BattleHeader from '@/components/Battle/BattleHeader';
@@ -15,6 +16,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { playCountdownSound } from '@/lib/sound';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
+import type { BattleSocketState } from '@/stores/battleSocketStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useRoomStore } from '@/stores/roomStore';
 import { useUserStore } from '@/stores/userStore';
@@ -26,24 +28,51 @@ function BattlePage() {
   const isSpectator = searchParams.get('mode') === 'spectator';
   const desiredRole = isSpectator ? 'spectator' : 'player';
   const { theme, toggleTheme } = useTheme();
-  const resumeSession = useBattleSocketStore((state) => state.resumeSession);
-  const connect = useBattleSocketStore((state) => state.connect);
-  const joinRoom = useBattleSocketStore((state) => state.joinRoom);
-  const leaveRoom = useBattleSocketStore((state) => state.leaveRoom);
-  const leaveBattle = useBattleSocketStore((state) => state.leaveBattle);
-  const subscribeRoomAvailability = useBattleSocketStore(
-    (state) => state.subscribeRoomAvailability,
+  const {
+    resumeSession,
+    connect,
+    joinRoom,
+    leaveRoom,
+    leaveBattle,
+    subscribeRoomAvailability,
+    unsubscribeRoomAvailability,
+    requestRoomAvailability,
+    isLeavingBattle,
+  } = useBattleSocketStore(
+    useShallow((state: BattleSocketState) => ({
+      resumeSession: state.resumeSession,
+      connect: state.connect,
+      joinRoom: state.joinRoom,
+      leaveRoom: state.leaveRoom,
+      leaveBattle: state.leaveBattle,
+      subscribeRoomAvailability: state.subscribeRoomAvailability,
+      unsubscribeRoomAvailability: state.unsubscribeRoomAvailability,
+      requestRoomAvailability: state.requestRoomAvailability,
+      isLeavingBattle: state.isLeavingBattle,
+    })),
   );
-  const unsubscribeRoomAvailability = useBattleSocketStore(
-    (state) => state.unsubscribeRoomAvailability,
+  const { problem, clearProblem } = useBattleProblemStore(
+    useShallow((state) => ({
+      problem: state.problem,
+      clearProblem: state.clearProblem,
+    })),
   );
-  const requestRoomAvailability = useBattleSocketStore((state) => state.requestRoomAvailability);
-  const clearProblem = useBattleProblemStore((state) => state.clearProblem);
-  const clearRoom = useRoomStore((state) => state.clearRoom);
-  const problem = useBattleProblemStore((state) => state.problem);
-  const user = useUserStore((state) => state.user);
-  const me = useRoomStore((state) => state.me);
-  const resetProgresses = useBattleProgressStore((state) => state.resetProgresses);
+  const { me, clearRoom } = useRoomStore(
+    useShallow((state) => ({
+      me: state.me,
+      clearRoom: state.clearRoom,
+    })),
+  );
+  const { user } = useUserStore(
+    useShallow((state) => ({
+      user: state.user,
+    })),
+  );
+  const { resetProgresses } = useBattleProgressStore(
+    useShallow((state) => ({
+      resetProgresses: state.resetProgresses,
+    })),
+  );
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [roleModalReason, setRoleModalReason] = useState<
     'player-to-spectator' | 'spectator-to-player' | 'not-authorized-player' | null
@@ -56,10 +85,10 @@ function BattlePage() {
 
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
   const battleId = problem?.battleId;
-  const isLeavingBattle = useBattleSocketStore((state) => state.isLeavingBattle);
   const effectiveRole =
     me && me.roomId === roomId ? me.role : (desiredRole as 'player' | 'spectator');
   const isSpectatorView = effectiveRole === 'spectator';
+  const isCheatDetectionEnabled = import.meta.env.VITE_CHEAT_DETECTION_ENABLED !== 'false';
   const isRoleMismatch = Boolean(me && me.roomId === roomId && me.role !== desiredRole);
   const mismatchReason = isRoleMismatch
     ? me?.role === 'player'
@@ -204,6 +233,7 @@ function BattlePage() {
   }, [requestRoomAvailability, roomId, subscribeRoomAvailability, unsubscribeRoomAvailability]);
 
   useEffect(() => {
+    if (!isCheatDetectionEnabled) return;
     if (effectiveRole !== 'player') return;
     if (!roomId) return;
 
@@ -233,7 +263,7 @@ function BattlePage() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [connect, effectiveRole, roomId]);
+  }, [connect, effectiveRole, roomId, isCheatDetectionEnabled]);
 
   useEffect(() => {
     const socket = connect();
