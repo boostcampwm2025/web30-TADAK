@@ -1,11 +1,19 @@
 import path from 'node:path';
 
 import react from '@vitejs/plugin-react';
+import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    visualizer({
+      open: true,
+      filename: 'bundle-analysis.html',
+      gzipSize: true,
+    }),
+  ],
   resolve: {
     alias: {
       '@shared/types': path.resolve(__dirname, '../../packages/types'),
