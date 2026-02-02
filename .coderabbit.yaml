@@ -3,7 +3,7 @@ language: 'ko-KR' # 한국어 사용
 early_access: false # 실험 기능 사용 안함
 
 reviews:
-  profile: 'strict' # 전문적 톤
+  profile: 'assertive' # 전문적 톤
   request_changes_workflow: false # PR 스타일 변경 요청 없음
   high_level_summary: true # 요약 제공
   poem: false # 시 리뷰 비활성
