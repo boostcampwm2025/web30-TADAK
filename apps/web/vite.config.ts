@@ -5,30 +5,37 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [
-    react(),
-    visualizer({
-      open: true,
-      filename: 'bundle-analysis.html',
-      gzipSize: true,
-    }),
-  ],
-  resolve: {
-    alias: {
-      '@shared/types': path.resolve(__dirname, '../../packages/types'),
-      '@shared/constants': path.resolve(__dirname, '../../packages/constants'),
-      '@': path.resolve(__dirname, 'src'),
+export default defineConfig(({ mode }) => {
+  const isAnalyze = mode === 'analyze' || process.env.ANALYZE === 'true';
+  return {
+    plugins: [
+      react(),
+      ...(isAnalyze
+        ? [
+            visualizer({
+              open: true,
+              filename: 'bundle-analysis.html',
+              gzipSize: true,
+            }),
+          ]
+        : []),
+    ],
+    resolve: {
+      alias: {
+        '@shared/types': path.resolve(__dirname, '../../packages/types'),
+        '@shared/constants': path.resolve(__dirname, '../../packages/constants'),
+        '@': path.resolve(__dirname, 'src'),
+      },
     },
-  },
-  server: {
-    host: true, // 도커 컨테이너에서 외부 접근 허용
-    port: 5173,
-    watch: {
-      usePolling: true, // 도커 볼륨 마운트에서 파일 변경 감지
+    server: {
+      host: true, // 도커 컨테이너에서 외부 접근 허용
+      port: 5173,
+      watch: {
+        usePolling: true, // 도커 볼륨 마운트에서 파일 변경 감지
+      },
+      hmr: {
+        host: 'localhost', // HMR을 위한 호스트 설정
+      },
     },
-    hmr: {
-      host: 'localhost', // HMR을 위한 호스트 설정
-    },
-  },
+  };
 });
