@@ -13,6 +13,7 @@ import { ProblemService } from '@/problem/problem.service';
 import { BattleService } from '../battle/battle.service';
 import { REDIS_CLIENT } from '../redis/redis.module';
 import { RedisKeys } from '../redis/redis-key.constant';
+import { REDIS_TTL } from '../redis/redis-ttl.constant';
 
 type PublicRoom = Omit<Room, 'currentPlayers' | 'currentSpectators'> & {
   currentPlayers: Array<Omit<RoomUser, 'socketId'>>;
@@ -54,7 +55,10 @@ export class RoomService {
     };
 
     const key = RedisKeys.room(newRoom.roomId);
-    await this.redis.set(key, JSON.stringify(newRoom));
+    const pipeline = this.redis.pipeline();
+    pipeline.set(key, JSON.stringify(newRoom));
+    pipeline.expire(key, REDIS_TTL.ROOM);
+    await pipeline.exec();
 
     return newRoom;
   }
@@ -179,7 +183,10 @@ export class RoomService {
 
   async saveRoom(room: Room): Promise<void> {
     const key = RedisKeys.room(room.roomId);
-    await this.redis.set(key, JSON.stringify(room));
+    const pipeline = this.redis.pipeline();
+    pipeline.set(key, JSON.stringify(room));
+    pipeline.expire(key, REDIS_TTL.ROOM);
+    await pipeline.exec();
   }
 
   async listRooms(): Promise<Room[]> {
