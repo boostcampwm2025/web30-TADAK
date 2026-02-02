@@ -85,6 +85,7 @@ function BattlePage() {
   const userRef = useRef(user);
 
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
+  const socket = connect();
   const battleId = problem?.battleId;
   const effectiveRole =
     me && me.roomId === roomId ? me.role : (desiredRole as 'player' | 'spectator');
@@ -178,7 +179,6 @@ function BattlePage() {
 
   // 배틀 종료 이벤트 리스너 분리
   useEffect(() => {
-    const socket = connect();
     const handleBattleEnded = (data: { battleId: string }) => {
       // 현재 배틀의 ID가 아닌 경우 무시 (다른 방의 종료 이벤트가 전역으로 퍼지는 문제 대비)
       const currentBattleId = useBattleProblemStore.getState().problem?.battleId;
@@ -227,7 +227,7 @@ function BattlePage() {
     return () => {
       socket.off(BATTLE_EVENTS.BATTLE_ENDED, handleBattleEnded);
     };
-  }, [connect, navigate, resetProgresses, clearProblem, clearRoom, roomId]);
+  }, [navigate, resetProgresses, clearProblem, clearRoom, roomId, socket]);
 
   useEffect(() => {
     subscribeRoomAvailability(roomId);
@@ -242,7 +242,6 @@ function BattlePage() {
     if (effectiveRole !== 'player') return;
     if (!roomId) return;
 
-    const socket = connect();
     const emitCheatWarning = (type: 'FOCUS_OUT' | 'PASTE') => {
       if (!socket?.connected) return;
       const now = Date.now();
@@ -268,10 +267,9 @@ function BattlePage() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [connect, effectiveRole, roomId, isCheatDetectionEnabled]);
+  }, [effectiveRole, roomId, isCheatDetectionEnabled, socket]);
 
   useEffect(() => {
-    const socket = connect();
     const handleSystemMessage = (message: ChatMessage) => {
       if (effectiveRole !== 'player') return;
       if (message.type !== 'SYSTEM') return;
@@ -285,7 +283,7 @@ function BattlePage() {
     return () => {
       socket.off(SOCKET_EVENT.RECEIVE_CHAT, handleSystemMessage);
     };
-  }, [connect, effectiveRole]);
+  }, [effectiveRole, socket]);
 
   useEffect(() => {
     if (isRoleModalOpen || isRoleMismatch) return;
@@ -317,7 +315,6 @@ function BattlePage() {
   }, [isRoleModalOpen, isRoleMismatch, resumeSession, joinRoom, roomId, desiredRole]);
 
   useEffect(() => {
-    const socket = connect();
     const handleReconnect = () => {
       if (isRoleMismatch) return;
       // 소켓 재연결 시 저장된 세션 기준으로 다시 JOIN_ROOM 시도
@@ -346,7 +343,7 @@ function BattlePage() {
     return () => {
       socket.off('connect', handleReconnect);
     };
-  }, [connect, resumeSession, joinRoom, roomId, desiredRole, isRoleMismatch]);
+  }, [resumeSession, joinRoom, roomId, desiredRole, isRoleMismatch, socket]);
 
   const handleRoleDenied = () => {
     setIsRoleModalOpen(false);
