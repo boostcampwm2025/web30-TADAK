@@ -5,6 +5,7 @@ import Redis from 'ioredis';
 import { REDIS_CLIENT } from '../redis/redis.module';
 import { FinalResult } from './judge.context';
 
+// Redis와의 통신과 캐시 키를 관리하는 객체
 @Injectable()
 export class JudgeCacheService {
   private readonly logger = new Logger(JudgeCacheService.name);
@@ -17,7 +18,8 @@ export class JudgeCacheService {
    * 문제 ID, 타입, 코드를 기반으로 캐시 키 생성
    */
   generateKey(problemId: string, type: string, code: string): string {
-    const hash = crypto.createHash('sha256').update(code).digest('hex');
+    const normalizedCode = code.trim();
+    const hash = crypto.createHash('sha256').update(normalizedCode).digest('hex');
     return `${this.CACHE_PREFIX}${problemId}:${type}:${hash}`;
   }
 
@@ -36,7 +38,7 @@ export class JudgeCacheService {
   }
 
   /**
-   * 결과 캐싱
+   * 결과 캐싱: FinalResult 객체를 JSON 문자열로 변환하여 Redis에 1시간 동안 저장
    */
   async set(key: string, result: FinalResult): Promise<void> {
     try {
