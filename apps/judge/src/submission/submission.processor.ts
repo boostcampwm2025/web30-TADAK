@@ -4,7 +4,9 @@ import { Job } from 'bullmq';
 
 import { DockerCleanupService } from '../docker/docker.cleanup.service';
 import { DockerRunnerService } from '../docker/docker.service';
+import { JudgeCacheService } from '../judge/judge.cache.service';
 import { JudgeService } from '../judge/judge.service';
+import { PubsubService } from '../pubsub/pubsub.service';
 import { SUBMISSION_QUEUE, SUBMISSION_WORKER_CONCURRENCY } from './submission.constants';
 import { parseSubmissionJobPayload, SubmissionJobPayload } from './submission.payload';
 import { SubmissionService } from './submission.service';
@@ -18,24 +20,73 @@ export class SubmissionProcessor extends WorkerHost {
     private readonly dockerCleanupService: DockerCleanupService,
     private readonly submissionService: SubmissionService,
     private readonly judgeService: JudgeService,
+    private readonly judgeCacheService: JudgeCacheService,
+    private readonly pubsubService: PubsubService,
   ) {
     super();
   }
 
   async process(job: Job<SubmissionJobPayload>): Promise<void> {
     const payload = parseSubmissionJobPayload(job.data);
-    // 컨테이너 실행에 사용할 실행 ID 결정
     const executionId = String(payload.submissionId);
 
     this.logger.log(
       `Job ${job.id ?? 'unknown'} received: type=${payload.type}, problemId=${payload.problemId}, submissionId=${payload.submissionId ?? 'null'}`,
     );
 
-    try {
-      // 문제 데이터 준비
-      await this.submissionService.prepareProblemData(payload.problemId);
+    const startTime = performance.now();
 
-      // 제출 데이터 준비
+    try {
+      // 1. 캐시 확인
+      const cacheKey = this.judgeCacheService.generateKey(
+        payload.problemId,
+        payload.type,
+        payload.code,
+      );
+      const cachedResult = await this.judgeCacheService.get(cacheKey);
+
+      if (cachedResult) {
+        this.logger.log(`Cache Hit! submissionId=${executionId}`);
+        // 캐시된 결과 "Replay" (사용자에게 실시간 결과 전달 모사)
+        let currentPassed = 0;
+        for (const tc of cachedResult.testcases) {
+          if (tc.status === 'ACCEPTED') currentPassed++;
+          await this.pubsubService.publishTestcaseUpdate({
+            type: 'TESTCASE_UPDATE',
+            submissionId: executionId,
+            socketId: payload.socketId,
+            testcase: { index: tc.index, status: tc.status, time: tc.time, memory: tc.memory },
+            progress: {
+              completed: tc.index,
+              passed: currentPassed,
+              total: cachedResult.total,
+            },
+            results: tc.results,
+          });
+        }
+
+        await this.pubsubService.publishFinalResult({
+          type: 'FINAL_RESULT',
+          submissionId: executionId,
+          socketId: payload.socketId,
+          status: cachedResult.status,
+          result: {
+            passed: cachedResult.passed,
+            total: cachedResult.total,
+            time: cachedResult.time,
+            memory: cachedResult.memory,
+          },
+        });
+
+        const endTime = performance.now();
+        this.logger.log(`[PERF] Cache Hit Processing Time: ${(endTime - startTime).toFixed(2)}ms`);
+        return;
+      }
+
+      this.logger.log(`Cache Miss. Running full judging... submissionId=${executionId}`);
+
+      // 2. 문제 및 제출 데이터 준비
+      await this.submissionService.prepareProblemData(payload.problemId);
       await this.submissionService.prepareSubmissionData(
         executionId,
         payload.type,
@@ -45,14 +96,20 @@ export class SubmissionProcessor extends WorkerHost {
         payload.battleId,
       );
 
-      // Docker 실행과 채점을 병렬로 시작
-      const [result] = await Promise.all([
+      // 3. Docker 실행과 채점을 병렬로 시작
+      const [dockerResult, judgeResult] = await Promise.all([
         this.dockerRunnerService.runSubmission({ submissionId: executionId }),
         this.judgeService.judgeSubmission(executionId),
       ]);
 
+      // 4. 결과 캐싱
+      if (judgeResult) {
+        await this.judgeCacheService.set(cacheKey, judgeResult);
+      }
+
+      const endTime = performance.now();
       this.logger.log(
-        `Docker run completed: exitCode=${result.exitCode ?? 'null'}, signal=${result.signal ?? 'null'}`,
+        `[PERF] Cache Miss Processing Time: ${(endTime - startTime).toFixed(2)}ms (Docker Exit: ${dockerResult.exitCode})`,
       );
     } finally {
       await this.dockerCleanupService.cleanupExecution(executionId);
