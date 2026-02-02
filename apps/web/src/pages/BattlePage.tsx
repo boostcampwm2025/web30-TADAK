@@ -82,6 +82,7 @@ function BattlePage() {
 
   const [showFinishOverlay, setShowFinishOverlay] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const userRef = useRef(user);
 
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
   const battleId = problem?.battleId;
@@ -97,6 +98,10 @@ function BattlePage() {
     : null;
   const modalReason = roleModalReason ?? mismatchReason;
   const shouldShowRoleModal = isRoleModalOpen || isRoleMismatch;
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   // 뒤로가기 차단 (플레이어 + 배틀 중 + 나가기 미확인 시)
   const blocker = useBlocker(
@@ -284,19 +289,20 @@ function BattlePage() {
 
   useEffect(() => {
     if (isRoleModalOpen || isRoleMismatch) return;
-    if (me && me.roomId === roomId) {
+    if (useRoomStore.getState().me?.roomId === roomId) {
       return;
     }
     const attempt = async () => {
       await resumeSession({ roomId, roleHint: desiredRole }).catch(() => {});
       if (!useRoomStore.getState().me) {
         try {
+          const currentUser = userRef.current;
           await joinRoom({
             roomId,
             requestedRole: desiredRole,
-            userId: user?.id,
-            username: user?.username,
-            avatarUrl: user?.avatarUrl,
+            userId: currentUser?.id,
+            username: currentUser?.username,
+            avatarUrl: currentUser?.avatarUrl,
           });
         } catch (error) {
           const code = (error as Error & { code?: string }).code;
@@ -308,18 +314,7 @@ function BattlePage() {
       }
     };
     attempt();
-  }, [
-    isRoleModalOpen,
-    isRoleMismatch,
-    me,
-    resumeSession,
-    joinRoom,
-    roomId,
-    desiredRole,
-    user?.avatarUrl,
-    user?.id,
-    user?.username,
-  ]);
+  }, [isRoleModalOpen, isRoleMismatch, resumeSession, joinRoom, roomId, desiredRole]);
 
   useEffect(() => {
     const socket = connect();
@@ -330,12 +325,13 @@ function BattlePage() {
         .catch(() => {})
         .then(() => {
           if (!useRoomStore.getState().me) {
+            const currentUser = userRef.current;
             joinRoom({
               roomId,
               requestedRole: desiredRole,
-              userId: user?.id,
-              username: user?.username,
-              avatarUrl: user?.avatarUrl,
+              userId: currentUser?.id,
+              username: currentUser?.username,
+              avatarUrl: currentUser?.avatarUrl,
             }).catch((error) => {
               const code = (error as Error & { code?: string }).code;
               if (code === SOCKET_ERROR.INVALID_ROLE) {
@@ -350,17 +346,7 @@ function BattlePage() {
     return () => {
       socket.off('connect', handleReconnect);
     };
-  }, [
-    connect,
-    resumeSession,
-    joinRoom,
-    roomId,
-    desiredRole,
-    isRoleMismatch,
-    user?.avatarUrl,
-    user?.id,
-    user?.username,
-  ]);
+  }, [connect, resumeSession, joinRoom, roomId, desiredRole, isRoleMismatch]);
 
   const handleRoleDenied = () => {
     setIsRoleModalOpen(false);
