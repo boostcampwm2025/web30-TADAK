@@ -1,8 +1,12 @@
-import battleEndUrl from '@/sounds/battle-end.mp3';
-import battleReadyUrl from '@/sounds/battle-ready.mp3';
-import battleStartUrl from '@/sounds/battle-start.mp3';
-import timerTicksUrl from '@/sounds/timer-ticks.mp3';
 import { useSoundStore } from '@/stores/soundStore';
+
+// 음악 파일 URL (public 폴더)
+const SOUND_URLS = {
+  battleEnd: '/sounds/battle-end.mp3',
+  battleReady: '/sounds/battle-ready.mp3',
+  battleStart: '/sounds/battle-start.mp3',
+  timerTicks: '/sounds/timer-ticks.mp3',
+} as const;
 
 /**
  * 전역 설정에 따른 오디오 재생
@@ -25,9 +29,9 @@ const playAudio = (url: string) => {
  */
 export const playCountdownSound = (type: 'tick' | 'end') => {
   if (type === 'tick') {
-    playAudio(timerTicksUrl);
+    playAudio(SOUND_URLS.timerTicks);
   } else if (type === 'end') {
-    playAudio(battleEndUrl);
+    playAudio(SOUND_URLS.battleEnd);
   }
 };
 
@@ -36,9 +40,9 @@ export const playCountdownSound = (type: 'tick' | 'end') => {
  */
 export const playBattleCountdownSound = (type: 'tick' | 'end') => {
   if (type === 'tick') {
-    playAudio(battleReadyUrl);
+    playAudio(SOUND_URLS.battleReady);
   } else if (type === 'end') {
-    playAudio(battleStartUrl);
+    playAudio(SOUND_URLS.battleStart);
   }
 };
 
@@ -46,5 +50,5 @@ export const playBattleCountdownSound = (type: 'tick' | 'end') => {
  * 볼륨 조절 확인용 소리 재생
  */
 export const playPreviewSound = () => {
-  playAudio(battleEndUrl);
+  playAudio(SOUND_URLS.battleEnd);
 };
