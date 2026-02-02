@@ -2,7 +2,7 @@ import { BATTLE_EVENTS } from '@shared/constants/battle';
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { ChatMessage } from '@shared/types/chat';
 import { AlertCircle } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBlocker, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -87,18 +87,27 @@ function BattlePage() {
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
   const socket = connect();
   const battleId = problem?.battleId;
-  const effectiveRole =
-    me && me.roomId === roomId ? me.role : (desiredRole as 'player' | 'spectator');
+  const effectiveRole = useMemo(
+    () => (me && me.roomId === roomId ? me.role : (desiredRole as 'player' | 'spectator')),
+    [me, roomId, desiredRole],
+  );
   const isSpectatorView = effectiveRole === 'spectator';
   const isCheatDetectionEnabled = import.meta.env.VITE_CHEAT_DETECTION_ENABLED !== 'false';
-  const isRoleMismatch = Boolean(me && me.roomId === roomId && me.role !== desiredRole);
-  const mismatchReason = isRoleMismatch
-    ? me?.role === 'player'
-      ? 'player-to-spectator'
-      : 'spectator-to-player'
-    : null;
-  const modalReason = roleModalReason ?? mismatchReason;
-  const shouldShowRoleModal = isRoleModalOpen || isRoleMismatch;
+  const { isRoleMismatch, modalReason, shouldShowRoleModal } = useMemo(() => {
+    const mismatch = Boolean(me && me.roomId === roomId && me.role !== desiredRole);
+    const reason = mismatch
+      ? me?.role === 'player'
+        ? 'player-to-spectator'
+        : 'spectator-to-player'
+      : null;
+    const resolvedReason = roleModalReason ?? reason;
+    return {
+      isRoleMismatch: mismatch,
+      mismatchReason: reason,
+      modalReason: resolvedReason,
+      shouldShowRoleModal: isRoleModalOpen || mismatch,
+    };
+  }, [me, roomId, desiredRole, roleModalReason, isRoleModalOpen]);
 
   const handleInvalidRole = useCallback(() => {
     setRoleModalReason('not-authorized-player');
