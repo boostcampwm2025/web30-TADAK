@@ -1,6 +1,4 @@
-# # 서버 리소스 모니터링 스크립트 (Windows PowerShell)
-# # k6 테스트와 함께 실행하여 CPU/Memory 사용량 기록
-# 서버 리소스 모니터링 스크립트 (V2 - 가독성 강화 버전)
+# 서버 리소스 모니터링 스크립트 (V3.1 - 수정 버전)
 $logDir = "logs"
 if (-not (Test-Path -Path $logDir)) {
     New-Item -ItemType Directory -Path $logDir | Out-Null
@@ -9,55 +7,103 @@ if (-not (Test-Path -Path $logDir)) {
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $outputFile = Join-Path $logDir "resource-monitor-$timestamp.log"
 
-# 터미널 출력용 헤더
-$displayHeader = "{0,-20} | {1,-20} | {2,-10} | {3,-20} | {4,-10}" -f "TIMESTAMP", "CONTAINER", "CPU%", "MEM_USAGE", "MEM%"
-$separator = "-" * 88
+# 상태 관리 및 데이터 저장소 (강력한 타입 지정)
+$script:state = "BEFORE"
+$script:beforeData = @{}
+$script:testingData = @{}
 
-Write-Host "`n" + ("=" * 88) -ForegroundColor Cyan
-Write-Host " Monitoring Started" -ForegroundColor Cyan
-Write-Host " Output FIle: $outputFile" -ForegroundColor Gray
-Write-Host " Press Ctrl+C to stop" -ForegroundColor Yellow
-Write-Host ("=" * 88) + "`n" -ForegroundColor Cyan
+Write-Host "`n====================================================================================================" -ForegroundColor Cyan
+Write-Host " Resource Monitoring (Test Mode)" -ForegroundColor Cyan
+Write-Host " [S] Start Recording    [Q] Stop and Show Results" -ForegroundColor Yellow
+Write-Host "====================================================================================================`n"
 
-# 로그 파일 헤더 저장 (CSV 형태)
-"TIMESTAMP,CONTAINER,CPU%,MEM_USAGE,MEM%" | Out-File -FilePath $outputFile -Encoding utf8
+"TIMESTAMP,CONTAINER,CPU%,MEM_USAGE,MEM%,STATE" | Out-File -FilePath $outputFile -Encoding utf8
 
-Write-Host $displayHeader -ForegroundColor Green
-Write-Host $separator
+function Parse-Percentage($value) {
+    if ($value -match "([0-9.]+)") {
+        return [double]$matches[1]
+    }
+    return 0.0
+}
 
-try {
-    while ($true) {
-        $now = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-        
-        # Docker stats 수집 (한 번에 모든 컨테이너 정보 캡처)
-        $stats = docker stats --no-stream --format "{{.Name}},{{.CPUPerc}},{{.MemUsage}},{{.MemPerc}}"
+function Show-Results {
+    Write-Host "`n`n====================================================================================================" -ForegroundColor Cyan
+    Write-Host " TEST RESULTS SUMMARY" -ForegroundColor Cyan
+    Write-Host "====================================================================================================" -ForegroundColor Cyan
 
-        foreach ($line in $stats) {
-            # 데이터 파싱
-            $parts = $line.Split(',')
-            if ($parts.Count -eq 4) {
-                $name = $parts[0]
-                $cpu  = $parts[1]
-                $mem  = $parts[2]
-                $memP = $parts[3]
+    Write-Host "`n[Before Test - Last Values]" -ForegroundColor Yellow
+    foreach ($key in $script:beforeData.Keys) {
+        $d = $script:beforeData[$key]
+        Write-Host ("{0,-30} | CPU: {1,8}% | MEM: {2,8}%" -f $key, $d.CPU, $d.MEM)
+    }
 
-                # 1. 파일 저장 (순수 데이터 CSV)
-                "$now,$line" | Out-File -FilePath $outputFile -Append -Encoding utf8
+    Write-Host "`n[During Test - Statistics]" -ForegroundColor Yellow
+    Write-Host ("{0,-25} | {1,8} | {2,8} | {3,8} | {4,8} | {5,8} | {6,8}" -f "CONTAINER", "CPU_MIN", "CPU_MAX", "CPU_AVG", "MEM_MIN", "MEM_MAX", "MEM_AVG")
+    Write-Host ("-" * 105)
 
-                # 2. 터미널 출력 (정렬된 포맷)
-                $displayText = "{0,-20} | {1,-20} | {2,10} | {3,20} | {4,10}" -f $now, $name, $cpu, $mem, $memP
+    if ($script:testingData.Count -eq 0) {
+        Write-Host "No data collected during TESTING state. (Did you press 'S'?)" -ForegroundColor Red
+    } else {
+        foreach ($key in $script:testingData.Keys) {
+            $cpus = $script:testingData[$key].CPU
+            $mems = $script:testingData[$key].MEM
+            
+            if ($cpus.Count -gt 0) {
+                $cpuStat = $cpus | Measure-Object -Average -Minimum -Maximum
+                $memStat = $mems | Measure-Object -Average -Minimum -Maximum
                 
-                # 특정 수치가 높을 경우 색상 강조 (CPU 80% 이상 등 - 필요시 추가 가능)
-                Write-Host $displayText
+                Write-Host ("{0,-25} | {1,7}% | {2,7}% | {3,7}% | {4,7}% | {5,7}% | {6,7}%" -f `
+                    $key, 
+                    [math]::Round($cpuStat.Minimum, 2), [math]::Round($cpuStat.Maximum, 2), [math]::Round($cpuStat.Average, 2),
+                    [math]::Round($memStat.Minimum, 2), [math]::Round($memStat.Maximum, 2), [math]::Round($memStat.Average, 2))
             }
         }
-        
-        # 0이 뜨는 타이밍 이슈를 줄이기 위해 1초 대기
-        Start-Sleep -Seconds 1
     }
 }
-catch {
-    Write-Host "`n`n" + ("=" * 88)
-    Write-Host " Stopped Monitoring." -ForegroundColor Green
-    Write-Host ("=" * 88)
+
+while ($true) {
+    if ([Console]::KeyAvailable) {
+        $key = [Console]::ReadKey($true)
+        if ($key.Key -eq "S" -and $script:state -eq "BEFORE") {
+            $script:state = "TESTING"
+            Write-Host "`n[!!!] RECORDING STARTED - DATA IS NOW BEING COLLECTED [!!!]`n" -ForegroundColor Green
+        }
+        elseif ($key.Key -eq "Q") {
+            Write-Host "`n[!!!] STOPPING... PLEASE WAIT FOR SUMMARY [!!!]`n" -ForegroundColor Red
+            break
+        }
+    }
+
+    $now = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $stats = docker stats --no-stream --format "{{.Name}},{{.CPUPerc}},{{.MemUsage}},{{.MemPerc}}" 2>$null
+
+    if ($null -ne $stats) {
+        foreach ($line in $stats) {
+            $parts = $line.Split(',')
+            if ($parts.Count -lt 4) { continue }
+
+            $name = $parts[0].Trim(); $cpu = $parts[1].Trim(); $mem = $parts[2].Trim(); $memP = $parts[3].Trim()
+            $cpuVal = Parse-Percentage $cpu
+            $memVal = Parse-Percentage $memP
+
+            "$now,$name,$cpu,$mem,$memP,$($script:state)" | Out-File -FilePath $outputFile -Append -Encoding utf8
+
+            if ($script:state -eq "BEFORE") {
+                $script:beforeData[$name] = @{ CPU = $cpuVal; MEM = $memVal }
+            }
+            elseif ($script:state -eq "TESTING") {
+                if (-not $script:testingData.ContainsKey($name)) {
+                    $script:testingData[$name] = @{ CPU = New-Object System.Collections.Generic.List[double]; MEM = New-Object System.Collections.Generic.List[double] }
+                }
+                $script:testingData[$name].CPU.Add($cpuVal)
+                $script:testingData[$name].MEM.Add($memVal)
+            }
+
+            $color = if ($script:state -eq "TESTING") { "Yellow" } else { "Gray" }
+            Write-Host ("{0,-20} | {1,-25} | {2,10} | {3,10} | {4,10} | {5,-10}" -f $now, $name, $cpu, $memP, "", $script:state) -ForegroundColor $color
+        }
+    }
+    Start-Sleep -Seconds 1
 }
+
+Show-Results
