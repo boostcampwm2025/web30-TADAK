@@ -1,8 +1,8 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
-import { SOCKET_ERROR, SOCKET_EVENT } from '@shared/constants/socket-event';
+import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { ChatMessage } from '@shared/types/chat';
 import { AlertCircle } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useBlocker, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -12,6 +12,7 @@ import BattlePlayer from '@/components/Battle/Player/BattlePlayer';
 import BattleSpectator from '@/components/Battle/Spectator/BattleSpectator';
 import Modal from '@/components/Common/Modal';
 import Toast from '@/components/Common/Toast';
+import { useBattleJoin } from '@/hooks/useBattleJoin';
 import { useTheme } from '@/hooks/useTheme';
 import { playCountdownSound } from '@/lib/sound';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
@@ -82,7 +83,6 @@ function BattlePage() {
 
   const [showFinishOverlay, setShowFinishOverlay] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
-  const userRef = useRef(user);
 
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
   const socket = connect();
@@ -100,9 +100,10 @@ function BattlePage() {
   const modalReason = roleModalReason ?? mismatchReason;
   const shouldShowRoleModal = isRoleModalOpen || isRoleMismatch;
 
-  useEffect(() => {
-    userRef.current = user;
-  }, [user]);
+  const handleInvalidRole = useCallback(() => {
+    setRoleModalReason('not-authorized-player');
+    setIsRoleModalOpen(true);
+  }, []);
 
   // 뒤로가기 차단 (플레이어 + 배틀 중 + 나가기 미확인 시)
   const blocker = useBlocker(
@@ -285,65 +286,17 @@ function BattlePage() {
     };
   }, [effectiveRole, socket]);
 
-  useEffect(() => {
-    if (isRoleModalOpen || isRoleMismatch) return;
-    if (useRoomStore.getState().me?.roomId === roomId) {
-      return;
-    }
-    const attempt = async () => {
-      await resumeSession({ roomId, roleHint: desiredRole }).catch(() => {});
-      if (!useRoomStore.getState().me) {
-        try {
-          const currentUser = userRef.current;
-          await joinRoom({
-            roomId,
-            requestedRole: desiredRole,
-            userId: currentUser?.id,
-            username: currentUser?.username,
-            avatarUrl: currentUser?.avatarUrl,
-          });
-        } catch (error) {
-          const code = (error as Error & { code?: string }).code;
-          if (code === SOCKET_ERROR.INVALID_ROLE) {
-            setRoleModalReason('not-authorized-player');
-            setIsRoleModalOpen(true);
-          }
-        }
-      }
-    };
-    attempt();
-  }, [isRoleModalOpen, isRoleMismatch, resumeSession, joinRoom, roomId, desiredRole]);
-
-  useEffect(() => {
-    const handleReconnect = () => {
-      if (isRoleMismatch) return;
-      // 소켓 재연결 시 저장된 세션 기준으로 다시 JOIN_ROOM 시도
-      resumeSession({ roleHint: desiredRole })
-        .catch(() => {})
-        .then(() => {
-          if (!useRoomStore.getState().me) {
-            const currentUser = userRef.current;
-            joinRoom({
-              roomId,
-              requestedRole: desiredRole,
-              userId: currentUser?.id,
-              username: currentUser?.username,
-              avatarUrl: currentUser?.avatarUrl,
-            }).catch((error) => {
-              const code = (error as Error & { code?: string }).code;
-              if (code === SOCKET_ERROR.INVALID_ROLE) {
-                setRoleModalReason('not-authorized-player');
-                setIsRoleModalOpen(true);
-              }
-            });
-          }
-        });
-    };
-    socket.on('connect', handleReconnect);
-    return () => {
-      socket.off('connect', handleReconnect);
-    };
-  }, [resumeSession, joinRoom, roomId, desiredRole, isRoleMismatch, socket]);
+  useBattleJoin({
+    roomId,
+    desiredRole,
+    isRoleModalOpen,
+    isRoleMismatch,
+    user,
+    socket,
+    resumeSession,
+    joinRoom,
+    onInvalidRole: handleInvalidRole,
+  });
 
   const handleRoleDenied = () => {
     setIsRoleModalOpen(false);
