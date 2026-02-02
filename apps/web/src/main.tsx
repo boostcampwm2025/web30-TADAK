@@ -7,7 +7,6 @@ import { createBrowserRouter, Outlet, RouterProvider } from 'react-router-dom';
 import App from '@/App.tsx';
 import BattleGuard from '@/components/Guards/BattleGuard.tsx';
 import LoginErrorPage from '@/pages/Error/LoginErrorPage';
-import LandingPage from '@/pages/LandingPage.tsx';
 import LoginPage from '@/pages/LoginPage.tsx';
 import MainPage from '@/pages/MainPage.tsx';
 
@@ -16,6 +15,7 @@ const BattlePage = lazy(() => import('@/pages/BattlePage.tsx'));
 const MatchingPage = lazy(() => import('@/pages/MatchingPage.tsx'));
 const ResultPage = lazy(() => import('@/pages/ResultPage.tsx'));
 const MyPage = lazy(() => import('@/pages/MyPage.tsx'));
+const LandingPage = lazy(() => import('@/pages/LandingPage.tsx'));
 
 const router = createBrowserRouter([
   {
