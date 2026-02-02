@@ -124,6 +124,29 @@ describe('MatchingSchedulerService', () => {
 
       expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('매칭 성공: 3쌍 (6명)'));
     });
+
+    it('매칭 Tick이 진행 중이면 중복 실행되지 않아야 한다', async () => {
+      let resolveFn: () => void;
+
+      mockMatchingService.matchUsers.mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveFn = resolve;
+          }),
+      );
+
+      // 첫 번째 Tick 시작
+      const firstTick = service.handleMatchingTick();
+
+      // 두 번째 Tick 시도
+      await service.handleMatchingTick();
+
+      expect(mockMatchingService.matchUsers).toHaveBeenCalledTimes(1);
+
+      // 첫 번째 Tick 완료
+      resolveFn!();
+      await firstTick;
+    });
   });
 
   describe('handleStatsUpdate', () => {
