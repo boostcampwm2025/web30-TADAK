@@ -13,6 +13,7 @@ import BattleSpectator from '@/components/Battle/Spectator/BattleSpectator';
 import Modal from '@/components/Common/Modal';
 import Toast from '@/components/Common/Toast';
 import { useBattleJoin } from '@/hooks/useBattleJoin';
+import { useRoleModalState } from '@/hooks/useRoleModalState';
 import { useTheme } from '@/hooks/useTheme';
 import { playCountdownSound } from '@/lib/sound';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
@@ -91,23 +92,15 @@ function BattlePage() {
     () => (me && me.roomId === roomId ? me.role : (desiredRole as 'player' | 'spectator')),
     [me, roomId, desiredRole],
   );
-  const isSpectatorView = effectiveRole === 'spectator';
+  const isSpectatorView = useMemo(() => effectiveRole === 'spectator', [effectiveRole]);
   const isCheatDetectionEnabled = import.meta.env.VITE_CHEAT_DETECTION_ENABLED !== 'false';
-  const { isRoleMismatch, modalReason, shouldShowRoleModal } = useMemo(() => {
-    const mismatch = Boolean(me && me.roomId === roomId && me.role !== desiredRole);
-    const reason = mismatch
-      ? me?.role === 'player'
-        ? 'player-to-spectator'
-        : 'spectator-to-player'
-      : null;
-    const resolvedReason = roleModalReason ?? reason;
-    return {
-      isRoleMismatch: mismatch,
-      mismatchReason: reason,
-      modalReason: resolvedReason,
-      shouldShowRoleModal: isRoleModalOpen || mismatch,
-    };
-  }, [me, roomId, desiredRole, roleModalReason, isRoleModalOpen]);
+  const { isRoleMismatch, modalReason, shouldShowRoleModal } = useRoleModalState({
+    me,
+    roomId,
+    desiredRole,
+    roleModalReason,
+    isRoleModalOpen,
+  });
 
   const handleInvalidRole = useCallback(() => {
     setRoleModalReason('not-authorized-player');
