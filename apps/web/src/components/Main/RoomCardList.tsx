@@ -3,6 +3,7 @@ import { Eye } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import TierBadge from '@/components/Common/TierBadge';
+import { getOptimizedAvatarUrl } from '@/lib/avatar';
 
 type Props = {
   rooms: Room[];
@@ -48,12 +49,17 @@ function RoomCardList({ rooms, onSpectate, joiningRoomId }: Props) {
           >
             <div className="mb-4 flex items-center justify-between text-xs text-base-secondary">
               <div className="flex items-center gap-2">
-                <span className="flex items-center font-semibold text-red-01">● LIVE</span>
+                <span className="flex items-center font-semibold text-red-01">
+                  <span aria-hidden="true">●</span> LIVE
+                </span>
                 <span className="text-blue-03">{formatElapsed(room.createdAt)}</span>
               </div>
-              <div className="inline-flex items-center gap-1.5 text-blue-03 text-sm font-medium">
-                <Eye className="h-4 w-4 text-blue-03" strokeWidth={1.5} />
-                {room.currentSpectators?.length ?? 0}
+              <div
+                className="inline-flex items-center gap-1.5 text-blue-03 text-sm font-medium"
+                aria-label={`관전자 ${room.currentSpectators?.length ?? 0}명`}
+              >
+                <Eye className="h-4 w-4 text-blue-03" strokeWidth={1.5} aria-hidden="true" />
+                <span>{room.currentSpectators?.length ?? 0}</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -74,12 +80,15 @@ function RoomCardList({ rooms, onSpectate, joiningRoomId }: Props) {
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-base-muted text-sm font-bold text-base-primary">
                       {p.avatarUrl ? (
                         <img
-                          src={p.avatarUrl}
-                          alt={p.username}
+                          src={getOptimizedAvatarUrl(p.avatarUrl, 72)}
+                          alt={`${p.username} 프로필`}
+                          width={36}
+                          height={36}
+                          loading="lazy"
                           className="h-full w-full rounded-full object-cover"
                         />
                       ) : (
-                        getInitial(p.username)
+                        <span aria-hidden="true">{getInitial(p.username)}</span>
                       )}
                     </div>
                     <div className="flex flex-col">
@@ -89,7 +98,18 @@ function RoomCardList({ rooms, onSpectate, joiningRoomId }: Props) {
                       )}
                     </div>
                   </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-base-muted">
+                  <div
+                    className="h-2 w-full overflow-hidden rounded-full bg-base-muted"
+                    role="progressbar"
+                    aria-label={`${p.username} 진행률`}
+                    aria-valuenow={
+                      p.progress && p.progress.totalCount > 0
+                        ? Math.round((p.progress.passedCount / p.progress.totalCount) * 100)
+                        : 0
+                    }
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                  >
                     <div
                       className="h-full rounded-full transition-all duration-300"
                       style={{
