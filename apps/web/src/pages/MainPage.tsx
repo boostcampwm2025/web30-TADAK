@@ -111,29 +111,36 @@ function MainPage() {
         {/* 상단 헤더 */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-red-01" />
+            <div className="h-2 w-2 rounded-full bg-red-01" aria-hidden="true" />
             <h1 className="text-3xl font-bold">LIVE</h1>
             <h1 className="text-3xl font-bold text-brand">BATTLES</h1>
             <button
               type="button"
               onClick={handleStartBattle}
-              className="cursor-pointer ml-auto rounded-3xl bg-brand px-6 py-3 text-lg font-semibold shadow-md transition hover:scale-[1.02]"
+              className="cursor-pointer ml-auto rounded-3xl bg-brand px-6 py-3 text-lg font-semibold shadow-md transition hover:scale-[1.02] text-gray-900"
             >
               게임 시작하기
             </button>
           </div>
           <p className="text-sm text-base-primary flex items-center gap-2">
             현재 진행 중인 배틀을 관전하고 고수들의 코딩을 배워보세요
-            <div className="group relative flex items-center">
+            <button
+              type="button"
+              onClick={() => navigate('/landing')}
+              className="group relative flex items-center"
+              aria-label="서비스 소개 페이지로 이동"
+            >
               <Info
                 size={16}
-                onClick={() => navigate('/landing')}
                 className="cursor-pointer text-base-secondary transition hover:text-brand"
               />
-              <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-bg-layer-2 border border-border-soft px-2 py-1 text-[10px] font-bold text-ink opacity-0 transition-all group-hover:opacity-100 shadow-sm">
+              <span
+                className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-bg-layer-2 border border-border-soft px-2 py-1 text-[10px] font-bold text-ink opacity-0 transition-all group-hover:opacity-100 shadow-sm"
+                aria-hidden="true"
+              >
                 서비스 소개
               </span>
-            </div>
+            </button>
           </p>
         </div>
 
@@ -147,7 +154,7 @@ function MainPage() {
                 type="button"
                 onClick={() => setSelectedFilter(tier.value)}
                 className={`cursor-pointer rounded-full px-4 py-2 text-xs font-semibold shadow-sm transition ${
-                  isSelected ? 'bg-green-01 text-green-06' : 'bg-base-faint text-base-secondary'
+                  isSelected ? 'bg-green-01 text-green-800' : 'bg-base-faint text-base-secondary'
                 }`}
               >
                 <span className={`mr-2 inline-block h-2 w-2 rounded-full ${tier.color}`} />
