@@ -135,6 +135,15 @@
 
   --white: var(--color-black-static);
   --black: var(--color-white-static);
+
+  /* 다크모드 티어 색상 (어두운 배경과 대비를 위해 밝게) */
+  --color-tier-bronze: #d97706;
+  --color-tier-silver: #9ca3af;
+  --color-tier-gold: #facc15;
+  --color-tier-platinum: #22d3ee;
+  --color-tier-diamond: #93c5fd;
+  --color-tier-ruby: #fb7185;
+  --color-tier-master: #c084fc;
 }
 
 * {
