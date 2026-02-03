@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
-import bgmUrl from '@/sounds/background-music.mp3';
 import { useSoundStore } from '@/stores/soundStore';
 
 export default function BackgroundMusic() {
@@ -12,7 +11,7 @@ export default function BackgroundMusic() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    const audio = new Audio(bgmUrl);
+    const audio = new Audio('/sounds/background-music.mp3');
     audio.loop = true;
     audio.preload = 'auto';
     audio.volume = bgmVolume;

@@ -3,19 +3,20 @@ import { BATTLE_CONFIG, BATTLE_EVENTS, DEFAULT_CODE_TEMPLATE } from '@shared/con
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { FinalResultMessage, TestcaseUpdateMessage } from '@shared/types/pubsub';
 import { Code } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 import { createDryRun, createSubmission } from '@/apis/submission';
 import EditorFooter from '@/components/Battle/Player/EditorFooter';
 import TestcaseResultPanel from '@/components/Battle/Player/TestcaseResultPanel';
-import BaseCodeEditor from '@/components/Common/BaseCodeEditor';
 import Toast from '@/components/Common/Toast';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import type { Player } from '@/stores/roomStore';
 import { useRoomStore } from '@/stores/roomStore';
+
+const LazyBaseCodeEditor = lazy(() => import('@/components/Common/BaseCodeEditor'));
 
 type SubmissionProgress = TestcaseUpdateMessage['progress'];
 type TestcaseResult = TestcaseUpdateMessage['testcase'] & {
@@ -389,17 +390,23 @@ function CodeEditor() {
           </div>
         </div>
         <div className="min-h-[320px] h-[40vh] bg-(bg-layer-2) font-mono text-sm text-base-primary xl:h-auto xl:flex-1">
-          <BaseCodeEditor
-            value={code}
-            onChange={(value) => handleChange(value || '')}
-            onMount={handleEditorMount}
-            options={{
-              quickSuggestions: false, // 자동 완성 비활성화
-              suggestOnTriggerCharacters: false, // 트리거 문자 입력 시 자동 완성 비활성화
-              snippetSuggestions: 'none', // 스니펫 비활성화
-              wordBasedSuggestions: 'off', // 단어 기반 제안 비활성화
-            }}
-          />
+          <Suspense
+            fallback={
+              <div className="flex h-full items-center justify-center">에디터를 불러오는 중...</div>
+            }
+          >
+            <LazyBaseCodeEditor
+              value={code}
+              onChange={(value) => handleChange(value || '')}
+              onMount={handleEditorMount}
+              options={{
+                quickSuggestions: false, // 자동 완성 비활성화
+                suggestOnTriggerCharacters: false, // 트리거 문자 입력 시 자동 완성 비활성화
+                snippetSuggestions: 'none', // 스니펫 비활성화
+                wordBasedSuggestions: 'off', // 단어 기반 제안 비활성화
+              }}
+            />
+          </Suspense>
         </div>
         <EditorFooter
           statusText={statusText}

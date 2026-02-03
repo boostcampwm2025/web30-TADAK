@@ -6,6 +6,7 @@ import Redis from 'ioredis';
 import { BattleService } from '../battle/battle.service';
 import { REDIS_CLIENT } from '../redis/redis.module';
 import { RedisKeys } from '../redis/redis-key.constant';
+import { REDIS_TTL } from '../redis/redis-ttl.constant';
 import { RoomService } from '../room/room.service';
 import { MatchingGateway } from './matching.gateway';
 
@@ -190,9 +191,9 @@ export class MatchingService {
             opponentId: user1.userId,
             matchedAt: new Date().toISOString(),
           })
-          // 1시간 후 자동 삭제 (공간 절약)
-          .expire(RedisKeys.matchingUser(user1.userId), 3600)
-          .expire(RedisKeys.matchingUser(user2.userId), 3600)
+          // 2시간 후 자동 삭제 (배틀 종료 후 정리)
+          .expire(RedisKeys.matchingUser(user1.userId), REDIS_TTL.MATCHING_USER)
+          .expire(RedisKeys.matchingUser(user2.userId), REDIS_TTL.MATCHING_USER)
           .lpush(RedisKeys.recentMatchTimes(), avgWaitTime) // 리스트의 맨 앞에 추가
           .ltrim(RedisKeys.recentMatchTimes(), 0, 99) // 최근 100개만 유지
           .exec();

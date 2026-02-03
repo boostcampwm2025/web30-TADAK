@@ -4,7 +4,7 @@ import { clampRating, getTierFromRating, RATING_CONFIG } from '@packages/constan
 import { BattleHistoryItem, SubmissionHistoryItem } from '@packages/types/user';
 import { Glicko2, newProcedure } from 'glicko2.ts';
 import Redis from 'ioredis';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 
 import { Battle } from '@/battle/battle.entity';
 import { Problem } from '@/problem/problem.entity';
@@ -81,9 +81,13 @@ export class UserService {
     winnerId: string,
     loserId: string,
     isDraw: boolean = false,
+    manager?: EntityManager,
   ): Promise<{ winner: RatingUpdateResult; loser: RatingUpdateResult }> {
-    const winner = await this.findOne(winnerId);
-    const loser = await this.findOne(loserId);
+    // 트랜잭션 매니저가 있으면 사용, 없으면 기본 repository 사용
+    const userRepo = manager?.getRepository(User) ?? this.userRepository;
+
+    const winner = await userRepo.findOne({ where: { id: winnerId } });
+    const loser = await userRepo.findOne({ where: { id: loserId } });
 
     if (!winner || !loser) {
       throw new Error('User not found');
@@ -107,7 +111,7 @@ export class UserService {
     const loserNewTier = getTierFromRating(loserNewRating);
 
     // DB 업데이트
-    await this.userRepository.update(winnerId, {
+    await userRepo.update(winnerId, {
       rating: winnerNewRating,
       rd: winnerNewRd,
       volatility: winnerPlayer.getVol(),
@@ -116,7 +120,7 @@ export class UserService {
       draws: isDraw ? winner.draws + 1 : winner.draws,
     });
 
-    await this.userRepository.update(loserId, {
+    await userRepo.update(loserId, {
       rating: loserNewRating,
       rd: loserNewRd,
       volatility: loserPlayer.getVol(),
