@@ -16,3 +16,6 @@ node_modules
 
 # k6
 k6/logs
+
+# scanner work
+.scannerwork
