@@ -13,7 +13,6 @@ import { useUserStore } from '@/stores/userStore';
 
 function MatchingPage() {
   const navigate = useNavigate();
-  const [waitTime, setWaitTime] = useState(0);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const isMatchingStartedRef = useRef(false);
   const user = useUserStore((state) => state.user);
@@ -74,15 +73,6 @@ function MatchingPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasToken, user?.id, isLoading]);
-
-  // 타이머
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setWaitTime((prev) => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   // 페이지 이탈(뒤로가기 등) 시 cleanup
   useEffect(() => {
@@ -194,7 +184,7 @@ function MatchingPage() {
     <div className="flex min-h-screen flex-col">
       <Header rightContent={<MatchingCancelButton />} />
       <div className="flex flex-1 items-center justify-center">
-        <MatchingWait waitTime={waitTime} />
+        <MatchingWait />
       </div>
       {toastMessage && (
         <Toast

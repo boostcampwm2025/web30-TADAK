@@ -4,11 +4,7 @@ import LoadingSpinner from './LoadingSpinner';
 import MatchingStats from './MatchingStats';
 import MatchingTimer from './MatchingTimer';
 
-interface Props {
-  waitTime: number;
-}
-
-export default function MatchingWait({ waitTime }: Props) {
+export default function MatchingWait() {
   const timeoutMessage = useMatchingStore((state) => state.timeoutMessage);
   return (
     <div className="max-w-4xl mx-auto select-none">
@@ -30,7 +26,7 @@ export default function MatchingWait({ waitTime }: Props) {
         {/* 대기 시간 */}
         <div className="flex flex-col gap-2">
           <div className="flex flex-col items-center gap-2">
-            <MatchingTimer time={waitTime} />
+            <MatchingTimer />
             <div className="min-h-6">
               {timeoutMessage && <p className="text-sm">{timeoutMessage}</p>}
             </div>
