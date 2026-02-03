@@ -19,8 +19,8 @@ export default function MatchingSuccess() {
 
   // 매칭 성공 시 BattlePage와 에디터 prefetch
   useEffect(() => {
-    import('@/pages/BattlePage.tsx');
-    import('@/components/Common/BaseCodeEditor');
+    void import('@/pages/BattlePage');
+    void import('@/components/Common/BaseCodeEditor');
   }, []);
 
   // 효과음 재생 로직
