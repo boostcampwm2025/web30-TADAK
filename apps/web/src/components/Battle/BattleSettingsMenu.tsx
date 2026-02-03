@@ -57,9 +57,7 @@ function BattleSettingsMenu({ theme, toggleTheme }: BattleSettingsMenuProps) {
               )}
             </button>
             <div className="my-1 h-[1px] bg-border-soft" />
-            <div className="px-4 pt-2 text-[11px] font-semibold text-base-secondary">
-              효과음
-            </div>
+            <div className="px-4 pt-2 text-[11px] font-semibold text-base-secondary">효과음</div>
             <div className="flex items-center gap-3 px-4 py-2">
               <button
                 onClick={toggleMute}
@@ -80,9 +78,7 @@ function BattleSettingsMenu({ theme, toggleTheme }: BattleSettingsMenuProps) {
                 className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-border-soft accent-brand"
               />
             </div>
-            <div className="px-4 pt-1 text-[11px] font-semibold text-base-secondary">
-              배경음악
-            </div>
+            <div className="px-4 pt-1 text-[11px] font-semibold text-base-secondary">배경음악</div>
             <div className="flex items-center gap-3 px-4 py-2">
               <button
                 onClick={toggleBgmMute}
