@@ -1,8 +1,10 @@
-import { useEffect } from 'react';
+import { domAnimation, LazyMotion } from 'framer-motion';
+import { lazy, Suspense, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 
-import BackgroundMusic from '@/components/Common/BackgroundMusic';
 import { useUserStore } from '@/stores/userStore';
+
+const BackgroundMusic = lazy(() => import('@/components/Common/BackgroundMusic'));
 
 function App() {
   const fetchUser = useUserStore((state) => state.fetchUser);
@@ -14,10 +16,12 @@ function App() {
   }, [fetchUser]);
 
   return (
-    <>
-      <BackgroundMusic />
+    <LazyMotion features={domAnimation}>
+      <Suspense fallback={null}>
+        <BackgroundMusic />
+      </Suspense>
       <Outlet />
-    </>
+    </LazyMotion>
   );
 }
 
