@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DockerModule } from '../docker/docker.module';
 import { JudgeModule } from '../judge/judge.module';
 import { Problem } from '../problem/problem.entity';
+import { PubSubModule } from '../pubsub/pubsub.module';
 import { SUBMISSION_QUEUE } from './submission.constants';
 import { SubmissionProcessor } from './submission.processor';
 import { SubmissionService } from './submission.service';
@@ -20,6 +21,7 @@ import { SubmissionService } from './submission.service';
     }),
     DockerModule,
     JudgeModule,
+    PubSubModule,
     TypeOrmModule.forFeature([Problem]),
   ],
   providers: [SubmissionProcessor, SubmissionService],

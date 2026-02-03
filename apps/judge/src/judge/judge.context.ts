@@ -1,4 +1,3 @@
-import { Logger } from '@nestjs/common';
 import { TestcaseStatus } from '@packages/types/pubsub';
 
 import { PubsubService } from '../pubsub/pubsub.service';
@@ -12,14 +11,30 @@ interface OutputResults {
   expectedOutput: string;
 }
 
+export interface TestcaseResult {
+  index: number;
+  status: TestcaseStatus; // ACCEPTED, WRONG_ANSWER 등
+  time: number;
+  memory: number;
+  results: OutputResults;
+}
+
+export interface FinalResult {
+  status: TestcaseStatus;
+  passed: number;
+  total: number;
+  time: number;
+  memory: number;
+  testcases: TestcaseResult[];
+}
+
 export class JudgeContext {
   private lastProcessedIndex = -1;
   private passed = 0;
   private maxTime = 0;
   private maxMemory = 0;
   private finalStatus: TestcaseStatus = 'ACCEPTED';
-  private readonly submissionIdValue: number | string;
-  private readonly logger = new Logger(JudgeContext.name);
+  private readonly testcaseResults: TestcaseResult[] = [];
 
   constructor(
     public readonly submissionId: string,
@@ -59,6 +74,13 @@ export class JudgeContext {
       } as OutputResults;
 
       await this.publishUpdate(i, tcStatus, time, memory, results);
+      this.testcaseResults.push({
+        index: i + 1,
+        status: tcStatus,
+        time,
+        memory,
+        results,
+      });
       this.updateStatistics(tcStatus, time, memory);
 
       this.lastProcessedIndex = i;
@@ -89,6 +111,18 @@ export class JudgeContext {
     return {
       passed: this.passed,
       total: this.testcases.length,
+    };
+  }
+
+  // 채점 완료된 데이터를 Redis에 저장할 최종 결과
+  getFinalResult(): FinalResult {
+    return {
+      status: this.finalStatus,
+      passed: this.passed,
+      total: this.testcases.length,
+      time: this.maxTime,
+      memory: this.maxMemory,
+      testcases: this.testcaseResults,
     };
   }
 

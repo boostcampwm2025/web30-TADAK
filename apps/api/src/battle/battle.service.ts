@@ -265,150 +265,176 @@ export class BattleService {
   async endBattle(battleId: string): Promise<BattleEntity> {
     this.logger.log(`[endBattle] 시작 - battleId: ${battleId}`);
 
-    // 1. Redis에서 배틀 데이터 조회
-    const battle = await this.battleRedisService.getBattle(battleId);
-    this.logger.log(`[endBattle] Redis 배틀 데이터 조회 완료 - battle: ${JSON.stringify(battle)}`);
-    if (!battle) {
-      this.logger.error(`[endBattle] 배틀을 찾을 수 없음 - battleId: ${battleId}`);
-      throw new Error(`Battle not found: ${battleId}`);
-    }
-
-    // 2. 각 참가자의 마지막 제출 기록 조회
-    const lastSubmissions = await Promise.all(
-      battle.users.map(async (user) => {
-        const submission = await this.submissionRepository.findOne({
-          where: { battleId: battle.battleId, userId: user.userId },
-          order: { createdAt: 'DESC' },
-        });
-        return { odUserId: user.userId, submission };
-      }),
-    );
-    this.logger.log(
-      `[endBattle] 마지막 제출 조회 완료 - ${JSON.stringify(
-        lastSubmissions.map((s) => ({
-          odUserId: s.odUserId,
-          submissionId: s.submission?.id || null,
-          passedTestCases: s.submission?.passedTestCases || 0,
-          status: s.submission?.status || null,
-        })),
-      )}`,
-    );
-
-    // 3. 승자 결정 (submission 기반)
-    // ACCEPTED 상태인 사람이 있으면 그 사람이 승자 (먼저 제출한 사람 우선)
-    const acceptedSubmissions = lastSubmissions
-      .filter((s) => s.submission?.status === 'ACCEPTED')
-      .sort((a, b) => {
-        const timeA = a.submission?.createdAt
-          ? new Date(a.submission.createdAt).getTime()
-          : Infinity;
-        const timeB = b.submission?.createdAt
-          ? new Date(b.submission.createdAt).getTime()
-          : Infinity;
-        return timeA - timeB;
-      });
-
-    let winnerId: string | null = null;
-    let loserId: string | null = null;
-
-    if (acceptedSubmissions.length > 0) {
-      // ACCEPTED가 있으면 먼저 ACCEPTED한 사람이 승자
-      winnerId = acceptedSubmissions[0].odUserId;
-      loserId = battle.users.find((u) => u.userId !== winnerId)?.userId || null;
-      this.logger.log(`[endBattle] ACCEPTED 기준 승자 결정 - winnerId: ${winnerId}`);
-    } else {
-      // ACCEPTED가 없으면 passedTestCases가 많은 사람이 승자
-      const sortedByScore = [...lastSubmissions].sort((a, b) => {
-        const scoreA = a.submission?.passedTestCases || 0;
-        const scoreB = b.submission?.passedTestCases || 0;
-        return scoreB - scoreA;
-      });
-
-      const firstScore = sortedByScore[0]?.submission?.passedTestCases || 0;
-      const secondScore = sortedByScore[1]?.submission?.passedTestCases || 0;
-
-      if (firstScore === secondScore) {
-        // 동점이면 무승부
-        winnerId = null;
-        loserId = null;
-        this.logger.log(
-          `[endBattle] 동점 무승부 - firstScore: ${firstScore}, secondScore: ${secondScore}`,
-        );
-      } else {
-        winnerId = sortedByScore[0].odUserId;
-        loserId = sortedByScore[1]?.odUserId || null;
-        this.logger.log(
-          `[endBattle] 점수 기준 승자 결정 - winnerId: ${winnerId}, firstScore: ${firstScore}, secondScore: ${secondScore}`,
-        );
+    // 0. 분산 락 획득 시도 (동시 중복 종료 방지)
+    const lockKey = `lock:battle:end:${battleId}`;
+    const acquired = await this.redisClient.set(lockKey, 'true', 'EX', 30, 'NX');
+    if (!acquired) {
+      this.logger.warn(
+        `[endBattle] 이미 종료 처리가 진행 중이거나 완료되었습니다. - battleId: ${battleId}`,
+      );
+      // 이미 처리가 완료되었는지 확인하기 위해 DB에서 조회 시도
+      const existingBattle = await this.battleRepository.findOne({ where: { id: battleId } });
+      if (existingBattle) {
+        return existingBattle;
       }
+      throw new Error(`Battle is already being processed or already finished: ${battleId}`);
     }
 
-    this.logger.log(
-      `[endBattle] 최종 승자 결정 완료 - winnerId: ${winnerId || 'null'}, loserId: ${loserId || 'null'}`,
-    );
+    try {
+      // 1. Redis에서 배틀 데이터 조회
+      const battle = await this.battleRedisService.getBattle(battleId);
+      this.logger.log(
+        `[endBattle] Redis 배틀 데이터 조회 완료 - battle: ${JSON.stringify(battle)}`,
+      );
+      if (!battle) {
+        this.logger.error(`[endBattle] 배틀을 찾을 수 없음 - battleId: ${battleId}`);
+        throw new Error(`Battle not found: ${battleId}`);
+      }
 
-    const winnerSubmission = winnerId
-      ? lastSubmissions.find((s) => s.odUserId === winnerId)?.submission || null
-      : null;
-    const loserSubmission = loserId
-      ? lastSubmissions.find((s) => s.odUserId === loserId)?.submission || null
-      : null;
+      // 2. 각 참가자의 마지막 제출 기록 조회
+      const lastSubmissions = await Promise.all(
+        battle.users.map(async (user) => {
+          const submission = await this.submissionRepository.findOne({
+            where: { battleId: battle.battleId, userId: user.userId },
+            order: { createdAt: 'DESC' },
+          });
+          return { odUserId: user.userId, submission };
+        }),
+      );
+      this.logger.log(
+        `[endBattle] 마지막 제출 조회 완료 - ${JSON.stringify(
+          lastSubmissions.map((s) => ({
+            odUserId: s.odUserId,
+            submissionId: s.submission?.id || null,
+            passedTestCases: s.submission?.passedTestCases || 0,
+            status: s.submission?.status || null,
+          })),
+        )}`,
+      );
 
-    const isDraw = winnerId === null;
-    const finalWinnerId = winnerId || battle.users[0].userId;
-    const finalLoserId = loserId || battle.users[1].userId;
-    this.logger.log(
-      `[endBattle] 점수 업데이트 시작 - finalWinnerId: ${finalWinnerId}, finalLoserId: ${finalLoserId}, isDraw: ${isDraw}`,
-    );
-    const ratingResult = await this.userService.updateRatings(finalWinnerId, finalLoserId, isDraw);
+      // 3. 승자 결정 (submission 기반)
+      // ACCEPTED 상태인 사람이 있으면 그 사람이 승자 (먼저 제출한 사람 우선)
+      const acceptedSubmissions = lastSubmissions
+        .filter((s) => s.submission?.status === 'ACCEPTED')
+        .sort((a, b) => {
+          const timeA = a.submission?.createdAt
+            ? new Date(a.submission.createdAt).getTime()
+            : Infinity;
+          const timeB = b.submission?.createdAt
+            ? new Date(b.submission.createdAt).getTime()
+            : Infinity;
+          return timeA - timeB;
+        });
 
-    // 4. 배틀 엔티티 생성 및 저장
-    const battleEntity = new BattleEntity();
-    battleEntity.id = battle.battleId;
-    battleEntity.problemId = battle.problemId;
-    battleEntity.startedAt = battle.startedAt ? new Date(battle.startedAt) : new Date();
-    battleEntity.winnerId = winnerId;
-    battleEntity.winnerSubmissionId = winnerSubmission?.id || null;
-    battleEntity.loserSubmissionId = loserSubmission?.id || null;
-    battleEntity.playerIds = battle.users.map((u) => u.userId);
+      let winnerId: string | null = null;
+      let loserId: string | null = null;
 
-    const player1Id = battle.users[0].userId;
-    battleEntity.player1RatingChange =
-      finalWinnerId === player1Id
-        ? ratingResult.winner.ratingDelta
-        : ratingResult.loser.ratingDelta;
-    battleEntity.player2RatingChange =
-      finalWinnerId === player1Id
-        ? ratingResult.loser.ratingDelta
-        : ratingResult.winner.ratingDelta;
+      if (acceptedSubmissions.length > 0) {
+        // ACCEPTED가 있으면 먼저 ACCEPTED한 사람이 승자
+        winnerId = acceptedSubmissions[0].odUserId;
+        loserId = battle.users.find((u) => u.userId !== winnerId)?.userId || null;
+        this.logger.log(`[endBattle] ACCEPTED 기준 승자 결정 - winnerId: ${winnerId}`);
+      } else {
+        // ACCEPTED가 없으면 passedTestCases가 많은 사람이 승자
+        const sortedByScore = [...lastSubmissions].sort((a, b) => {
+          const scoreA = a.submission?.passedTestCases || 0;
+          const scoreB = b.submission?.passedTestCases || 0;
+          return scoreB - scoreA;
+        });
 
-    const savedBattle = await this.battleRepository.save(battleEntity);
-    this.logger.log(`[endBattle] 배틀 엔티티 저장 완료 - savedBattle.id: ${savedBattle.id}`);
+        const firstScore = sortedByScore[0]?.submission?.passedTestCases || 0;
+        const secondScore = sortedByScore[1]?.submission?.passedTestCases || 0;
 
-    // 5. Redis에서 배틀 데이터 및 방 정보 삭제
-    this.logger.log(`[endBattle] Redis 배틀 데이터 삭제 시작`);
-    await this.battleRedisService.deleteBattle(battle.battleId, battle.roomId);
-    this.logger.log(`[endBattle] Redis 배틀 데이터 삭제 완료`);
-    await this.roomService.deleteRoom(battle.roomId);
+        if (firstScore === secondScore) {
+          // 동점이면 무승부
+          winnerId = null;
+          loserId = null;
+          this.logger.log(
+            `[endBattle] 동점 무승부 - firstScore: ${firstScore}, secondScore: ${secondScore}`,
+          );
+        } else {
+          winnerId = sortedByScore[0].odUserId;
+          loserId = sortedByScore[1]?.odUserId || null;
+          this.logger.log(
+            `[endBattle] 점수 기준 승자 결정 - winnerId: ${winnerId}, firstScore: ${firstScore}, secondScore: ${secondScore}`,
+          );
+        }
+      }
 
-    // 6. 진행 중인 배틀 목록에서 제거
-    await this.redisClient.srem(RedisKeys.activeBattles(), battle.battleId);
-    this.logger.log(`[endBattle] 진행 중인 배틀 목록에서 제거 완료`);
+      this.logger.log(
+        `[endBattle] 최종 승자 결정 완료 - winnerId: ${winnerId || 'null'}, loserId: ${loserId || 'null'}`,
+      );
 
-    // 6.5. 방 삭제
-    await this.roomService.deleteRoom(battle.roomId);
+      const winnerSubmission = winnerId
+        ? lastSubmissions.find((s) => s.odUserId === winnerId)?.submission || null
+        : null;
+      const loserSubmission = loserId
+        ? lastSubmissions.find((s) => s.odUserId === loserId)?.submission || null
+        : null;
 
-    // 7. 참가자들의 매칭 상태 초기화 (재매칭 가능하도록)
-    this.logger.log(
-      `[endBattle] 매칭 상태 초기화 시작 - users: ${battle.users.map((u) => u.userId).join(', ')}`,
-    );
-    await Promise.all(
-      battle.users.map((user) => this.matchingService.clearUserMatchingStatus(user.userId)),
-    );
-    this.logger.log(`[endBattle] 매칭 상태 초기화 완료`);
+      const isDraw = winnerId === null;
+      const finalWinnerId = winnerId || battle.users[0].userId;
+      const finalLoserId = loserId || battle.users[1].userId;
+      this.logger.log(
+        `[endBattle] 점수 업데이트 시작 - finalWinnerId: ${finalWinnerId}, finalLoserId: ${finalLoserId}, isDraw: ${isDraw}`,
+      );
+      const ratingResult = await this.userService.updateRatings(
+        finalWinnerId,
+        finalLoserId,
+        isDraw,
+      );
 
-    this.logger.log(`[endBattle] 종료 - battleId: ${battleId}`);
-    return savedBattle;
+      // 4. 배틀 엔티티 생성 및 저장
+      const battleEntity = new BattleEntity();
+      battleEntity.id = battle.battleId;
+      battleEntity.problemId = battle.problemId;
+      battleEntity.startedAt = battle.startedAt ? new Date(battle.startedAt) : new Date();
+      battleEntity.winnerId = winnerId;
+      battleEntity.winnerSubmissionId = winnerSubmission?.id || null;
+      battleEntity.loserSubmissionId = loserSubmission?.id || null;
+      battleEntity.playerIds = battle.users.map((u) => u.userId);
+
+      const player1Id = battle.users[0].userId;
+      battleEntity.player1RatingChange =
+        finalWinnerId === player1Id
+          ? ratingResult.winner.ratingDelta
+          : ratingResult.loser.ratingDelta;
+      battleEntity.player2RatingChange =
+        finalWinnerId === player1Id
+          ? ratingResult.loser.ratingDelta
+          : ratingResult.winner.ratingDelta;
+
+      const savedBattle = await this.battleRepository.save(battleEntity);
+      this.logger.log(`[endBattle] 배틀 엔티티 저장 완료 - savedBattle.id: ${savedBattle.id}`);
+
+      // 5. Redis에서 배틀 데이터 및 방 정보 삭제
+      this.logger.log(`[endBattle] Redis 배틀 데이터 삭제 시작`);
+      await this.battleRedisService.deleteBattle(battle.battleId, battle.roomId);
+      this.logger.log(`[endBattle] Redis 배틀 데이터 삭제 완료`);
+      await this.roomService.deleteRoom(battle.roomId);
+
+      // 6. 진행 중인 배틀 목록에서 제거
+      await this.redisClient.srem(RedisKeys.activeBattles(), battle.battleId);
+      this.logger.log(`[endBattle] 진행 중인 배틀 목록에서 제거 완료`);
+
+      // 6.5. 방 삭제
+      await this.roomService.deleteRoom(battle.roomId);
+
+      // 7. 참가자들의 매칭 상태 초기화 (재매칭 가능하도록)
+      this.logger.log(
+        `[endBattle] 매칭 상태 초기화 시작 - users: ${battle.users.map((u) => u.userId).join(', ')}`,
+      );
+      await Promise.all(
+        battle.users.map((user) => this.matchingService.clearUserMatchingStatus(user.userId)),
+      );
+      this.logger.log(`[endBattle] 매칭 상태 초기화 완료`);
+
+      this.logger.log(`[endBattle] 종료 - battleId: ${battleId}`);
+      return savedBattle;
+    } catch (error) {
+      this.logger.error(`[endBattle] 실패 - battleId: ${battleId}`, error);
+      throw error;
+    }
   }
 
   /**

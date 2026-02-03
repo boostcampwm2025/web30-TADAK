@@ -18,7 +18,7 @@ export class JudgeService {
   ) {}
 
   // 전체 채점 흐름 관리
-  async judgeSubmission(submissionId: string): Promise<void> {
+  async judgeSubmission(submissionId: string) {
     try {
       const metadata = this.reader.readMetadata(submissionId);
       const testcases = this.reader.loadTestcases(metadata.problemId, metadata.type);
@@ -42,6 +42,8 @@ export class JudgeService {
 
       const { passed, total } = context.getSummary();
       this.logger.log(`채점 완료: Submission ${submissionId} - (${passed}/${total} TC)`);
+
+      return context.getFinalResult();
     } catch (error) {
       this.logger.error(`Failed to judge submission ${submissionId}`, error);
       throw error;
