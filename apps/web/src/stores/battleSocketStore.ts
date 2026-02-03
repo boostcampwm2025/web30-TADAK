@@ -52,7 +52,7 @@ const clearSession = () => {
   }
 };
 
-interface BattleSocketState {
+export interface BattleSocketState {
   socket: Socket | null;
   isConnected: boolean;
   roomAvailability: RoomAvailabilityResponseDTO | null;

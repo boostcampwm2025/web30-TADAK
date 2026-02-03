@@ -429,6 +429,9 @@ export class RoomGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId: string; type?: 'FOCUS_OUT' | 'PASTE' },
   ) {
+    if (process.env.CHEAT_DETECTION_ENABLED === 'false') {
+      return;
+    }
     const { roomId, type } = data ?? {};
     if (!roomId) return;
 
