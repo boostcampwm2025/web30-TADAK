@@ -4,6 +4,7 @@ import Redis from 'ioredis';
 
 import { REDIS_CLIENT } from '@/redis/redis.module';
 import { RedisKeys } from '@/redis/redis-key.constant';
+import { REDIS_TTL } from '@/redis/redis-ttl.constant';
 
 @Injectable()
 export class BattleRedisService {
@@ -15,14 +16,16 @@ export class BattleRedisService {
   async createBattle(battle: Battle): Promise<void> {
     try {
       const key = RedisKeys.battle(battle.battleId);
-      await this.redis.set(key, JSON.stringify(battle));
-
-      // roomId로 battleId 매핑 저장
       const roomKey = RedisKeys.battleByRoom(battle.roomId);
-      await this.redis.set(roomKey, battle.battleId);
 
-      // 진행 중인 배틀 목록에 추가
-      await this.redis.sadd(RedisKeys.activeBattles(), battle.battleId);
+      // 배틀 데이터 저장
+      const pipeline = this.redis.pipeline();
+      pipeline.set(key, JSON.stringify(battle));
+      pipeline.expire(key, REDIS_TTL.BATTLE);
+      pipeline.set(roomKey, battle.battleId);
+      pipeline.expire(roomKey, REDIS_TTL.BATTLE_ROOM_MAPPING);
+      pipeline.sadd(RedisKeys.activeBattles(), battle.battleId);
+      await pipeline.exec();
     } catch (error) {
       // TODO: 에러 로깅 추가
       console.error('Failed to create battle in Redis:', error);
@@ -49,7 +52,10 @@ export class BattleRedisService {
 
   async updateBattle(battle: Battle): Promise<void> {
     const key = RedisKeys.battle(battle.battleId);
-    await this.redis.set(key, JSON.stringify(battle));
+    const pipeline = this.redis.pipeline();
+    pipeline.set(key, JSON.stringify(battle));
+    pipeline.expire(key, REDIS_TTL.BATTLE);
+    await pipeline.exec();
   }
 
   async deleteBattle(battleId: string, roomId: string): Promise<void> {

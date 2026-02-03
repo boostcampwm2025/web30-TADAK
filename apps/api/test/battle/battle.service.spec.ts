@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import RedisMock from 'ioredis-mock';
+import { DataSource } from 'typeorm';
 
 import { Battle as BattleEntity } from '@/battle/battle.entity';
 import { BattleService } from '@/battle/battle.service';
@@ -18,6 +19,8 @@ describe('BattleService', () => {
   let mockBattleRepository: any;
   let mockSubmissionRepository: any;
   let mockUserRepository: any;
+  let mockDataSource: any;
+  let mockUserService: any;
   let redis: RedisMock;
 
   beforeEach(async () => {
@@ -43,6 +46,25 @@ describe('BattleService', () => {
         whereInIds: jest.fn().mockReturnThis(),
         getMany: jest.fn().mockResolvedValue([]),
       })),
+    };
+
+    // UserService mock 설정
+    mockUserService = {
+      updateRatings: jest.fn().mockResolvedValue({
+        winner: { ratingDelta: 10 },
+        loser: { ratingDelta: -10 },
+      }),
+    };
+
+    // DataSource mock 설정 (트랜잭션 지원)
+    mockDataSource = {
+      transaction: jest.fn((callback) => {
+        const mockManager = {
+          save: jest.fn().mockImplementation((entity) => Promise.resolve(entity)),
+          getRepository: jest.fn().mockReturnValue(mockUserRepository),
+        };
+        return callback(mockManager);
+      }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -89,11 +111,16 @@ describe('BattleService', () => {
         },
         {
           provide: UserService,
+          useValue: mockUserService,
+        },
+        {
+          provide: DataSource,
+          useValue: mockDataSource,
+        },
+        {
+          provide: RoomService,
           useValue: {
-            updateRatings: jest.fn().mockResolvedValue({
-              winner: { ratingDelta: 10 },
-              loser: { ratingDelta: -10 },
-            }),
+            deleteRoom: jest.fn().mockResolvedValue(undefined),
           },
         },
         {
@@ -335,6 +362,74 @@ describe('BattleService', () => {
       expect(battleRedisService.getBattle).toHaveBeenCalledTimes(1);
       expect(battleRedisService.deleteBattle).toHaveBeenCalledTimes(1);
       expect(mockBattleRepository.save).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('endBattle 트랜잭션', () => {
+    it('트랜잭션 내에서 레이팅 업데이트와 배틀 저장이 함께 실행되어야 한다', async () => {
+      const battleId = 'battle-123';
+      const roomId = 'room-123';
+      const mockBattleData = {
+        battleId,
+        roomId,
+        problemId: 'problem-1',
+        startedAt: new Date(),
+        users: [{ userId: 'user-1' }, { userId: 'user-2' }],
+      };
+
+      const battleRedisService = (service as any).battleRedisService;
+      battleRedisService.getBattle = jest.fn().mockResolvedValue(mockBattleData);
+      battleRedisService.deleteBattle = jest.fn().mockResolvedValue(undefined);
+      (service as any).redisClient = { srem: jest.fn().mockResolvedValue(1) };
+
+      await service.endBattle(battleId);
+
+      // 트랜잭션이 호출되었는지 확인
+      expect(mockDataSource.transaction).toHaveBeenCalled();
+
+      // 레이팅 업데이트가 호출되었는지 확인
+      expect(mockUserService.updateRatings).toHaveBeenCalled();
+    });
+
+    it('배틀 저장 실패 시 에러가 발생해야 한다', async () => {
+      const battleId = 'battle-123';
+      const roomId = 'room-123';
+      const mockBattleData = {
+        battleId,
+        roomId,
+        problemId: 'problem-1',
+        startedAt: new Date(),
+        users: [{ userId: 'user-1' }, { userId: 'user-2' }],
+      };
+
+      const battleRedisService = (service as any).battleRedisService;
+      battleRedisService.getBattle = jest.fn().mockResolvedValue(mockBattleData);
+
+      // 트랜잭션 내에서 에러 발생하도록 설정
+      mockDataSource.transaction = jest.fn().mockRejectedValue(new Error('DB Error'));
+
+      await expect(service.endBattle(battleId)).rejects.toThrow('DB Error');
+    });
+
+    it('Redis 삭제 실패해도 에러가 전파되지 않아야 한다', async () => {
+      const battleId = 'battle-123';
+      const roomId = 'room-123';
+      const mockBattleData = {
+        battleId,
+        roomId,
+        problemId: 'problem-1',
+        startedAt: new Date(),
+        users: [{ userId: 'user-1' }, { userId: 'user-2' }],
+      };
+
+      const battleRedisService = (service as any).battleRedisService;
+      battleRedisService.getBattle = jest.fn().mockResolvedValue(mockBattleData);
+      // Redis 삭제 실패
+      battleRedisService.deleteBattle = jest.fn().mockRejectedValue(new Error('Redis Error'));
+      (service as any).redisClient = { srem: jest.fn().mockResolvedValue(1) };
+
+      // 에러가 발생하지 않고 정상 완료되어야 함
+      await expect(service.endBattle(battleId)).resolves.toBeDefined();
     });
   });
 });

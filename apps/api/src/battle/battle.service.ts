@@ -12,7 +12,7 @@ import {
 import { Tier } from '@packages/types/matching';
 import { RoomUser } from '@packages/types/user';
 import Redis from 'ioredis';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
 import { Battle as BattleEntity } from '@/battle/battle.entity';
 import { BattleRedisService } from '@/battle/battle-redis.service';
@@ -45,6 +45,7 @@ export class BattleService {
     private readonly userService: UserService,
     @Inject(forwardRef(() => RoomService))
     private readonly roomService: RoomService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async createBattle(dto: CreateBattleDTO): Promise<Battle> {
@@ -378,56 +379,69 @@ export class BattleService {
       this.logger.log(
         `[endBattle] 점수 업데이트 시작 - finalWinnerId: ${finalWinnerId}, finalLoserId: ${finalLoserId}, isDraw: ${isDraw}`,
       );
-      const ratingResult = await this.userService.updateRatings(
-        finalWinnerId,
-        finalLoserId,
-        isDraw,
-      );
 
-      // 4. 배틀 엔티티 생성 및 저장
-      const battleEntity = new BattleEntity();
-      battleEntity.id = battle.battleId;
-      battleEntity.problemId = battle.problemId;
-      battleEntity.startedAt = battle.startedAt ? new Date(battle.startedAt) : new Date();
-      battleEntity.winnerId = winnerId;
-      battleEntity.winnerSubmissionId = winnerSubmission?.id || null;
-      battleEntity.loserSubmissionId = loserSubmission?.id || null;
-      battleEntity.playerIds = battle.users.map((u) => u.userId);
+      // 4. 트랜잭션으로 DB 작업 수행 (레이팅 업데이트 + 배틀 저장)
+      const savedBattle = await this.dataSource.transaction(async (manager) => {
+        // 4-1. 레이팅 업데이트 (트랜잭션 매니저 전달)
+        const ratingResult = await this.userService.updateRatings(
+          finalWinnerId,
+          finalLoserId,
+          isDraw,
+          manager,
+        );
 
-      const player1Id = battle.users[0].userId;
-      battleEntity.player1RatingChange =
-        finalWinnerId === player1Id
-          ? ratingResult.winner.ratingDelta
-          : ratingResult.loser.ratingDelta;
-      battleEntity.player2RatingChange =
-        finalWinnerId === player1Id
-          ? ratingResult.loser.ratingDelta
-          : ratingResult.winner.ratingDelta;
+        // 4-2. 배틀 엔티티 생성 및 저장
+        const battleEntity = new BattleEntity();
+        battleEntity.id = battle.battleId;
+        battleEntity.problemId = battle.problemId;
+        battleEntity.startedAt = battle.startedAt ? new Date(battle.startedAt) : new Date();
+        battleEntity.winnerId = winnerId;
+        battleEntity.winnerSubmissionId = winnerSubmission?.id || null;
+        battleEntity.loserSubmissionId = loserSubmission?.id || null;
+        battleEntity.playerIds = battle.users.map((u) => u.userId);
 
-      const savedBattle = await this.battleRepository.save(battleEntity);
+        const player1Id = battle.users[0].userId;
+        battleEntity.player1RatingChange =
+          finalWinnerId === player1Id
+            ? ratingResult.winner.ratingDelta
+            : ratingResult.loser.ratingDelta;
+        battleEntity.player2RatingChange =
+          finalWinnerId === player1Id
+            ? ratingResult.loser.ratingDelta
+            : ratingResult.winner.ratingDelta;
+
+        return await manager.save(battleEntity);
+      });
       this.logger.log(`[endBattle] 배틀 엔티티 저장 완료 - savedBattle.id: ${savedBattle.id}`);
 
       // 5. Redis에서 배틀 데이터 및 방 정보 삭제
-      this.logger.log(`[endBattle] Redis 배틀 데이터 삭제 시작`);
-      await this.battleRedisService.deleteBattle(battle.battleId, battle.roomId);
-      this.logger.log(`[endBattle] Redis 배틀 데이터 삭제 완료`);
-      await this.roomService.deleteRoom(battle.roomId);
+      try {
+        this.logger.log(`[endBattle] Redis 배틀 데이터 삭제 시작`);
+        await this.battleRedisService.deleteBattle(battle.battleId, battle.roomId);
+        this.logger.log(`[endBattle] Redis 배틀 데이터 삭제 완료`);
 
-      // 6. 진행 중인 배틀 목록에서 제거
-      await this.redisClient.srem(RedisKeys.activeBattles(), battle.battleId);
-      this.logger.log(`[endBattle] 진행 중인 배틀 목록에서 제거 완료`);
+        // 6. 진행 중인 배틀 목록에서 제거
+        await this.redisClient.srem(RedisKeys.activeBattles(), battle.battleId);
+        this.logger.log(`[endBattle] 진행 중인 배틀 목록에서 제거 완료`);
 
-      // 6.5. 방 삭제
-      await this.roomService.deleteRoom(battle.roomId);
+        // 7. 방 삭제
+        await this.roomService.deleteRoom(battle.roomId);
+      } catch (error) {
+        this.logger.error(`[endBattle] Redis 정리 실패 - battleId: ${battleId}`, error);
+      }
 
-      // 7. 참가자들의 매칭 상태 초기화 (재매칭 가능하도록)
-      this.logger.log(
-        `[endBattle] 매칭 상태 초기화 시작 - users: ${battle.users.map((u) => u.userId).join(', ')}`,
-      );
-      await Promise.all(
-        battle.users.map((user) => this.matchingService.clearUserMatchingStatus(user.userId)),
-      );
-      this.logger.log(`[endBattle] 매칭 상태 초기화 완료`);
+      // 8. 참가자들의 매칭 상태 초기화 (재매칭 가능하도록)
+      try {
+        this.logger.log(
+          `[endBattle] 매칭 상태 초기화 시작 - users: ${battle.users.map((u) => u.userId).join(', ')}`,
+        );
+        await Promise.all(
+          battle.users.map((user) => this.matchingService.clearUserMatchingStatus(user.userId)),
+        );
+        this.logger.log(`[endBattle] 매칭 상태 초기화 완료`);
+      } catch (error) {
+        this.logger.error(`[endBattle] 매칭 상태 초기화 실패`, error);
+      }
 
       this.logger.log(`[endBattle] 종료 - battleId: ${battleId}`);
       return savedBattle;
@@ -493,10 +507,9 @@ export class BattleService {
       throw new Error('Opponent not found in battle');
     }
 
-    // 승자 결정 및 레이팅 업데이트
+    // 승자 결정
     const winnerId = opponent.userId;
     const loserId = forfeiterUserId;
-    const ratingResult = await this.userService.updateRatings(winnerId, loserId, false);
 
     // 마지막 제출 기록 조회 (있으면 저장)
     const winnerSubmission = await this.submissionRepository.findOne({
@@ -508,33 +521,47 @@ export class BattleService {
       order: { createdAt: 'DESC' },
     });
 
-    // 배틀 엔티티 생성 및 저장
-    const battleEntity = new BattleEntity();
-    battleEntity.id = battle.battleId;
-    battleEntity.problemId = battle.problemId;
-    battleEntity.startedAt = battle.startedAt ? new Date(battle.startedAt) : new Date();
-    battleEntity.winnerId = winnerId;
-    battleEntity.winnerSubmissionId = winnerSubmission?.id || null;
-    battleEntity.loserSubmissionId = loserSubmission?.id || null;
-    battleEntity.playerIds = battle.users.map((u) => u.userId);
+    // 트랜잭션으로 DB 작업 수행 (레이팅 업데이트 + 배틀 저장)
+    const savedBattle = await this.dataSource.transaction(async (manager) => {
+      // 레이팅 업데이트 (트랜잭션 매니저 전달)
+      const ratingResult = await this.userService.updateRatings(winnerId, loserId, false, manager);
 
-    const player1Id = battle.users[0].userId;
-    battleEntity.player1RatingChange =
-      winnerId === player1Id ? ratingResult.winner.ratingDelta : ratingResult.loser.ratingDelta;
-    battleEntity.player2RatingChange =
-      winnerId === player1Id ? ratingResult.loser.ratingDelta : ratingResult.winner.ratingDelta;
+      // 배틀 엔티티 생성 및 저장
+      const battleEntity = new BattleEntity();
+      battleEntity.id = battle.battleId;
+      battleEntity.problemId = battle.problemId;
+      battleEntity.startedAt = battle.startedAt ? new Date(battle.startedAt) : new Date();
+      battleEntity.winnerId = winnerId;
+      battleEntity.winnerSubmissionId = winnerSubmission?.id || null;
+      battleEntity.loserSubmissionId = loserSubmission?.id || null;
+      battleEntity.playerIds = battle.users.map((u) => u.userId);
 
-    const savedBattle = await this.battleRepository.save(battleEntity);
+      const player1Id = battle.users[0].userId;
+      battleEntity.player1RatingChange =
+        winnerId === player1Id ? ratingResult.winner.ratingDelta : ratingResult.loser.ratingDelta;
+      battleEntity.player2RatingChange =
+        winnerId === player1Id ? ratingResult.loser.ratingDelta : ratingResult.winner.ratingDelta;
 
-    // 배틀 및 방 삭제
-    await this.battleRedisService.deleteBattle(battle.battleId, battle.roomId);
-    await this.redisClient.srem(RedisKeys.activeBattles(), battle.battleId);
-    await this.roomService.deleteRoom(battle.roomId);
+      return await manager.save(battleEntity);
+    });
+
+    // Redis에서 배틀 데이터 및 방 정보 삭제
+    try {
+      await this.battleRedisService.deleteBattle(battle.battleId, battle.roomId);
+      await this.redisClient.srem(RedisKeys.activeBattles(), battle.battleId);
+      await this.roomService.deleteRoom(battle.roomId);
+    } catch (error) {
+      this.logger.error(`[forfeitBattle] Redis 정리 실패 - battleId: ${battleId}`, error);
+    }
 
     // 참가자들의 매칭 상태 초기화
-    await Promise.all(
-      battle.users.map((user) => this.matchingService.clearUserMatchingStatus(user.userId)),
-    );
+    try {
+      await Promise.all(
+        battle.users.map((user) => this.matchingService.clearUserMatchingStatus(user.userId)),
+      );
+    } catch (error) {
+      this.logger.error(`[forfeitBattle] 매칭 상태 초기화 실패`, error);
+    }
 
     this.logger.log(`[forfeitBattle] 종료 - battleId: ${battleId}`);
     return savedBattle;
