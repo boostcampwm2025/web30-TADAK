@@ -22,7 +22,7 @@
             "lineWidth": 2,
             "pointSize": 5,
             "showPoints": "never",
-            "spanNulls": false,
+            "spanNulls": true,
             "stacking": { "group": "A", "mode": "none" },
             "thresholdsStyle": { "mode": "off" }
           },
@@ -52,8 +52,8 @@
       "targets": [
         {
           "datasource": { "type": "prometheus" },
-          "expr": "sum(rate(container_cpu_usage_seconds_total{id=~\"/docker/.+\"}[30s])) by (id) * 100",
-          "legendFormat": "{{id}}",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{container_label_com_docker_compose_service!=\"\"}[40s])) by (container_label_com_docker_compose_service) * 100",
+          "legendFormat": "{{container_label_com_docker_compose_service}}",
           "refId": "A"
         }
       ],
@@ -75,7 +75,7 @@
             "lineWidth": 2,
             "pointSize": 5,
             "showPoints": "never",
-            "spanNulls": false,
+            "spanNulls": true,
             "stacking": { "group": "A", "mode": "none" },
             "thresholdsStyle": { "mode": "off" }
           },
@@ -102,8 +102,8 @@
       "targets": [
         {
           "datasource": { "type": "prometheus" },
-          "expr": "container_memory_usage_bytes{id=~\"/docker/.+\"}",
-          "legendFormat": "{{id}}",
+          "expr": "container_memory_usage_bytes{container_label_com_docker_compose_service!=\"\"}",
+          "legendFormat": "{{container_label_com_docker_compose_service}}",
           "refId": "A"
         }
       ],
@@ -125,7 +125,7 @@
             "lineWidth": 2,
             "pointSize": 5,
             "showPoints": "never",
-            "spanNulls": false,
+            "spanNulls": true,
             "stacking": { "group": "A", "mode": "none" },
             "thresholdsStyle": { "mode": "off" }
           },
@@ -152,14 +152,14 @@
       "targets": [
         {
           "datasource": { "type": "prometheus" },
-          "expr": "sum(rate(container_network_receive_bytes_total{id=~\"/docker/.+\"}[30s])) by (id)",
-          "legendFormat": "{{id}} (rx)",
+          "expr": "sum(rate(container_network_receive_bytes_total{container_label_com_docker_compose_service!=\"\"}[40s])) by (container_label_com_docker_compose_service)",
+          "legendFormat": "{{container_label_com_docker_compose_service}} (rx)",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus" },
-          "expr": "sum(rate(container_network_transmit_bytes_total{id=~\"/docker/.+\"}[30s])) by (id)",
-          "legendFormat": "{{id}} (tx)",
+          "expr": "sum(rate(container_network_transmit_bytes_total{container_label_com_docker_compose_service!=\"\"}[40s])) by (container_label_com_docker_compose_service)",
+          "legendFormat": "{{container_label_com_docker_compose_service}} (tx)",
           "refId": "B"
         }
       ],
@@ -199,8 +199,8 @@
       "targets": [
         {
           "datasource": { "type": "prometheus" },
-          "expr": "sum(rate(container_cpu_usage_seconds_total{id=~\"/docker/.+\"}[30s])) by (id) * 100",
-          "legendFormat": "{{id}}",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{container_label_com_docker_compose_service!=\"\"}[40s])) by (container_label_com_docker_compose_service) * 100",
+          "legendFormat": "{{container_label_com_docker_compose_service}}",
           "refId": "A"
         }
       ],
@@ -208,7 +208,7 @@
       "type": "gauge"
     }
   ],
-  "refresh": "5s",
+  "refresh": "10s",
   "schemaVersion": 38,
   "style": "dark",
   "tags": ["docker", "containers"],
