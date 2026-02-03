@@ -1,25 +1,28 @@
 import path from 'node:path';
 
 import react from '@vitejs/plugin-react';
-import { visualizer } from 'rollup-plugin-visualizer';
-import { defineConfig } from 'vite';
+import { defineConfig, type PluginOption } from 'vite';
 
 // https://vite.dev/config/
-export default defineConfig(({ mode }) => {
+export default defineConfig(async ({ mode }) => {
   const isAnalyze = mode === 'analyze' || process.env.ANALYZE === 'true';
+
+  const plugins: PluginOption[] = [react()];
+
+  // analyze 모드일 때만 visualizer 로드
+  if (isAnalyze) {
+    const { visualizer } = await import('rollup-plugin-visualizer');
+    plugins.push(
+      visualizer({
+        open: true,
+        filename: 'bundle-analysis.html',
+        gzipSize: true,
+      }),
+    );
+  }
+
   return {
-    plugins: [
-      react(),
-      ...(isAnalyze
-        ? [
-            visualizer({
-              open: true,
-              filename: 'bundle-analysis.html',
-              gzipSize: true,
-            }),
-          ]
-        : []),
-    ],
+    plugins,
     resolve: {
       alias: {
         '@shared/types': path.resolve(__dirname, '../../packages/types'),
