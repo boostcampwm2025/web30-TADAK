@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  # cAdvisor - Docker 컨테이너 메트릭
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  # API 서버 메트릭 (추후 NestJS에 prometheus 모듈 추가 시)
+  # - job_name: 'api'
+  #   static_configs:
+  #     - targets: ['api:3000']
+  #   metrics_path: '/metrics'
+
+  # Redis 메트릭 (redis-exporter 사용 시)
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
