@@ -1,6 +1,7 @@
 import { Eye, Moon, Settings, Sun, Volume2, VolumeX } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { memo, useCallback, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useShallow } from 'zustand/react/shallow';
 
 import logo from '@/assets/logo.webp';
 import BattleTimer from '@/components/Battle/BattleTimer';
@@ -17,9 +18,13 @@ interface BattleHeaderProps {
 
 function BattleHeader({ theme, toggleTheme, onLeaveClick }: BattleHeaderProps) {
   const { roomId } = useParams<{ roomId: string }>();
-  const spectatorCount = useBattleSocketStore((state) => state.spectatorCount);
   const problem = useBattleProblemStore((state) => state.problem);
   const timeOffset = useBattleProblemStore((state) => state.timeOffset);
+  const { spectatorCount } = useBattleSocketStore(
+    useShallow((state) => ({
+      spectatorCount: state.spectatorCount,
+    })),
+  );
 
   const {
     volume,
@@ -38,6 +43,10 @@ function BattleHeader({ theme, toggleTheme, onLeaveClick }: BattleHeaderProps) {
   const battleId = problem?.battleId;
   const duration = problem?.duration;
   const startedAt = problem?.startedAt;
+
+  const handleToggleSetting = useCallback(() => {
+    setIsSettingOpen((prev) => !prev);
+  }, []);
 
   return (
     <header className="relative z-50 flex w-full items-center justify-between rounded-2xl px-5 text-base-primary backdrop-blur dark:shadow-slate-950/40">
@@ -69,7 +78,7 @@ function BattleHeader({ theme, toggleTheme, onLeaveClick }: BattleHeaderProps) {
         </button>
         <div className="relative" ref={settingRef}>
           <button
-            onClick={() => setIsSettingOpen(!isSettingOpen)}
+            onClick={handleToggleSetting}
             className="rounded-full bg-base-faint p-2 text-ink shadow-sm transition hover:scale-110 active:scale-95"
           >
             <Settings size={24} className="text-slate-400" />
@@ -148,4 +157,4 @@ function BattleHeader({ theme, toggleTheme, onLeaveClick }: BattleHeaderProps) {
   );
 }
 
-export default BattleHeader;
+export default memo(BattleHeader);
