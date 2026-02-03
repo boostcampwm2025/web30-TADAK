@@ -3,7 +3,6 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { logout } from '@/apis/auth';
-import LogoImage from '@/assets/logo.webp';
 import { UserProfile } from '@/components/Profile/UserProfile';
 import { useTheme } from '@/hooks/useTheme';
 import { playPreviewSound } from '@/lib/sound';
@@ -64,7 +63,7 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
     <header className="relative z-50 border-b border-border-soft bg-bg-layer-2 shadow-sm">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-8 py-2">
         <Link to="/" className="flex items-center gap-3">
-          <img src={LogoImage} alt="TADAK 로고" className="h-12 w-auto" />
+          <img src="/logo.webp" alt="TADAK 로고" className="h-12 w-auto" />
           <span className="text-2xl font-black tracking-tight">TADAK</span>
         </Link>
         <div className="flex items-center gap-4">
