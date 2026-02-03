@@ -1,13 +1,12 @@
-import { Eye, Moon, Settings, Sun, Volume2, VolumeX } from 'lucide-react';
+import { Moon, Settings, Sun, Volume2, VolumeX } from 'lucide-react';
 import { memo, useCallback, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useShallow } from 'zustand/react/shallow';
 
 import logo from '@/assets/logo.webp';
 import BattleTimer from '@/components/Battle/BattleTimer';
+import SpectatorCountBadge from '@/components/Battle/SpectatorCountBadge';
 import { playPreviewSound } from '@/lib/sound';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
-import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useSoundStore } from '@/stores/soundStore';
 
 interface BattleHeaderProps {
@@ -20,11 +19,6 @@ function BattleHeader({ theme, toggleTheme, onLeaveClick }: BattleHeaderProps) {
   const { roomId } = useParams<{ roomId: string }>();
   const problem = useBattleProblemStore((state) => state.problem);
   const timeOffset = useBattleProblemStore((state) => state.timeOffset);
-  const { spectatorCount } = useBattleSocketStore(
-    useShallow((state) => ({
-      spectatorCount: state.spectatorCount,
-    })),
-  );
 
   const {
     volume,
@@ -66,10 +60,7 @@ function BattleHeader({ theme, toggleTheme, onLeaveClick }: BattleHeaderProps) {
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-base-faint px-5 py-2 text-sm font-medium text-base-primary">
-          <Eye className="h-4 w-4 text-base-secondary" strokeWidth={2.5} />
-          <span className="text-base-primary">{spectatorCount}</span>
-        </div>
+        <SpectatorCountBadge />
         <button
           onClick={onLeaveClick}
           className="inline-flex h-10 w-20 items-center justify-center rounded-full bg-base-faint text-sm font-bold text-base-primary transition hover:brightness-110"
