@@ -46,6 +46,7 @@ function CodeEditor() {
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? 'room-unknown';
   const me = useRoomStore((state: { me?: Player }) => state.me);
   const setMe = useRoomStore((state: { setMe: (me: Player) => void }) => state.setMe);
+  const isCheatDetectionEnabled = import.meta.env.VITE_CHEAT_DETECTION_ENABLED !== 'false';
 
   const socket = useBattleSocketStore((state) => state.socket);
   const connect = useBattleSocketStore((state) => state.connect);
@@ -360,6 +361,7 @@ function CodeEditor() {
 
     editorDomRef.current = domNode;
     const handlePaste = (event: ClipboardEvent) => {
+      if (!isCheatDetectionEnabled) return;
       event.preventDefault();
       event.stopPropagation();
       const now = Date.now();
@@ -368,7 +370,7 @@ function CodeEditor() {
       setPasteToastMessage('외부 코드 붙여넣기는 금지되어 있습니다! 🚫');
 
       const activeSocket = socket ?? connect();
-      if (activeSocket?.connected) {
+      if (activeSocket?.connected && isCheatDetectionEnabled) {
         activeSocket.emit(SOCKET_EVENT.CHEAT_WARNING, { roomId, type: 'PASTE' });
       }
     };
