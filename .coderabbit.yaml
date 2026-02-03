@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: 'ko-KR' # 한국어 사용
+early_access: false # 실험 기능 사용 안함
+
+reviews:
+  profile: 'assertive' # 전문적 톤
+  request_changes_workflow: false # PR 스타일 변경 요청 없음
+  high_level_summary: true # 요약 제공
+  poem: false # 시 리뷰 비활성
+  review_status: true # 리뷰 상태 표시
+  collapse_walkthrough: false # 단계별 설명 펼침
+  auto_review:
+    enabled: true # 자동 리뷰 켬
+    drafts: false # 초안 리뷰 안함
+
+chat:
+  auto_reply: true # 채팅 자동 응답 켬

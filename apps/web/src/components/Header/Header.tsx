@@ -3,7 +3,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { logout } from '@/apis/auth';
-import LogoImage from '@/assets/logo.png';
+import LogoImage from '@/assets/logo.webp';
 import { UserProfile } from '@/components/Profile/UserProfile';
 import { useTheme } from '@/hooks/useTheme';
 import { playPreviewSound } from '@/lib/sound';
