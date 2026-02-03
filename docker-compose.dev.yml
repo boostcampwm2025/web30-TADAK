@@ -124,7 +124,7 @@ services:
       - /app/node_modules
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.9.1
     restart: unless-stopped
     labels:
       app: prometheus
@@ -140,7 +140,7 @@ services:
       - '--storage.tsdb.path=/prometheus'
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:12.3.2
     restart: unless-stopped
     labels:
       app: grafana
