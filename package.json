@@ -11,7 +11,8 @@
     "clean": "turbo run clean",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "prepare": "husky"
+    "prepare": "husky",
+    "bench:cache": "pnpm --filter judge bench:cache"
   },
   "keywords": [],
   "author": "",

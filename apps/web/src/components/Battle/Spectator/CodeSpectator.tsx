@@ -1,14 +1,15 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
 import type { FinalResultMessage } from '@shared/types/pubsub';
 import { Code } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 import ProgressBarSpectator from '@/components/Battle/Spectator/ProgressBarSpectator';
-import BaseCodeEditor from '@/components/Common/BaseCodeEditor';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useRoomStore } from '@/stores/roomStore';
+
+const BaseCodeEditor = lazy(() => import('@/components/Common/BaseCodeEditor'));
 
 type SubmissionResultPayload = Omit<FinalResultMessage, 'type'> & {
   userId?: string;
@@ -133,16 +134,24 @@ function CodeSpectator() {
           </div>
 
           <div className="min-h-[520px] h-[40vh] bg-(bg-layer-2) font-mono text-sm text-base-primary xl:h-auto xl:flex-1">
-            <BaseCodeEditor
-              value={selectedCode}
-              options={{
-                readOnly: true,
-                renderLineHighlight: 'none',
-                contextmenu: false,
-                folding: false,
-                hideCursorInOverviewRuler: true,
-              }}
-            />
+            <Suspense
+              fallback={
+                <div className="flex h-full items-center justify-center">
+                  에디터를 불러오는 중...
+                </div>
+              }
+            >
+              <BaseCodeEditor
+                value={selectedCode}
+                options={{
+                  readOnly: true,
+                  renderLineHighlight: 'none',
+                  contextmenu: false,
+                  folding: false,
+                  hideCursorInOverviewRuler: true,
+                }}
+              />
+            </Suspense>
           </div>
           <div className="flex items-center justify-end gap-4 border-t border-border-soft bg-(--bg-layer-2) px-4 py-3 text-xs text-base-secondary">
             <span className="flex items-center gap-1 text-green-05">

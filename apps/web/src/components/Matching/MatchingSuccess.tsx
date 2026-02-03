@@ -17,6 +17,12 @@ export default function MatchingSuccess() {
   const user = useUserStore((state) => state.user);
   const setAllowNavigation = useMatchingStore((s) => s.setAllowNavigation);
 
+  // 매칭 성공 시 BattlePage와 에디터 prefetch
+  useEffect(() => {
+    void import('@/pages/BattlePage');
+    void import('@/components/Common/BaseCodeEditor');
+  }, []);
+
   // 효과음 재생 로직
   useEffect(() => {
     if (countdown === 5 && !hasPlayedReadyRef.current) {
