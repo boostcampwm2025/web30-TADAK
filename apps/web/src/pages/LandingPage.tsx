@@ -57,12 +57,12 @@ const LandingPage = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="inline-block py-1 px-3 rounded-full bg-brand/10 text-brand font-bold text-sm mb-6 border border-brand/20"
+              className="inline-block py-1 px-3 rounded-full bg-brand/10 text-brand font-bold text-sm mb-6 border border-brand"
             >
               v2.0 업데이트 완료
             </motion.span>
             <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight leading-tight">
-              고독한 코딩은 이제 그만.
+              고독한 코딩은 이제 그만
               <br />
               <span className="bg-gradient-to-r from-brand to-sky-400 bg-clip-text text-transparent">
                 실시간 알고리즘 배틀
@@ -106,7 +106,7 @@ const LandingPage = () => {
               document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })
             }
           >
-            <span className="text-[10px] font-bold tracking-widest text-base-tertiary uppercase group-hover:text-brand transition-colors">
+            <span className="text-[10px] font-bold tracking-widest text-base-secondary uppercase group-hover:text-brand transition-colors">
               Scroll Down
             </span>
             <motion.div
@@ -116,7 +116,7 @@ const LandingPage = () => {
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
-              className="text-base-tertiary group-hover:text-brand transition-colors"
+              className="text-base-secondary group-hover:text-brand transition-colors"
             >
               <ChevronDown size={24} />
             </motion.div>
@@ -229,7 +229,7 @@ const LandingPage = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="text-base-tertiary mb-12 text-lg"
+              className="text-base-secondary mb-12 text-lg"
             >
               수십명의 캠퍼들이 당신의 도전을 기다리고 있습니다.
             </motion.p>
