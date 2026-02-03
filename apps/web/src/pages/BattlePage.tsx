@@ -11,7 +11,7 @@ import LeaveBattleModal from '@/components/Battle/modals/LeaveBattleModal';
 import RoleModal from '@/components/Battle/modals/RoleModal';
 import BattlePlayer from '@/components/Battle/Player/BattlePlayer';
 import BattleSpectator from '@/components/Battle/Spectator/BattleSpectator';
-import Toast from '@/components/Common/Toast';
+import BattleSystemToast from '@/components/Battle/overlays/BattleSystemToast';
 import { useBattleJoin } from '@/hooks/useBattleJoin';
 import { useRoleModalState } from '@/hooks/useRoleModalState';
 import { useTheme } from '@/hooks/useTheme';
@@ -20,6 +20,7 @@ import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import type { BattleSocketState } from '@/stores/battleSocketStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
+import { useBattleToastStore } from '@/stores/battleToastStore';
 import { useRoomStore } from '@/stores/roomStore';
 import { useUserStore } from '@/stores/userStore';
 
@@ -79,7 +80,7 @@ function BattlePage() {
   const [roleModalReason, setRoleModalReason] = useState<
     'player-to-spectator' | 'spectator-to-player' | 'not-authorized-player' | null
   >(null);
-  const [systemToastMessage, setSystemToastMessage] = useState<string | null>(null);
+  const showSystemToast = useBattleToastStore((state) => state.show);
   const lastCheatSentAtRef = useRef(0);
 
   const [showFinishOverlay, setShowFinishOverlay] = useState(false);
@@ -279,14 +280,14 @@ function BattlePage() {
       if (!message.message.includes('부정행위 경고') && !message.message.includes('패배 처리')) {
         return;
       }
-      setSystemToastMessage(message.message);
+      showSystemToast(message.message);
     };
 
     socket.on(SOCKET_EVENT.RECEIVE_CHAT, handleSystemMessage);
     return () => {
       socket.off(SOCKET_EVENT.RECEIVE_CHAT, handleSystemMessage);
     };
-  }, [effectiveRole, socket]);
+  }, [effectiveRole, socket, showSystemToast]);
 
   useBattleJoin({
     roomId,
@@ -341,9 +342,7 @@ function BattlePage() {
         onCancel={handleCancelLeave}
         onConfirm={handleConfirmLeave}
       />
-      {systemToastMessage && (
-        <Toast message={systemToastMessage} onClose={() => setSystemToastMessage(null)} />
-      )}
+      <BattleSystemToast />
     </div>
   );
 }
