@@ -1,9 +1,6 @@
 import { memo } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { playCountdownSound } from '@/lib/sound';
-import { playPreviewSound } from '@/lib/sound';
-import logo from '@/assets/logo.webp';
 import BattleSettingsMenu from '@/components/Battle/BattleSettingsMenu';
 import BattleTimer from '@/components/Battle/BattleTimer';
 import SpectatorCountBadge from '@/components/Battle/SpectatorCountBadge';
