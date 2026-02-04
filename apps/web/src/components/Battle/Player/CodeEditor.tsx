@@ -3,7 +3,7 @@ import { BATTLE_CONFIG, BATTLE_EVENTS, DEFAULT_CODE_TEMPLATE } from '@shared/con
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { FinalResultMessage, TestcaseUpdateMessage } from '@shared/types/pubsub';
 import { Code } from 'lucide-react';
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -251,19 +251,22 @@ function CodeEditor() {
     };
   }, [me?.userId, roomId, socket, upsertProgress, syncProgress]);
 
-  const handleChange = (value: string) => {
-    hasEditedRef.current = true;
-    setCode(value);
-    if (!socket?.connected) return;
-    if (!me?.userId) return;
+  const handleChange = useCallback(
+    (value: string) => {
+      hasEditedRef.current = true;
+      setCode(value);
+      if (!socket?.connected) return;
+      if (!me?.userId) return;
 
-    socket.emit(BATTLE_EVENTS.CODE_CHANGE, {
-      roomId,
-      userId: me.userId,
-      code: value,
-      language: BATTLE_CONFIG.DEFAULT_LANGUAGE,
-    });
-  };
+      socket.emit(BATTLE_EVENTS.CODE_CHANGE, {
+        roomId,
+        userId: me.userId,
+        code: value,
+        language: BATTLE_CONFIG.DEFAULT_LANGUAGE,
+      });
+    },
+    [me, roomId, socket],
+  );
 
   const resetExecution = (type: 'TEST' | 'SUBMISSION', statusMessage: string) => {
     clearExecutionTimeout();
@@ -313,7 +316,7 @@ function CodeEditor() {
     setMode(null);
   };
 
-  const handleDryRun = async () => {
+  const handleDryRun = useCallback(async () => {
     // 이미 실행 중이면 무시
     if (executionRef.current) return;
     if (!socket?.connected || !socket.id) {
@@ -334,9 +337,9 @@ function CodeEditor() {
       resetOnError('TEST');
       console.error(error);
     }
-  };
+  }, [battleId, code, problemId, resetOnError, socket]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     // 이미 실행 중이면 무시
     if (executionRef.current) return;
     if (!socket?.connected || !socket.id) {
@@ -368,33 +371,36 @@ function CodeEditor() {
       resetOnError('SUBMISSION');
       console.error(error);
     }
-  };
+  }, [battleId, code, problemId, resetOnError, socket]);
 
   const progressLabel = progress ? `${progress.passed}/${progress.total}` : '0/0';
 
-  const handleEditorMount: OnMount = (editor) => {
-    const domNode = editor.getDomNode();
-    if (!domNode) return;
+  const handleEditorMount: OnMount = useCallback(
+    (editor) => {
+      const domNode = editor.getDomNode();
+      if (!domNode) return;
 
-    editorDomRef.current = domNode;
-    const handlePaste = (event: ClipboardEvent) => {
-      if (!isCheatDetectionEnabled) return;
-      event.preventDefault();
-      event.stopPropagation();
-      const now = Date.now();
-      if (now - lastPasteAtRef.current < 1000) return;
-      lastPasteAtRef.current = now;
-      setPasteToastMessage('외부 코드 붙여넣기는 금지되어 있습니다! 🚫');
+      editorDomRef.current = domNode;
+      const handlePaste = (event: ClipboardEvent) => {
+        if (!isCheatDetectionEnabled) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const now = Date.now();
+        if (now - lastPasteAtRef.current < 1000) return;
+        lastPasteAtRef.current = now;
+        setPasteToastMessage('외부 코드 붙여넣기는 금지되어 있습니다! 🚫');
 
-      const activeSocket = socket ?? connect();
-      if (activeSocket?.connected && isCheatDetectionEnabled) {
-        activeSocket.emit(SOCKET_EVENT.CHEAT_WARNING, { roomId, type: 'PASTE' });
-      }
-    };
+        const activeSocket = socket ?? connect();
+        if (activeSocket?.connected && isCheatDetectionEnabled) {
+          activeSocket.emit(SOCKET_EVENT.CHEAT_WARNING, { roomId, type: 'PASTE' });
+        }
+      };
 
-    pasteHandlerRef.current = handlePaste;
-    domNode.addEventListener('paste', handlePaste, true);
-  };
+      pasteHandlerRef.current = handlePaste;
+      domNode.addEventListener('paste', handlePaste, true);
+    },
+    [connect, isCheatDetectionEnabled, roomId, socket],
+  );
 
   return (
     <>
@@ -442,4 +448,4 @@ function CodeEditor() {
   );
 }
 
-export default CodeEditor;
+export default memo(CodeEditor);

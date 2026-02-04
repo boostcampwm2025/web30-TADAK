@@ -1,7 +1,7 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
 import type { FinalResultMessage } from '@shared/types/pubsub';
 import { Code } from 'lucide-react';
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, memo, Suspense, useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -181,4 +181,4 @@ function CodeSpectator() {
   );
 }
 
-export default CodeSpectator;
+export default memo(CodeSpectator);
