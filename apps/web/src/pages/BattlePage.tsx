@@ -1,21 +1,26 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
-import { SOCKET_ERROR, SOCKET_EVENT } from '@shared/constants/socket-event';
+import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { ChatMessage } from '@shared/types/chat';
-import { AlertCircle } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBlocker, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useShallow } from 'zustand/react/shallow';
 
 import BattleFinishOverlay from '@/components/Battle/BattleFinishOverlay';
 import BattleHeader from '@/components/Battle/BattleHeader';
+import LeaveBattleModal from '@/components/Battle/modals/LeaveBattleModal';
+import RoleModal from '@/components/Battle/modals/RoleModal';
+import BattleSystemToast from '@/components/Battle/overlays/BattleSystemToast';
 import BattlePlayer from '@/components/Battle/Player/BattlePlayer';
 import BattleSpectator from '@/components/Battle/Spectator/BattleSpectator';
-import Modal from '@/components/Common/Modal';
-import Toast from '@/components/Common/Toast';
+import { useBattleJoin } from '@/hooks/useBattleJoin';
+import { useRoleModalState } from '@/hooks/useRoleModalState';
 import { useTheme } from '@/hooks/useTheme';
 import { playCountdownSound } from '@/lib/sound';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
+import type { BattleSocketState } from '@/stores/battleSocketStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
+import { useBattleToastStore } from '@/stores/battleToastStore';
 import { useRoomStore } from '@/stores/roomStore';
 import { useUserStore } from '@/stores/userStore';
 
@@ -26,48 +31,82 @@ function BattlePage() {
   const isSpectator = searchParams.get('mode') === 'spectator';
   const desiredRole = isSpectator ? 'spectator' : 'player';
   const { theme, toggleTheme } = useTheme();
-  const resumeSession = useBattleSocketStore((state) => state.resumeSession);
-  const connect = useBattleSocketStore((state) => state.connect);
-  const joinRoom = useBattleSocketStore((state) => state.joinRoom);
-  const leaveRoom = useBattleSocketStore((state) => state.leaveRoom);
-  const leaveBattle = useBattleSocketStore((state) => state.leaveBattle);
-  const subscribeRoomAvailability = useBattleSocketStore(
-    (state) => state.subscribeRoomAvailability,
+  const {
+    resumeSession,
+    connect,
+    joinRoom,
+    leaveRoom,
+    leaveBattle,
+    subscribeRoomAvailability,
+    unsubscribeRoomAvailability,
+    requestRoomAvailability,
+    isLeavingBattle,
+  } = useBattleSocketStore(
+    useShallow((state: BattleSocketState) => ({
+      resumeSession: state.resumeSession,
+      connect: state.connect,
+      joinRoom: state.joinRoom,
+      leaveRoom: state.leaveRoom,
+      leaveBattle: state.leaveBattle,
+      subscribeRoomAvailability: state.subscribeRoomAvailability,
+      unsubscribeRoomAvailability: state.unsubscribeRoomAvailability,
+      requestRoomAvailability: state.requestRoomAvailability,
+      isLeavingBattle: state.isLeavingBattle,
+    })),
   );
-  const unsubscribeRoomAvailability = useBattleSocketStore(
-    (state) => state.unsubscribeRoomAvailability,
+  const { problem, clearProblem } = useBattleProblemStore(
+    useShallow((state) => ({
+      problem: state.problem,
+      clearProblem: state.clearProblem,
+    })),
   );
-  const requestRoomAvailability = useBattleSocketStore((state) => state.requestRoomAvailability);
-  const clearProblem = useBattleProblemStore((state) => state.clearProblem);
-  const clearRoom = useRoomStore((state) => state.clearRoom);
-  const problem = useBattleProblemStore((state) => state.problem);
-  const user = useUserStore((state) => state.user);
-  const me = useRoomStore((state) => state.me);
-  const resetProgresses = useBattleProgressStore((state) => state.resetProgresses);
+  const { me, clearRoom } = useRoomStore(
+    useShallow((state) => ({
+      me: state.me,
+      clearRoom: state.clearRoom,
+    })),
+  );
+  const { user } = useUserStore(
+    useShallow((state) => ({
+      user: state.user,
+    })),
+  );
+  const { resetProgresses } = useBattleProgressStore(
+    useShallow((state) => ({
+      resetProgresses: state.resetProgresses,
+    })),
+  );
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [roleModalReason, setRoleModalReason] = useState<
     'player-to-spectator' | 'spectator-to-player' | 'not-authorized-player' | null
   >(null);
-  const [systemToastMessage, setSystemToastMessage] = useState<string | null>(null);
+  const showSystemToast = useBattleToastStore((state) => state.show);
   const lastCheatSentAtRef = useRef(0);
 
   const [showFinishOverlay, setShowFinishOverlay] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
 
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? '1';
+  const socket = connect();
   const battleId = problem?.battleId;
-  const isLeavingBattle = useBattleSocketStore((state) => state.isLeavingBattle);
-  const effectiveRole =
-    me && me.roomId === roomId ? me.role : (desiredRole as 'player' | 'spectator');
-  const isSpectatorView = effectiveRole === 'spectator';
-  const isRoleMismatch = Boolean(me && me.roomId === roomId && me.role !== desiredRole);
-  const mismatchReason = isRoleMismatch
-    ? me?.role === 'player'
-      ? 'player-to-spectator'
-      : 'spectator-to-player'
-    : null;
-  const modalReason = roleModalReason ?? mismatchReason;
-  const shouldShowRoleModal = isRoleModalOpen || isRoleMismatch;
+  const effectiveRole = useMemo(
+    () => (me && me.roomId === roomId ? me.role : (desiredRole as 'player' | 'spectator')),
+    [me, roomId, desiredRole],
+  );
+  const isSpectatorView = useMemo(() => effectiveRole === 'spectator', [effectiveRole]);
+  const isCheatDetectionEnabled = import.meta.env.VITE_CHEAT_DETECTION_ENABLED !== 'false';
+  const { isRoleMismatch, modalReason, shouldShowRoleModal } = useRoleModalState({
+    me,
+    roomId,
+    desiredRole,
+    roleModalReason,
+    isRoleModalOpen,
+  });
+
+  const handleInvalidRole = useCallback(() => {
+    setRoleModalReason('not-authorized-player');
+    setIsRoleModalOpen(true);
+  }, []);
 
   // 뒤로가기 차단 (플레이어 + 배틀 중 + 나가기 미확인 시)
   const blocker = useBlocker(
@@ -81,7 +120,7 @@ function BattlePage() {
   const isLeaveModalOpen = blocker.state === 'blocked' || showLeaveModal;
 
   // 나가기 버튼 클릭 핸들러
-  const handleLeaveClick = () => {
+  const handleLeaveClick = useCallback(() => {
     if (isSpectator) {
       if (roomId) {
         leaveRoom(roomId);
@@ -90,7 +129,7 @@ function BattlePage() {
     } else {
       setShowLeaveModal(true);
     }
-  };
+  }, [isSpectator, leaveRoom, navigate, roomId]);
 
   // 모달에서 나가기 확인
   const handleConfirmLeave = () => {
@@ -144,7 +183,6 @@ function BattlePage() {
 
   // 배틀 종료 이벤트 리스너 분리
   useEffect(() => {
-    const socket = connect();
     const handleBattleEnded = (data: { battleId: string }) => {
       // 현재 배틀의 ID가 아닌 경우 무시 (다른 방의 종료 이벤트가 전역으로 퍼지는 문제 대비)
       const currentBattleId = useBattleProblemStore.getState().problem?.battleId;
@@ -193,7 +231,7 @@ function BattlePage() {
     return () => {
       socket.off(BATTLE_EVENTS.BATTLE_ENDED, handleBattleEnded);
     };
-  }, [connect, navigate, resetProgresses, clearProblem, clearRoom, roomId]);
+  }, [navigate, resetProgresses, clearProblem, clearRoom, roomId, socket]);
 
   useEffect(() => {
     subscribeRoomAvailability(roomId);
@@ -204,10 +242,10 @@ function BattlePage() {
   }, [requestRoomAvailability, roomId, subscribeRoomAvailability, unsubscribeRoomAvailability]);
 
   useEffect(() => {
+    if (!isCheatDetectionEnabled) return;
     if (effectiveRole !== 'player') return;
     if (!roomId) return;
 
-    const socket = connect();
     const emitCheatWarning = (type: 'FOCUS_OUT' | 'PASTE') => {
       if (!socket?.connected) return;
       const now = Date.now();
@@ -233,104 +271,35 @@ function BattlePage() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [connect, effectiveRole, roomId]);
+  }, [effectiveRole, roomId, isCheatDetectionEnabled, socket]);
 
   useEffect(() => {
-    const socket = connect();
     const handleSystemMessage = (message: ChatMessage) => {
       if (effectiveRole !== 'player') return;
       if (message.type !== 'SYSTEM') return;
       if (!message.message.includes('부정행위 경고') && !message.message.includes('패배 처리')) {
         return;
       }
-      setSystemToastMessage(message.message);
+      showSystemToast(message.message);
     };
 
     socket.on(SOCKET_EVENT.RECEIVE_CHAT, handleSystemMessage);
     return () => {
       socket.off(SOCKET_EVENT.RECEIVE_CHAT, handleSystemMessage);
     };
-  }, [connect, effectiveRole]);
+  }, [effectiveRole, socket, showSystemToast]);
 
-  useEffect(() => {
-    if (isRoleModalOpen || isRoleMismatch) return;
-    if (me && me.roomId === roomId) {
-      return;
-    }
-    const attempt = async () => {
-      await resumeSession({ roomId, roleHint: desiredRole }).catch(() => {});
-      if (!useRoomStore.getState().me) {
-        try {
-          await joinRoom({
-            roomId,
-            requestedRole: desiredRole,
-            userId: user?.id,
-            username: user?.username,
-            avatarUrl: user?.avatarUrl,
-          });
-        } catch (error) {
-          const code = (error as Error & { code?: string }).code;
-          if (code === SOCKET_ERROR.INVALID_ROLE) {
-            setRoleModalReason('not-authorized-player');
-            setIsRoleModalOpen(true);
-          }
-        }
-      }
-    };
-    attempt();
-  }, [
+  useBattleJoin({
+    roomId,
+    desiredRole,
     isRoleModalOpen,
     isRoleMismatch,
-    me,
+    user,
+    socket,
     resumeSession,
     joinRoom,
-    roomId,
-    desiredRole,
-    user?.avatarUrl,
-    user?.id,
-    user?.username,
-  ]);
-
-  useEffect(() => {
-    const socket = connect();
-    const handleReconnect = () => {
-      if (isRoleMismatch) return;
-      // 소켓 재연결 시 저장된 세션 기준으로 다시 JOIN_ROOM 시도
-      resumeSession({ roleHint: desiredRole })
-        .catch(() => {})
-        .then(() => {
-          if (!useRoomStore.getState().me) {
-            joinRoom({
-              roomId,
-              requestedRole: desiredRole,
-              userId: user?.id,
-              username: user?.username,
-              avatarUrl: user?.avatarUrl,
-            }).catch((error) => {
-              const code = (error as Error & { code?: string }).code;
-              if (code === SOCKET_ERROR.INVALID_ROLE) {
-                setRoleModalReason('not-authorized-player');
-                setIsRoleModalOpen(true);
-              }
-            });
-          }
-        });
-    };
-    socket.on('connect', handleReconnect);
-    return () => {
-      socket.off('connect', handleReconnect);
-    };
-  }, [
-    connect,
-    resumeSession,
-    joinRoom,
-    roomId,
-    desiredRole,
-    isRoleMismatch,
-    user?.avatarUrl,
-    user?.id,
-    user?.username,
-  ]);
+    onInvalidRole: handleInvalidRole,
+  });
 
   const handleRoleDenied = () => {
     setIsRoleModalOpen(false);
@@ -357,34 +326,6 @@ function BattlePage() {
     navigate('/', { replace: true });
   };
 
-  const roleModalTitle =
-    modalReason === 'player-to-spectator'
-      ? '참가자는 관전자로 전환할 수 없습니다'
-      : modalReason === 'spectator-to-player'
-        ? '관전자는 참가자로 전환할 수 없습니다'
-        : '참가자 전용 방입니다';
-
-  const roleModalDescription =
-    modalReason === 'player-to-spectator' ? (
-      <>
-        참가자 화면으로 이동합니다.
-        <br />
-        URL을 변경해도 역할은 바뀌지 않습니다.
-      </>
-    ) : modalReason === 'spectator-to-player' ? (
-      <>
-        관전 화면으로 이동합니다.
-        <br />
-        참가자 권한이 있어야 입장할 수 있습니다.
-      </>
-    ) : (
-      <>
-        해당 방의 참가자가 아닙니다.
-        <br />
-        메인 페이지로 이동합니다.
-      </>
-    );
-
   return (
     <div className="min-h-svh overflow-auto xl:h-screen xl:overflow-hidden">
       <div className="flex min-h-svh flex-col gap-3 px-3 py-3 xl:h-full xl:w-full xl:gap-4 xl:px-6 xl:py-4">
@@ -393,50 +334,15 @@ function BattlePage() {
           {isSpectatorView ? <BattleSpectator /> : <BattlePlayer />}
         </div>
       </div>
-      <Modal
-        isOpen={shouldShowRoleModal}
-        onClose={handleRoleDenied}
-        icon={AlertCircle}
-        iconColor="text-error-01"
-        iconBgColor="bg-error-01/20"
-        title={roleModalTitle}
-        description={roleModalDescription}
-        buttons={[
-          {
-            label: '확인',
-            onClick: handleRoleDenied,
-            variant: 'black',
-          },
-        ]}
-        closeOnBackdrop={false}
-      />
+      <RoleModal isOpen={shouldShowRoleModal} reason={modalReason} onConfirm={handleRoleDenied} />
       <BattleFinishOverlay isVisible={showFinishOverlay} />
 
-      <Modal
+      <LeaveBattleModal
         isOpen={isLeaveModalOpen}
-        onClose={handleCancelLeave}
-        icon={AlertCircle}
-        iconColor="text-error-01"
-        iconBgColor="bg-error-01/20"
-        title="대결에서 나가시겠습니까?"
-        description="진행 중인 문제 풀이가 모두 사라집니다."
-        buttons={[
-          {
-            label: '취소',
-            onClick: handleCancelLeave,
-            variant: 'muted',
-          },
-          {
-            label: '나가기',
-            onClick: handleConfirmLeave,
-            variant: 'black',
-          },
-        ]}
-        closeOnBackdrop={false}
+        onCancel={handleCancelLeave}
+        onConfirm={handleConfirmLeave}
       />
-      {systemToastMessage && (
-        <Toast message={systemToastMessage} onClose={() => setSystemToastMessage(null)} />
-      )}
+      <BattleSystemToast />
     </div>
   );
 }

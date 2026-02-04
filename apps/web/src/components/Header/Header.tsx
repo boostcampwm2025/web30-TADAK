@@ -1,5 +1,5 @@
 import { LogOut, Moon, Settings, Sun, User as UserIcon, Volume2, VolumeX } from 'lucide-react';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { memo, type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { logout } from '@/apis/auth';
@@ -198,4 +198,4 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
   );
 }
 
-export default Header;
+export default memo(Header);

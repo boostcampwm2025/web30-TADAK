@@ -1,21 +1,17 @@
 import { Check } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import TierBadge from '@/components/Common/TierBadge';
-import { playBattleCountdownSound } from '@/lib/sound';
 import { useMatchingStore } from '@/stores/matchingStore';
 import { useUserStore } from '@/stores/userStore';
 
-export default function MatchingSuccess() {
-  const navigate = useNavigate();
-  const [countdown, setCountdown] = useState(5);
-  const hasPlayedReadyRef = useRef(false);
-  const hasPlayedStartRef = useRef(false);
+import MatchingCountdown from './MatchingCountdown';
 
+function MatchingSuccess() {
+  const navigate = useNavigate();
   const matchResult = useMatchingStore((state) => state.matchResult);
   const user = useUserStore((state) => state.user);
-  const setAllowNavigation = useMatchingStore((s) => s.setAllowNavigation);
 
   // 매칭 성공 시 BattlePage와 에디터 prefetch
   useEffect(() => {
@@ -23,34 +19,15 @@ export default function MatchingSuccess() {
     void import('@/components/Common/BaseCodeEditor');
   }, []);
 
-  // 효과음 재생 로직
-  useEffect(() => {
-    if (countdown === 5 && !hasPlayedReadyRef.current) {
-      hasPlayedReadyRef.current = true;
-      playBattleCountdownSound('tick');
-    }
-    if (countdown === 0 && !hasPlayedStartRef.current) {
-      hasPlayedStartRef.current = true;
-      playBattleCountdownSound('end');
-    }
-  }, [countdown]);
+  const handleCountdownComplete = useCallback(() => {
+    const { setAllowNavigation } = useMatchingStore.getState();
+    const currentMatchResult = useMatchingStore.getState().matchResult;
 
-  // 카운트다운 타이머 로직
-  useEffect(() => {
-    if (countdown === 0) {
-      if (matchResult?.roomId) {
-        setAllowNavigation(true);
-        navigate(`/room/${matchResult.roomId}`, { replace: true });
-      }
-      return;
+    if (currentMatchResult?.roomId) {
+      setAllowNavigation(true);
+      navigate(`/room/${currentMatchResult.roomId}`, { replace: true });
     }
-
-    const timer = setTimeout(() => {
-      setCountdown((prev) => prev - 1);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [countdown, matchResult, navigate, setAllowNavigation]);
+  }, [navigate]);
 
   if (!matchResult || !user) {
     return null;
@@ -111,13 +88,9 @@ export default function MatchingSuccess() {
       </div>
 
       {/* 카운트다운 */}
-      <div className="text-center">
-        {countdown > 0 ? (
-          <div className="text-9xl font-black text-green-05">{countdown}</div>
-        ) : (
-          <div className="text-9xl font-black italic text-green-05 animate-bounce">FIGHT!</div>
-        )}
-      </div>
+      <MatchingCountdown onComplete={handleCountdownComplete} />
     </div>
   );
 }
+
+export default memo(MatchingSuccess);
