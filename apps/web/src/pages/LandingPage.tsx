@@ -85,6 +85,7 @@ const LandingPage = () => {
               className="flex flex-col sm:flex-row gap-4 justify-center items-center"
             >
               <button
+                type="button"
                 onClick={() =>
                   document.getElementById('battle-start')?.scrollIntoView({ behavior: 'smooth' })
                 }
