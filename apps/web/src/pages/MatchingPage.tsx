@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useBlocker, useNavigate } from 'react-router-dom';
 
 import Modal from '@/components/Common/Modal';
@@ -13,7 +13,6 @@ import { useUserStore } from '@/stores/userStore';
 
 function MatchingPage() {
   const navigate = useNavigate();
-  const [waitTime, setWaitTime] = useState(0);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const isMatchingStartedRef = useRef(false);
   const user = useUserStore((state) => state.user);
@@ -29,6 +28,8 @@ function MatchingPage() {
 
   // 토큰 존재 여부 확인
   const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('accessToken');
+
+  const cancelButton = useMemo(() => <MatchingCancelButton />, []);
 
   // 페이지 진입 시 allowNavigation 초기화
   useEffect(() => {
@@ -74,15 +75,6 @@ function MatchingPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasToken, user?.id, isLoading]);
-
-  // 타이머
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setWaitTime((prev) => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   // 페이지 이탈(뒤로가기 등) 시 cleanup
   useEffect(() => {
@@ -192,9 +184,9 @@ function MatchingPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header rightContent={<MatchingCancelButton />} />
+      <Header rightContent={cancelButton} />
       <div className="flex flex-1 items-center justify-center">
-        <MatchingWait waitTime={waitTime} />
+        <MatchingWait />
       </div>
       {toastMessage && (
         <Toast

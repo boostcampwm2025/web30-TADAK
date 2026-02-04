@@ -19,7 +19,8 @@ function CodeSpectator() {
   const { roomId: roomIdParam } = useParams<{ roomId?: string }>();
   const [searchParams] = useSearchParams();
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? 'room-unknown';
-  const { players, codes } = useRoomStore((state) => state);
+  const players = useRoomStore((state) => state.players);
+  const codes = useRoomStore((state) => state.codes);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const socket = useBattleSocketStore((state) => state.socket);

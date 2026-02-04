@@ -9,6 +9,12 @@ export default defineConfig(async ({ mode }) => {
 
   const plugins: PluginOption[] = [react()];
 
+  // 개발 환경에서만 react-scan 활성화 (VITE_REACT_SCAN=false 로 비활성화 가능)
+  if (mode === 'development' && process.env.VITE_REACT_SCAN !== 'false') {
+    const { default: reactScan } = await import('@react-scan/vite-plugin-react-scan');
+    plugins.push(reactScan());
+  }
+
   // analyze 모드일 때만 visualizer 로드
   if (isAnalyze) {
     const { visualizer } = await import('rollup-plugin-visualizer');

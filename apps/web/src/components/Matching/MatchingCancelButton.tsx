@@ -1,17 +1,19 @@
+import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useMatchingStore } from '@/stores/matchingStore';
 import { useUserStore } from '@/stores/userStore';
 
-export function MatchingCancelButton() {
+function MatchingCancelButton() {
   const navigate = useNavigate();
-  const { cancelMatching, unregisterMatchingListeners } = useMatchingStore();
-  const setAllowNavigation = useMatchingStore((s) => s.setAllowNavigation);
-  const user = useUserStore((state) => state.user);
-  const socket = useBattleSocketStore((state) => state.socket);
 
   const handleCancel = async () => {
+    const { cancelMatching, unregisterMatchingListeners, setAllowNavigation } =
+      useMatchingStore.getState();
+    const user = useUserStore.getState().user;
+    const socket = useBattleSocketStore.getState().socket;
+
     if (!user?.id || !socket) return;
 
     try {
@@ -33,3 +35,6 @@ export function MatchingCancelButton() {
     </button>
   );
 }
+
+const MatchingCancelButtonMemo = memo(MatchingCancelButton);
+export { MatchingCancelButtonMemo as MatchingCancelButton };
