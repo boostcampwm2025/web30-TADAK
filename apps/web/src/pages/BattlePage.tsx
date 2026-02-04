@@ -120,7 +120,7 @@ function BattlePage() {
   const isLeaveModalOpen = blocker.state === 'blocked' || showLeaveModal;
 
   // 나가기 버튼 클릭 핸들러
-  const handleLeaveClick = () => {
+  const handleLeaveClick = useCallback(() => {
     if (isSpectator) {
       if (roomId) {
         leaveRoom(roomId);
@@ -129,7 +129,7 @@ function BattlePage() {
     } else {
       setShowLeaveModal(true);
     }
-  };
+  }, [isSpectator, leaveRoom, navigate, roomId]);
 
   // 모달에서 나가기 확인
   const handleConfirmLeave = () => {
