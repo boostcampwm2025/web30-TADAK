@@ -19,6 +19,43 @@ import { useRoomStore } from '@/stores/roomStore';
 
 const LazyBaseCodeEditor = lazy(() => import('@/components/Common/BaseCodeEditor'));
 
+type EditorPaneProps = {
+  initialValue: string;
+  onCodeChange: (value: string) => void;
+  onMount: OnMount;
+};
+
+const EditorPane = memo(function EditorPane({
+  initialValue,
+  onCodeChange,
+  onMount,
+}: EditorPaneProps) {
+  const [localCode, setLocalCode] = useState(initialValue);
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-full items-center justify-center">에디터를 불러오는 중...</div>
+      }
+    >
+      <LazyBaseCodeEditor
+        value={localCode}
+        onChange={(nextValue) => {
+          const normalized = nextValue || '';
+          setLocalCode(normalized);
+          onCodeChange(normalized);
+        }}
+        onMount={onMount}
+        options={{
+          quickSuggestions: false, // 자동 완성 비활성화
+          suggestOnTriggerCharacters: false, // 트리거 문자 입력 시 자동 완성 비활성화
+          snippetSuggestions: 'none', // 스니펫 비활성화
+          wordBasedSuggestions: 'off', // 단어 기반 제안 비활성화
+        }}
+      />
+    </Suspense>
+  );
+});
+
 type SubmissionProgress = TestcaseUpdateMessage['progress'];
 type TestcaseResult = TestcaseUpdateMessage['testcase'] & {
   results?: TestcaseUpdateMessage['results'];
@@ -66,7 +103,7 @@ function CodeEditor() {
     })),
   );
 
-  const [code, setCode] = useState(DEFAULT_CODE_TEMPLATE);
+  const [editorSeed, setEditorSeed] = useState(DEFAULT_CODE_TEMPLATE);
   const [statusText, setStatusText] = useState('대기 중');
   const [progress, setProgress] = useState<SubmissionProgress | null>(null);
   const [isTesting, setIsTesting] = useState(false);
@@ -151,7 +188,7 @@ function CodeEditor() {
       if (hasEditedRef.current || hasSyncedRef.current) return;
       const incomingCode = typeof payload.code === 'string' ? payload.code : '';
       if (incomingCode.trim().length > 0) {
-        setCode(incomingCode);
+        setEditorSeed(incomingCode);
       }
       hasSyncedRef.current = true;
     };
@@ -251,10 +288,9 @@ function CodeEditor() {
     };
   }, [me?.userId, roomId, socket, upsertProgress, syncProgress]);
 
-  const handleChange = useCallback(
+  const handleCodeChange = useCallback(
     (value: string) => {
       hasEditedRef.current = true;
-      setCode(value);
       if (!socket?.connected) return;
       if (!me?.userId) return;
 
@@ -331,13 +367,16 @@ function CodeEditor() {
     initSubmission('TEST');
 
     try {
-      await createDryRun({ problemId, code, language: BATTLE_CONFIG.DEFAULT_LANGUAGE }, socket.id);
+      await createDryRun(
+        { problemId, code: editorSeed, language: BATTLE_CONFIG.DEFAULT_LANGUAGE },
+        socket.id,
+      );
       setStatusText('테스트 대기 중');
     } catch (error) {
       resetOnError('TEST');
       console.error(error);
     }
-  }, [battleId, code, problemId, resetOnError, socket]);
+  }, [battleId, editorSeed, problemId, resetOnError, socket]);
 
   const handleSubmit = useCallback(async () => {
     // 이미 실행 중이면 무시
@@ -357,7 +396,7 @@ function CodeEditor() {
       const response = await createSubmission(
         {
           problemId,
-          code,
+          code: editorSeed,
           language: BATTLE_CONFIG.DEFAULT_LANGUAGE,
           ...(battleId ? { battleId } : {}),
         },
@@ -371,7 +410,7 @@ function CodeEditor() {
       resetOnError('SUBMISSION');
       console.error(error);
     }
-  }, [battleId, code, problemId, resetOnError, socket]);
+  }, [battleId, editorSeed, problemId, resetOnError, socket]);
 
   const progressLabel = useMemo(
     () => (progress ? `${progress.passed}/${progress.total}` : '0/0'),
@@ -416,23 +455,12 @@ function CodeEditor() {
           </div>
         </div>
         <div className="min-h-[320px] h-[40vh] bg-(bg-layer-2) font-mono text-sm text-base-primary xl:h-auto xl:flex-1">
-          <Suspense
-            fallback={
-              <div className="flex h-full items-center justify-center">에디터를 불러오는 중...</div>
-            }
-          >
-            <LazyBaseCodeEditor
-              value={code}
-              onChange={(value) => handleChange(value || '')}
-              onMount={handleEditorMount}
-              options={{
-                quickSuggestions: false, // 자동 완성 비활성화
-                suggestOnTriggerCharacters: false, // 트리거 문자 입력 시 자동 완성 비활성화
-                snippetSuggestions: 'none', // 스니펫 비활성화
-                wordBasedSuggestions: 'off', // 단어 기반 제안 비활성화
-              }}
-            />
-          </Suspense>
+          <EditorPane
+            key={editorSeed}
+            initialValue={editorSeed}
+            onCodeChange={handleCodeChange}
+            onMount={handleEditorMount}
+          />
         </div>
         <EditorFooter
           statusText={statusText}
