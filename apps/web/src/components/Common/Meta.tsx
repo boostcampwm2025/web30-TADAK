@@ -43,11 +43,11 @@ const Meta = ({
       <meta property="og:image:height" content="630" />
 
       {/* Twitter */}
-      <meta property="twitter:card" content="summary_large_image" />
-      <meta property="twitter:url" content={ogUrl} />
-      <meta property="twitter:title" content={ogTitle || pageTitle} />
-      <meta property="twitter:description" content={ogDescription || description} />
-      <meta property="twitter:image" content={finalOgImage} />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:url" content={ogUrl} />
+      <meta name="twitter:title" content={ogTitle || pageTitle} />
+      <meta name="twitter:description" content={ogDescription || description} />
+      <meta name="twitter:image" content={finalOgImage} />
 
       {/* Theme Color (Slack sidebar, Mobile browser) */}
       <meta name="theme-color" content="#00e074" />
