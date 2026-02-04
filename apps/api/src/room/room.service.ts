@@ -189,9 +189,20 @@ export class RoomService {
     await pipeline.exec();
   }
 
+  private async scanKeys(pattern: string): Promise<string[]> {
+    const keys: string[] = [];
+    const stream = this.redis.scanStream({ match: pattern, count: 100 });
+
+    return new Promise((resolve, reject) => {
+      stream.on('data', (batch: string[]) => keys.push(...batch));
+      stream.on('end', () => resolve(keys));
+      stream.on('error', reject);
+    });
+  }
+
   async listRooms(): Promise<Room[]> {
-    // 방 정보를 담고 있는 모든 키 조회
-    const keys = await this.redis.keys(RedisKeys.room('*'));
+    // 방 정보를 담고 있는 모든 키 조회 (SCAN 사용으로 비블로킹)
+    const keys = await this.scanKeys(RedisKeys.room('*'));
     if (!keys.length) return [];
 
     // 파이프라인으로 한 번에 조회 후 파싱
