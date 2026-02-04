@@ -5,6 +5,7 @@ import type { FinalResultMessage, TestcaseUpdateMessage } from '@shared/types/pu
 import { Code } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import { useShallow } from 'zustand/react/shallow';
 
 import { createDryRun, createSubmission } from '@/apis/submission';
 import EditorFooter from '@/components/Battle/Player/EditorFooter';
@@ -44,14 +45,26 @@ function CodeEditor() {
   const { roomId: roomIdParam } = useParams<{ roomId?: string }>();
   const [searchParams] = useSearchParams();
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? 'room-unknown';
-  const me = useRoomStore((state: { me?: Player }) => state.me);
-  const setMe = useRoomStore((state: { setMe: (me: Player) => void }) => state.setMe);
+  const { me, setMe } = useRoomStore(
+    useShallow((state: { me?: Player; setMe: (me: Player) => void }) => ({
+      me: state.me,
+      setMe: state.setMe,
+    })),
+  );
   const isCheatDetectionEnabled = import.meta.env.VITE_CHEAT_DETECTION_ENABLED !== 'false';
 
-  const socket = useBattleSocketStore((state) => state.socket);
-  const connect = useBattleSocketStore((state) => state.connect);
-  const upsertProgress = useBattleProgressStore((state) => state.upsertProgress);
-  const syncProgress = useBattleProgressStore((state) => state.syncProgress);
+  const { socket, connect } = useBattleSocketStore(
+    useShallow((state) => ({
+      socket: state.socket,
+      connect: state.connect,
+    })),
+  );
+  const { upsertProgress, syncProgress } = useBattleProgressStore(
+    useShallow((state) => ({
+      upsertProgress: state.upsertProgress,
+      syncProgress: state.syncProgress,
+    })),
+  );
 
   const [code, setCode] = useState(DEFAULT_CODE_TEMPLATE);
   const [statusText, setStatusText] = useState('대기 중');
@@ -69,8 +82,12 @@ function CodeEditor() {
   const editorDomRef = useRef<HTMLElement | null>(null);
   const pasteHandlerRef = useRef<((event: ClipboardEvent) => void) | null>(null);
   const lastPasteAtRef = useRef(0);
-  const problemId = useBattleProblemStore((state) => state.problem?.id ?? null);
-  const battleId = useBattleProblemStore((state) => state.problem?.battleId ?? null);
+  const { problemId, battleId } = useBattleProblemStore(
+    useShallow((state) => ({
+      problemId: state.problem?.id ?? null,
+      battleId: state.problem?.battleId ?? null,
+    })),
+  );
 
   const clearExecutionTimeout = () => {
     if (timeoutRef.current) {

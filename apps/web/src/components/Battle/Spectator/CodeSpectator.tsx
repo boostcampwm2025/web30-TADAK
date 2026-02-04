@@ -3,6 +3,7 @@ import type { FinalResultMessage } from '@shared/types/pubsub';
 import { Code } from 'lucide-react';
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import { useShallow } from 'zustand/react/shallow';
 
 import ProgressBarSpectator from '@/components/Battle/Spectator/ProgressBarSpectator';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
@@ -19,14 +20,26 @@ function CodeSpectator() {
   const { roomId: roomIdParam } = useParams<{ roomId?: string }>();
   const [searchParams] = useSearchParams();
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? 'room-unknown';
-  const players = useRoomStore((state) => state.players);
-  const codes = useRoomStore((state) => state.codes);
+  const { players, codes } = useRoomStore(
+    useShallow((state) => ({
+      players: state.players,
+      codes: state.codes,
+    })),
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const socket = useBattleSocketStore((state) => state.socket);
-  const connect = useBattleSocketStore((state) => state.connect);
-  const progresses = useBattleProgressStore((state) => state.progresses);
-  const upsertProgress = useBattleProgressStore((state) => state.upsertProgress);
+  const { socket, connect } = useBattleSocketStore(
+    useShallow((state) => ({
+      socket: state.socket,
+      connect: state.connect,
+    })),
+  );
+  const { progresses, upsertProgress } = useBattleProgressStore(
+    useShallow((state) => ({
+      progresses: state.progresses,
+      upsertProgress: state.upsertProgress,
+    })),
+  );
 
   useEffect(() => {
     const client = socket ?? connect();
