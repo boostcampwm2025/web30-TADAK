@@ -1,10 +1,12 @@
+import { memo } from 'react';
+
 import { useMatchingStore } from '@/stores/matchingStore';
 
 import LoadingSpinner from './LoadingSpinner';
 import MatchingStats from './MatchingStats';
 import MatchingTimer from './MatchingTimer';
 
-export default function MatchingWait() {
+function MatchingWait() {
   const timeoutMessage = useMatchingStore((state) => state.timeoutMessage);
   return (
     <div className="max-w-4xl mx-auto select-none">
@@ -39,3 +41,5 @@ export default function MatchingWait() {
     </div>
   );
 }
+
+export default memo(MatchingWait);

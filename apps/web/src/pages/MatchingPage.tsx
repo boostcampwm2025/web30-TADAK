@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useBlocker, useNavigate } from 'react-router-dom';
 
 import Modal from '@/components/Common/Modal';
@@ -28,6 +28,8 @@ function MatchingPage() {
 
   // 토큰 존재 여부 확인
   const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('accessToken');
+
+  const cancelButton = useMemo(() => <MatchingCancelButton />, []);
 
   // 페이지 진입 시 allowNavigation 초기화
   useEffect(() => {
@@ -182,7 +184,7 @@ function MatchingPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header rightContent={<MatchingCancelButton />} />
+      <Header rightContent={cancelButton} />
       <div className="flex flex-1 items-center justify-center">
         <MatchingWait />
       </div>
