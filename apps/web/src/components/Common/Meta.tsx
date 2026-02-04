@@ -17,10 +17,12 @@ const Meta = ({
   keywords = '알고리즘, 배틀 게임, 코딩 배틀, 프로그래밍, 백준, 리트코드, 개발자, 타닥, 코딩 테스트, 코딩 대결, 코테',
   ogTitle,
   ogDescription,
-  ogImage = '/logo.webp', // 기본 로고 이미지 경로 (추후 절대 경로 권장)
+  ogImage,
   ogUrl = window.location.href,
   canonical,
 }: MetaProps) => {
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const finalOgImage = ogImage || `${origin}/logo.webp`;
   const pageTitle = title === 'TADAK - 실시간 알고리즘 코딩 배틀' ? title : `${title} | TADAK`;
 
   return (
@@ -36,7 +38,7 @@ const Meta = ({
       <meta property="og:locale" content="ko_KR" />
       <meta property="og:title" content={ogTitle || pageTitle} />
       <meta property="og:description" content={ogDescription || description} />
-      <meta property="og:image" content={ogImage} />
+      <meta property="og:image" content={finalOgImage} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
 
@@ -45,7 +47,7 @@ const Meta = ({
       <meta property="twitter:url" content={ogUrl} />
       <meta property="twitter:title" content={ogTitle || pageTitle} />
       <meta property="twitter:description" content={ogDescription || description} />
-      <meta property="twitter:image" content={ogImage} />
+      <meta property="twitter:image" content={finalOgImage} />
 
       {/* Theme Color (Slack sidebar, Mobile browser) */}
       <meta name="theme-color" content="#00e074" />
