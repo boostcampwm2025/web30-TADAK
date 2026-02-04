@@ -73,8 +73,11 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
             isLoggedIn && user ? (
               <div className="relative" ref={menuRef}>
                 <button
+                  type="button"
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                   className="cursor-pointer flex items-center transition hover:opacity-80 active:scale-95"
+                  aria-label="사용자 메뉴 열기"
+                  aria-expanded={isMenuOpen}
                 >
                   <UserProfile
                     username={user.username}
@@ -85,22 +88,29 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
                 </button>
 
                 {isMenuOpen && (
-                  <div className="absolute mt-3 w-48 origin-top-right rounded-24 bg-bg-layer-2 p-2 shadow-2xl focus:outline-none transition-all duration-200 ease-out z-50">
+                  <div
+                    className="absolute mt-3 w-48 origin-top-right rounded-24 bg-bg-layer-2 p-2 shadow-2xl focus:outline-none transition-all duration-200 ease-out z-50"
+                    role="menu"
+                    aria-orientation="vertical"
+                  >
                     <div className="flex flex-col gap-1">
                       <Link
                         to="/mypage"
                         onClick={() => setIsMenuOpen(false)}
                         className="flex items-center gap-3 rounded-24 px-4 py-2 text-sm text-ink transition hover:bg-base-muted"
+                        role="menuitem"
                       >
-                        <UserIcon size={18} className="text-slate-400" />
+                        <UserIcon size={18} className="text-slate-400" aria-hidden="true" />
                         마이페이지
                       </Link>
                       <div className="my-1 h-[1px] bg-border-soft" />
                       <button
+                        type="button"
                         onClick={handleLogout}
                         className="cursor-pointer flex items-center gap-3 rounded-24 px-4 py-2 text-sm text-red-500 transition hover:bg-red-50"
+                        role="menuitem"
                       >
-                        <LogOut size={18} />
+                        <LogOut size={18} aria-hidden="true" />
                         로그아웃
                       </button>
                     </div>
@@ -118,27 +128,35 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
           ) : null}
           <div className="relative" ref={settingRef}>
             <button
+              type="button"
               onClick={() => setIsSettingOpen(!isSettingOpen)}
               className="cursor-pointer rounded-full bg-base-muted p-2 text-ink shadow-sm transition hover:scale-110 active:scale-95"
+              aria-label="설정 메뉴 열기"
+              aria-expanded={isSettingOpen}
             >
-              <Settings size={24} className="text-slate-400" />
+              <Settings size={24} className="text-slate-400" aria-hidden="true" />
             </button>
             {isSettingOpen && (
-              <div className="absolute right-0 mt-3 w-48 origin-top-right rounded-24 bg-bg-layer-2 p-2 shadow-2xl focus:outline-none transition-all duration-200 ease-out z-[100]">
+              <div
+                className="absolute right-0 mt-3 w-48 origin-top-right rounded-24 bg-bg-layer-2 p-2 shadow-2xl focus:outline-none transition-all duration-200 ease-out z-[100]"
+                role="menu"
+                aria-orientation="vertical"
+              >
                 <div className="flex flex-col gap-1">
                   <button
+                    type="button"
                     onClick={toggleTheme}
                     className="cursor-pointer flex items-center gap-3 rounded-24 px-4 py-2 text-sm text-ink transition hover:bg-base-muted"
-                    aria-label="Toggle theme"
+                    role="menuitem"
                   >
                     {theme === 'dark' ? (
                       <>
-                        <Sun size={18} />
+                        <Sun size={18} aria-hidden="true" />
                         <span>라이트 모드</span>
                       </>
                     ) : (
                       <>
-                        <Moon size={18} />
+                        <Moon size={18} aria-hidden="true" />
                         <span>다크 모드</span>
                       </>
                     )}
@@ -149,11 +167,16 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
                   </div>
                   <div className="flex items-center gap-3 px-4 py-2">
                     <button
+                      type="button"
                       onClick={toggleMute}
                       className="cursor-pointer text-ink transition hover:text-brand"
-                      aria-label={isMuted ? 'Unmute' : 'Mute'}
+                      aria-label={isMuted ? '효과음 켜기' : '효과음 끄기'}
                     >
-                      {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                      {isMuted ? (
+                        <VolumeX size={18} aria-hidden="true" />
+                      ) : (
+                        <Volume2 size={18} aria-hidden="true" />
+                      )}
                     </button>
                     <input
                       type="range"
@@ -165,6 +188,7 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
                       onMouseUp={playPreviewSound}
                       onTouchEnd={playPreviewSound}
                       className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-border-soft accent-brand"
+                      aria-label="효과음 볼륨"
                     />
                   </div>
                   <div className="px-4 pt-1 text-[11px] font-semibold text-base-secondary">
@@ -172,11 +196,16 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
                   </div>
                   <div className="flex items-center gap-3 px-4 py-2">
                     <button
+                      type="button"
                       onClick={toggleBgmMute}
                       className="cursor-pointer text-ink transition hover:text-brand"
-                      aria-label={isBgmSilent ? 'Unmute background music' : 'Mute background music'}
+                      aria-label={isBgmSilent ? '배경음악 켜기' : '배경음악 끄기'}
                     >
-                      {isBgmSilent ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                      {isBgmSilent ? (
+                        <VolumeX size={18} aria-hidden="true" />
+                      ) : (
+                        <Volume2 size={18} aria-hidden="true" />
+                      )}
                     </button>
                     <input
                       type="range"
@@ -186,6 +215,7 @@ function Header({ hideUserMenu = false, rightContent }: HeaderProps) {
                       value={bgmVolume}
                       onChange={(e) => setBgmVolume(parseFloat(e.target.value))}
                       className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-border-soft accent-brand"
+                      aria-label="배경음악 볼륨"
                     />
                   </div>
                 </div>
