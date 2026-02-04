@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { BattleGateway } from '../battle/battle.gateway';
 import { BattleService } from '../battle/battle.service';
 import { REDIS_CLIENT } from '../redis/redis.module';
+import { scanKeys } from '../redis/redis.util';
 import { RedisKeys } from '../redis/redis-key.constant';
 import { Submission } from '../submission/submission.entity';
 import { PubsubGateway } from './pubsub.gateway';
@@ -250,23 +251,12 @@ export class PubsubSubscriberService implements OnModuleInit {
     return null;
   }
 
-  private async scanKeys(pattern: string): Promise<string[]> {
-    const keys: string[] = [];
-    const stream = this.redisClient.scanStream({ match: pattern, count: 100 });
-
-    return new Promise((resolve, reject) => {
-      stream.on('data', (batch: string[]) => keys.push(...batch));
-      stream.on('end', () => resolve(keys));
-      stream.on('error', reject);
-    });
-  }
-
   // socketId로 유저 정보 조회
   private async getUserInfoBySocketId(
     socketId: string,
   ): Promise<{ roomId: string; userId: string; username: string } | null> {
     // Redis에서 socketId로 userId 찾기 (SCAN으로 비블로킹 조회)
-    const keys = await this.scanKeys(RedisKeys.matchingUser('*'));
+    const keys = await scanKeys(this.redisClient, RedisKeys.matchingUser('*'));
 
     for (const key of keys) {
       const userData = await this.redisClient.hgetall(key);
