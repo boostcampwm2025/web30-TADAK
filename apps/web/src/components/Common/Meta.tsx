@@ -1,5 +1,3 @@
-import { Helmet } from 'react-helmet-async';
-
 interface MetaProps {
   title?: string;
   description?: string;
@@ -26,7 +24,7 @@ const Meta = ({
   const pageTitle = title === 'TADAK - 실시간 알고리즘 코딩 배틀' ? title : `${title} | TADAK`;
 
   return (
-    <Helmet>
+    <>
       <title>{pageTitle}</title>
       <meta name="description" content={description} />
       <meta name="keywords" content={keywords} />
@@ -54,7 +52,7 @@ const Meta = ({
 
       {/* Canonical Link */}
       {canonical && <link rel="canonical" href={canonical} />}
-    </Helmet>
+    </>
   );
 };
 

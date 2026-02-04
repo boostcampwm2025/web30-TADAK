@@ -16,7 +16,6 @@
     "lucide-react": "^0.460.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-helmet-async": "^2.0.5",
     "react-router-dom": "^7.10.1",
     "socket.io-client": "^4.8.1",
     "zustand": "^5.0.9"
