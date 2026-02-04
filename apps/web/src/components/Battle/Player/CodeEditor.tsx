@@ -3,7 +3,7 @@ import { BATTLE_CONFIG, BATTLE_EVENTS, DEFAULT_CODE_TEMPLATE } from '@shared/con
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { FinalResultMessage, TestcaseUpdateMessage } from '@shared/types/pubsub';
 import { Code } from 'lucide-react';
-import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -11,6 +11,7 @@ import { createDryRun, createSubmission } from '@/apis/submission';
 import EditorFooter from '@/components/Battle/Player/EditorFooter';
 import TestcaseResultPanel from '@/components/Battle/Player/TestcaseResultPanel';
 import Toast from '@/components/Common/Toast';
+import { useBattleExecutionStore } from '@/stores/battleExecutionStore';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
@@ -56,10 +57,6 @@ const EditorPane = memo(function EditorPane({
   );
 });
 
-type SubmissionProgress = TestcaseUpdateMessage['progress'];
-type TestcaseResult = TestcaseUpdateMessage['testcase'] & {
-  results?: TestcaseUpdateMessage['results'];
-};
 type TestcaseUpdatePayload = Omit<TestcaseUpdateMessage, 'type'> & {
   results?: TestcaseUpdateMessage['results'];
 };
@@ -104,12 +101,6 @@ function CodeEditor() {
   );
 
   const [editorSeed, setEditorSeed] = useState(DEFAULT_CODE_TEMPLATE);
-  const [statusText, setStatusText] = useState('대기 중');
-  const [progress, setProgress] = useState<SubmissionProgress | null>(null);
-  const [isTesting, setIsTesting] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [testcaseResults, setTestcaseResults] = useState<TestcaseResult[]>([]);
-  const [mode, setMode] = useState<'TEST' | 'SUBMISSION' | null>(null);
   const [pasteToastMessage, setPasteToastMessage] = useState<string | null>(null);
 
   const executionRef = useRef<ExecutionState | null>(null);
@@ -123,6 +114,25 @@ function CodeEditor() {
     useShallow((state) => ({
       problemId: state.problem?.id ?? null,
       battleId: state.problem?.battleId ?? null,
+    })),
+  );
+  const {
+    setStatusText,
+    setProgress,
+    setIsTesting,
+    setIsSubmitting,
+    setMode,
+    setTestcaseResults,
+    upsertTestcaseResult,
+  } = useBattleExecutionStore(
+    useShallow((state) => ({
+      setStatusText: state.setStatusText,
+      setProgress: state.setProgress,
+      setIsTesting: state.setIsTesting,
+      setIsSubmitting: state.setIsSubmitting,
+      setMode: state.setMode,
+      setTestcaseResults: state.setTestcaseResults,
+      upsertTestcaseResult: state.upsertTestcaseResult,
     })),
   );
 
@@ -214,12 +224,7 @@ function CodeEditor() {
         setProgress(payload.progress);
       }
 
-      setTestcaseResults((prev) => {
-        const next = prev.filter((item) => item.index !== payload.testcase.index);
-        next.push({ ...payload.testcase, results: payload.results });
-        next.sort((a, b) => a.index - b.index);
-        return next;
-      });
+      upsertTestcaseResult({ ...payload.testcase, results: payload.results });
 
       setStatusText(execution.type === 'TEST' ? '테스트 진행 중' : '채점 진행 중');
     };
@@ -286,7 +291,18 @@ function CodeEditor() {
       socket.off('testcase-update', handleTestcaseUpdate);
       socket.off('submission-result', handleSubmissionResult);
     };
-  }, [me?.userId, roomId, socket, upsertProgress, syncProgress]);
+  }, [
+    me?.userId,
+    roomId,
+    socket,
+    upsertProgress,
+    syncProgress,
+    setProgress,
+    setStatusText,
+    setIsSubmitting,
+    setIsTesting,
+    upsertTestcaseResult,
+  ]);
 
   const handleCodeChange = useCallback(
     (value: string) => {
@@ -376,7 +392,7 @@ function CodeEditor() {
       resetOnError('TEST');
       console.error(error);
     }
-  }, [battleId, editorSeed, problemId, resetOnError, socket]);
+  }, [battleId, editorSeed, initSubmission, problemId, resetOnError, setStatusText, socket]);
 
   const handleSubmit = useCallback(async () => {
     // 이미 실행 중이면 무시
@@ -410,12 +426,7 @@ function CodeEditor() {
       resetOnError('SUBMISSION');
       console.error(error);
     }
-  }, [battleId, editorSeed, problemId, resetOnError, socket]);
-
-  const progressLabel = useMemo(
-    () => (progress ? `${progress.passed}/${progress.total}` : '0/0'),
-    [progress],
-  );
+  }, [battleId, editorSeed, initSubmission, problemId, resetOnError, setStatusText, socket]);
 
   const handleEditorMount: OnMount = useCallback(
     (editor) => {
@@ -462,15 +473,8 @@ function CodeEditor() {
             onMount={handleEditorMount}
           />
         </div>
-        <EditorFooter
-          statusText={statusText}
-          progressLabel={progressLabel}
-          isTesting={isTesting}
-          isSubmitting={isSubmitting}
-          onDryRun={handleDryRun}
-          onSubmit={handleSubmit}
-        />
-        <TestcaseResultPanel testcaseResults={testcaseResults} mode={mode} />
+        <EditorFooter onDryRun={handleDryRun} onSubmit={handleSubmit} />
+        <TestcaseResultPanel />
       </section>
       {pasteToastMessage && (
         <Toast message={pasteToastMessage} onClose={() => setPasteToastMessage(null)} />

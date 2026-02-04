@@ -1,20 +1,21 @@
+import { memo, useMemo } from 'react';
+
+import { useBattleExecutionStore } from '@/stores/battleExecutionStore';
+
 type EditorFooterProps = {
-  statusText: string;
-  progressLabel: string;
-  isTesting: boolean;
-  isSubmitting: boolean;
   onDryRun: () => void;
   onSubmit: () => void;
 };
 
-function EditorFooter({
-  statusText,
-  progressLabel,
-  isTesting,
-  isSubmitting,
-  onDryRun,
-  onSubmit,
-}: EditorFooterProps) {
+function EditorFooter({ onDryRun, onSubmit }: EditorFooterProps) {
+  const statusText = useBattleExecutionStore((state) => state.statusText);
+  const progress = useBattleExecutionStore((state) => state.progress);
+  const isTesting = useBattleExecutionStore((state) => state.isTesting);
+  const isSubmitting = useBattleExecutionStore((state) => state.isSubmitting);
+  const progressLabel = useMemo(
+    () => (progress ? `${progress.passed}/${progress.total}` : '0/0'),
+    [progress],
+  );
   const isDisabled = isTesting || isSubmitting;
 
   return (
@@ -44,4 +45,4 @@ function EditorFooter({
   );
 }
 
-export default EditorFooter;
+export default memo(EditorFooter);

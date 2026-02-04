@@ -1,14 +1,7 @@
-import type { TestcaseStatus, TestcaseUpdateMessage } from '@shared/types/pubsub';
-import { useEffect, useRef } from 'react';
+import type { TestcaseStatus } from '@shared/types/pubsub';
+import { memo, useEffect, useRef } from 'react';
 
-type TestcaseResult = TestcaseUpdateMessage['testcase'] & {
-  results?: TestcaseUpdateMessage['results'];
-};
-
-type TestcaseResultPanelProps = {
-  testcaseResults: TestcaseResult[];
-  mode?: 'TEST' | 'SUBMISSION' | null;
-};
+import { useBattleExecutionStore } from '@/stores/battleExecutionStore';
 
 function getStatusColor(status: TestcaseStatus) {
   switch (status) {
@@ -27,7 +20,9 @@ function getStatusColor(status: TestcaseStatus) {
   }
 }
 
-function TestcaseResultPanel({ testcaseResults, mode }: TestcaseResultPanelProps) {
+function TestcaseResultPanel() {
+  const testcaseResults = useBattleExecutionStore((state) => state.testcaseResults);
+  const mode = useBattleExecutionStore((state) => state.mode);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -117,4 +112,4 @@ function TestcaseResultPanel({ testcaseResults, mode }: TestcaseResultPanelProps
   );
 }
 
-export default TestcaseResultPanel;
+export default memo(TestcaseResultPanel);
