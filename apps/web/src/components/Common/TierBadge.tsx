@@ -15,7 +15,7 @@ function TierBadge({ tier, division }: TierBadgeProps) {
 
   return (
     <div className="flex items-center gap-1">
-      <Icon size={12} className={`${config.fillClass} ${config.colorClass}`} />
+      <Icon size={12} className={`${config.fillClass} ${config.colorClass}`} aria-hidden="true" />
       <span className={`font-semibold ${config.colorClass} text-sm`}>
         {tier}
         {division !== undefined && ` ${toRomanNumeral(division)}`}
