@@ -20,10 +20,9 @@ function CodeSpectator() {
   const { roomId: roomIdParam } = useParams<{ roomId?: string }>();
   const [searchParams] = useSearchParams();
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? 'room-unknown';
-  const { players, codes } = useRoomStore(
+  const { players } = useRoomStore(
     useShallow((state) => ({
       players: state.players,
-      codes: state.codes,
     })),
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -34,9 +33,8 @@ function CodeSpectator() {
       connect: state.connect,
     })),
   );
-  const { progresses, upsertProgress } = useBattleProgressStore(
+  const { upsertProgress } = useBattleProgressStore(
     useShallow((state) => ({
-      progresses: state.progresses,
       upsertProgress: state.upsertProgress,
     })),
   );
@@ -117,8 +115,12 @@ function CodeSpectator() {
   }, [firstParticipantId, participants, selectedId]);
 
   const activeSelectedId = selectedId ?? firstParticipantId;
-  const selectedProgress = activeSelectedId ? progresses[activeSelectedId] : null;
-  const rawSelectedCode = activeSelectedId ? codes[activeSelectedId] : undefined;
+  const selectedProgress = useBattleProgressStore((state) =>
+    activeSelectedId ? state.progresses[activeSelectedId] : null,
+  );
+  const rawSelectedCode = useRoomStore((state) =>
+    activeSelectedId ? state.codes[activeSelectedId] : undefined,
+  );
   const isCodeEmpty = !rawSelectedCode || rawSelectedCode.trim().length === 0;
   const selectedCode = isCodeEmpty ? '아직 입력된 코드가 없어요 🙂' : rawSelectedCode;
 
