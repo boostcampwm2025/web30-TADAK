@@ -266,7 +266,7 @@ export class PubsubSubscriberService implements OnModuleInit {
     socketId: string,
   ): Promise<{ roomId: string; userId: string; username: string } | null> {
     // Redis에서 socketId로 userId 찾기 (SCAN으로 비블로킹 조회)
-    const keys = await this.scanKeys('matching:user:*');
+    const keys = await this.scanKeys(RedisKeys.matchingUser('*'));
 
     for (const key of keys) {
       const userData = await this.redisClient.hgetall(key);
