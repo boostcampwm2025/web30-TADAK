@@ -3,7 +3,7 @@ import { BATTLE_CONFIG, BATTLE_EVENTS, DEFAULT_CODE_TEMPLATE } from '@shared/con
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { FinalResultMessage, TestcaseUpdateMessage } from '@shared/types/pubsub';
 import { Code } from 'lucide-react';
-import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -373,7 +373,10 @@ function CodeEditor() {
     }
   }, [battleId, code, problemId, resetOnError, socket]);
 
-  const progressLabel = progress ? `${progress.passed}/${progress.total}` : '0/0';
+  const progressLabel = useMemo(
+    () => (progress ? `${progress.passed}/${progress.total}` : '0/0'),
+    [progress],
+  );
 
   const handleEditorMount: OnMount = useCallback(
     (editor) => {
