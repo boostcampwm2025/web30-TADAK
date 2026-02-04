@@ -56,6 +56,7 @@ function RoomCardList({ rooms, onSpectate, joiningRoomId }: Props) {
               </div>
               <div
                 className="inline-flex items-center gap-1.5 text-blue-03 text-sm font-medium"
+                role="group"
                 aria-label={`관전자 ${room.currentSpectators?.length ?? 0}명`}
               >
                 <Eye className="h-4 w-4 text-blue-03" strokeWidth={1.5} aria-hidden="true" />
