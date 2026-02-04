@@ -1,4 +1,5 @@
 import type { UserStats } from '@shared/types/user';
+import { memo } from 'react';
 
 import TierBadge from '@/components/Common/TierBadge';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
@@ -80,4 +81,4 @@ function ProgressBarSpectator({ participants, selectedId, onSelect }: Props) {
   );
 }
 
-export default ProgressBarSpectator;
+export default memo(ProgressBarSpectator);
