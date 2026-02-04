@@ -511,15 +511,17 @@ export class BattleService {
     const winnerId = opponent.userId;
     const loserId = forfeiterUserId;
 
-    // 마지막 제출 기록 조회 (있으면 저장)
-    const winnerSubmission = await this.submissionRepository.findOne({
-      where: { battleId: battle.battleId, userId: winnerId },
-      order: { createdAt: 'DESC' },
-    });
-    const loserSubmission = await this.submissionRepository.findOne({
-      where: { battleId: battle.battleId, userId: loserId },
-      order: { createdAt: 'DESC' },
-    });
+    // 마지막 제출 기록 조회
+    const [winnerSubmission, loserSubmission] = await Promise.all([
+      this.submissionRepository.findOne({
+        where: { battleId: battle.battleId, userId: winnerId },
+        order: { createdAt: 'DESC' },
+      }),
+      this.submissionRepository.findOne({
+        where: { battleId: battle.battleId, userId: loserId },
+        order: { createdAt: 'DESC' },
+      }),
+    ]);
 
     // 트랜잭션으로 DB 작업 수행 (레이팅 업데이트 + 배틀 저장)
     const savedBattle = await this.dataSource.transaction(async (manager) => {
