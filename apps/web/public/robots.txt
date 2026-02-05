@@ -4,3 +4,5 @@ Allow: /
 
 # Sitemaps
 Sitemap: https://tadak.site/sitemap.xml
+
+# Last updated: 2026-02-06
