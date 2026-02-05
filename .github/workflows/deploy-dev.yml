@@ -51,17 +51,19 @@ jobs:
             pnpm install --frozen-lockfile
             
             # 3. 프론트엔드 강제 빌드 (환경 변수 직접 주입)
+            echo "Clean old build..."
+            rm -rf ./apps/web/dist
             echo "Building frontend with domain URL..."
             VITE_API_BASE_URL=https://www.tadak.site npx turbo run build --filter=web --force
             
             # 4. 정적 파일 동기화 및 권한 최적화
             echo "Syncing files to /var/www/port30/web/"
-            sudo mkdir -p /var/www/port30/web
-            sudo rsync -av --delete ./apps/web/dist/ /var/www/port30/web/
-            sudo chown -R www-data:www-data /var/www/port30/web
+            echo ${{ secrets.SSH_PASSWORD }} | sudo -S mkdir -p /var/www/port30/web
+            echo ${{ secrets.SSH_PASSWORD }} | sudo -S rsync -av --delete ./apps/web/dist/ /var/www/port30/web/
+            echo ${{ secrets.SSH_PASSWORD }} | sudo -S chown -R www-data:www-data /var/www/port30/web
             
             # 5. 백엔드 및 기타 서비스 재실행
-            docker compose -f docker-compose.prod.yml up -d --build
+            echo ${{ secrets.SSH_PASSWORD }} | sudo -S docker compose -f docker-compose.prod.yml up -d --build
             
             # 6. Nginx 설정 정합성 확인 및 반영
-            sudo nginx -t && sudo systemctl reload nginx
+            echo ${{ secrets.SSH_PASSWORD }} | sudo -S nginx -t && echo ${{ secrets.SSH_PASSWORD }} | sudo -S systemctl reload nginx
