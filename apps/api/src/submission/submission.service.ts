@@ -28,6 +28,7 @@ export class SubmissionService {
   ): Promise<SubmissionDetail | null> {
     const submission = await this.submissionRepository.findOne({
       where: { id: submissionId, userId },
+      select: ['id', 'code', 'language', 'problemId'],
     });
 
     if (!submission) {
@@ -36,6 +37,18 @@ export class SubmissionService {
 
     const problem = await this.problemRepository.findOne({
       where: { id: submission.problemId },
+      select: [
+        'title',
+        'source',
+        'difficulty',
+        'tags',
+        'timeLimit',
+        'memoryLimit',
+        'statement',
+        'input',
+        'output',
+        'examples',
+      ],
     });
 
     if (!problem) {
