@@ -150,7 +150,6 @@ TADAK의 주요 기능들을 실제 구동 화면으로 확인해보세요.
 
 <img width="4787" height="2779" alt="image" src="https://github.com/user-attachments/assets/ea7d9db4-ee02-4e9e-9c51-0a02bc5f12d8" />
 
-
 <br>
 
 ## 🛠 기술 스택 (Tech Stack)

@@ -42,7 +42,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd /home/ubuntu/web30-boostcamp
-            # 1. dev 브랜치 강제 동기화
+            # 1. dev 브랜치 강제 동기화 (경로 변경)
             git fetch origin dev
             git checkout -f dev
             git reset --hard origin/dev
