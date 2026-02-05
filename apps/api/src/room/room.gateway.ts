@@ -452,7 +452,7 @@ export class RoomGateway {
     if (now - lastSent < 1000) return;
     this.cheatWarningMap.set(throttleKey, now);
 
-    const maxWarnings = 100;
+    const maxWarnings = 5;
     const currentCount = this.cheatCountMap.get(throttleKey) ?? 0;
     const nextCount = Math.min(maxWarnings, currentCount + 1);
     this.cheatCountMap.set(throttleKey, nextCount);
