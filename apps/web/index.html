@@ -7,9 +7,33 @@
     <link rel="preconnect" href="https://avatars.githubusercontent.com" crossorigin />
     <link rel="dns-prefetch" href="https://avatars.githubusercontent.com" />
     <title>TADAK</title>
+    <style>
+      /* 초기 렌더링에 필요한 최소한의 스타일 */
+      .app-shell {
+        background-color: #f1f7fb;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      .shell-logo { width: 96px; height: 96px; margin-bottom: 1.5rem; }
+      .shell-title { font-size: 2.5rem; font-weight: 900; color: #161a32; margin-bottom: 0.5rem; line-height: 1.2; }
+      .shell-gradient { background: linear-gradient(to right, #00e074, #38bdf8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="app-shell">
+        <img class="shell-logo" src="/logo.webp" alt="TADAK" fetchpriority="high" />
+        <h1 class="shell-title">
+          고독한 코딩은 이제 그만<br />
+          <span class="shell-gradient">실시간 알고리즘 배틀</span>
+        </h1>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
