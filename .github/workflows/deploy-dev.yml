@@ -41,7 +41,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            cd /root/web30-boostcamp
+            cd /home/ubuntu/web30-boostcamp
             # 1. dev 브랜치 강제 동기화
             git fetch origin dev
             git checkout -f dev
