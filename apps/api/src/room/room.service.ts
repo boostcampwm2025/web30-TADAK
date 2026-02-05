@@ -12,6 +12,7 @@ import { ProblemService } from '@/problem/problem.service';
 
 import { BattleService } from '../battle/battle.service';
 import { REDIS_CLIENT } from '../redis/redis.module';
+import { scanKeys } from '../redis/redis.util';
 import { RedisKeys } from '../redis/redis-key.constant';
 import { REDIS_TTL } from '../redis/redis-ttl.constant';
 
@@ -190,8 +191,8 @@ export class RoomService {
   }
 
   async listRooms(): Promise<Room[]> {
-    // 방 정보를 담고 있는 모든 키 조회
-    const keys = await this.redis.keys(RedisKeys.room('*'));
+    // 방 정보를 담고 있는 모든 키 조회 (SCAN 사용으로 비블로킹)
+    const keys = await scanKeys(this.redis, RedisKeys.room('*'));
     if (!keys.length) return [];
 
     // 파이프라인으로 한 번에 조회 후 파싱
