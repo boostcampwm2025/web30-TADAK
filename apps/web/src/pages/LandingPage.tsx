@@ -57,7 +57,7 @@ const LandingPage = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="inline-block py-1 px-3 rounded-full bg-brand/10 text-brand font-bold text-sm mb-6 border border-brand"
+              className="inline-block py-1 px-3 rounded-full bg-brand/11 text-brand font-bold text-sm mb-6 border border-brand"
             >
               v2.0 업데이트 완료
             </motion.span>
