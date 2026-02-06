@@ -45,6 +45,7 @@ services:
       - .env.production
     environment:
       - NODE_ENV=production
+      - CLIENT_URL=https://www.tadak.site
     ports:
       - "3000:3000"
     networks:

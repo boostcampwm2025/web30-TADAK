@@ -26,10 +26,7 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    const redirectUrl =
-      process.env.NODE_ENV === 'production'
-        ? `https://www.tadak.site/login?token=${accessToken}`
-        : `http://localhost:5173/login?token=${accessToken}`;
+    const redirectUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/login?token=${accessToken}`;
 
     res.redirect(redirectUrl);
   }
