@@ -5,7 +5,7 @@
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "types": ["vite/client"],
+    "types": ["vite/client", "@testing-library/jest-dom"],
     "skipLibCheck": true,
 
     /* Bundler mode */
@@ -32,5 +32,5 @@
       "@shared/constants/*": ["../../packages/constants/*"]
     }
   },
-  "include": ["src", "src/apis/api.ts", "src/apis/axios.ts"]
+  "include": ["src", "src/apis/api.ts", "src/apis/axios.ts", "test", "vitest.config.ts"]
 }
