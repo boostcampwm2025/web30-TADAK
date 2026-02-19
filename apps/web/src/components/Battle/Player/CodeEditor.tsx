@@ -318,53 +318,70 @@ function CodeEditor() {
     [me, roomId, socket],
   );
 
-  const resetExecution = (type: 'TEST' | 'SUBMISSION', statusMessage: string) => {
-    clearExecutionTimeout();
-    executionRef.current = null;
+  const resetExecution = useCallback(
+    (type: 'TEST' | 'SUBMISSION', statusMessage: string) => {
+      clearExecutionTimeout();
+      executionRef.current = null;
 
-    if (type === 'TEST') {
-      setIsTesting(false);
-    } else {
-      setIsSubmitting(false);
-    }
-    setStatusText(statusMessage);
-  };
-
-  const initSubmission = (type: 'TEST' | 'SUBMISSION', submissionId?: string) => {
-    // 이전 타임아웃 정리
-    clearExecutionTimeout();
-
-    executionRef.current = {
-      type,
-      submissionId: submissionId ?? null,
-      isCompleted: false,
-    };
-    setProgress(null);
-    setTestcaseResults([]);
-
-    if (type === 'TEST') {
-      setIsTesting(true);
-      setMode('TEST');
-      setStatusText('테스트 요청 중');
-    } else {
-      setIsSubmitting(true);
-      setMode('SUBMISSION');
-      setStatusText('제출 요청 중');
-    }
-
-    // 타임아웃 설정
-    timeoutRef.current = setTimeout(() => {
-      const execution = executionRef.current;
-      if (execution && !execution.isCompleted) {
-        resetExecution(execution.type, '시간 초과 - 결과를 받지 못했습니다');
+      if (type === 'TEST') {
+        setIsTesting(false);
+      } else {
+        setIsSubmitting(false);
       }
-    }, EXECUTION_TIMEOUT);
-  };
+      setStatusText(statusMessage);
+    },
+    [setIsSubmitting, setIsTesting, setStatusText],
+  );
 
-  const resetOnError = (type: 'TEST' | 'SUBMISSION') => {
-    resetExecution(type, type === 'TEST' ? '테스트 요청 실패' : '제출 요청 실패');
-    setMode(null);
-  };
+  const initSubmission = useCallback(
+    (type: 'TEST' | 'SUBMISSION', submissionId?: string) => {
+      // 이전 타임아웃 정리
+      clearExecutionTimeout();
+
+      executionRef.current = {
+        type,
+        submissionId: submissionId ?? null,
+        isCompleted: false,
+      };
+      setProgress(null);
+      setTestcaseResults([]);
+
+      if (type === 'TEST') {
+        setIsTesting(true);
+        setMode('TEST');
+        setStatusText('테스트 요청 중');
+      } else {
+        setIsSubmitting(true);
+        setMode('SUBMISSION');
+        setStatusText('제출 요청 중');
+      }
+
+      // 타임아웃 설정
+      timeoutRef.current = setTimeout(() => {
+        const execution = executionRef.current;
+        if (execution && !execution.isCompleted) {
+          resetExecution(execution.type, '시간 초과 - 결과를 받지 못했습니다');
+        }
+      }, EXECUTION_TIMEOUT);
+    },
+    [
+      resetExecution,
+      setIsSubmitting,
+      setIsTesting,
+      setMode,
+      setProgress,
+      setStatusText,
+      setTestcaseResults,
+    ],
+  );
+
+  const resetOnError = useCallback(
+    (type: 'TEST' | 'SUBMISSION') => {
+      resetExecution(type, type === 'TEST' ? '테스트 요청 실패' : '제출 요청 실패');
+      setMode(null);
+    },
+    [resetExecution, setMode],
+  );
 
   const handleDryRun = useCallback(async () => {
     // 이미 실행 중이면 무시
@@ -390,7 +407,7 @@ function CodeEditor() {
       resetOnError('TEST');
       console.error(error);
     }
-  }, [battleId, initSubmission, problemId, resetOnError, setStatusText, socket]);
+  }, [initSubmission, problemId, resetOnError, setStatusText, socket]);
 
   const handleSubmit = useCallback(async () => {
     // 이미 실행 중이면 무시
