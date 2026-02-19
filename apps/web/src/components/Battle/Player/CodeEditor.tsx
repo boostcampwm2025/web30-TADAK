@@ -21,17 +21,12 @@ import { useRoomStore } from '@/stores/roomStore';
 const LazyBaseCodeEditor = lazy(() => import('@/components/Common/BaseCodeEditor'));
 
 type EditorPaneProps = {
-  initialValue: string;
+  code: string;
   onCodeChange: (value: string) => void;
   onMount: OnMount;
 };
 
-const EditorPane = memo(function EditorPane({
-  initialValue,
-  onCodeChange,
-  onMount,
-}: EditorPaneProps) {
-  const [localCode, setLocalCode] = useState(initialValue);
+const EditorPane = memo(function EditorPane({ code, onCodeChange, onMount }: EditorPaneProps) {
   return (
     <Suspense
       fallback={
@@ -39,10 +34,9 @@ const EditorPane = memo(function EditorPane({
       }
     >
       <LazyBaseCodeEditor
-        value={localCode}
+        value={code}
         onChange={(nextValue) => {
           const normalized = nextValue || '';
-          setLocalCode(normalized);
           onCodeChange(normalized);
         }}
         onMount={onMount}
@@ -100,7 +94,8 @@ function CodeEditor() {
     })),
   );
 
-  const [editorSeed, setEditorSeed] = useState(DEFAULT_CODE_TEMPLATE);
+  const [code, setCode] = useState(DEFAULT_CODE_TEMPLATE);
+  const codeRef = useRef(code);
   const [pasteToastMessage, setPasteToastMessage] = useState<string | null>(null);
 
   const executionRef = useRef<ExecutionState | null>(null);
@@ -198,7 +193,8 @@ function CodeEditor() {
       if (hasEditedRef.current || hasSyncedRef.current) return;
       const incomingCode = typeof payload.code === 'string' ? payload.code : '';
       if (incomingCode.trim().length > 0) {
-        setEditorSeed(incomingCode);
+        setCode(incomingCode);
+        codeRef.current = incomingCode;
       }
       hasSyncedRef.current = true;
     };
@@ -306,6 +302,8 @@ function CodeEditor() {
 
   const handleCodeChange = useCallback(
     (value: string) => {
+      setCode(value);
+      codeRef.current = value;
       hasEditedRef.current = true;
       if (!socket?.connected) return;
       if (!me?.userId) return;
@@ -384,15 +382,14 @@ function CodeEditor() {
 
     try {
       await createDryRun(
-        { problemId, code: editorSeed, language: BATTLE_CONFIG.DEFAULT_LANGUAGE },
+        { problemId, code: codeRef.current, language: BATTLE_CONFIG.DEFAULT_LANGUAGE },
         socket.id,
       );
       setStatusText('테스트 대기 중');
     } catch (error) {
-      resetOnError('TEST');
       console.error(error);
     }
-  }, [battleId, editorSeed, initSubmission, problemId, resetOnError, setStatusText, socket]);
+  }, [battleId, initSubmission, problemId, resetOnError, setStatusText, socket]);
 
   const handleSubmit = useCallback(async () => {
     // 이미 실행 중이면 무시
@@ -412,21 +409,20 @@ function CodeEditor() {
       const response = await createSubmission(
         {
           problemId,
-          code: editorSeed,
+          code: codeRef.current,
           language: BATTLE_CONFIG.DEFAULT_LANGUAGE,
           ...(battleId ? { battleId } : {}),
         },
         socket.id,
       );
       if (response?.submissionId) {
-        initSubmission('SUBMISSION', String(response.submissionId));
         setStatusText('채점 대기 중');
       }
     } catch (error) {
       resetOnError('SUBMISSION');
       console.error(error);
     }
-  }, [battleId, editorSeed, initSubmission, problemId, resetOnError, setStatusText, socket]);
+  }, [battleId, initSubmission, problemId, resetOnError, setStatusText, socket]);
 
   const handleEditorMount: OnMount = useCallback(
     (editor) => {
@@ -466,12 +462,7 @@ function CodeEditor() {
           </div>
         </div>
         <div className="min-h-[320px] h-[40vh] bg-(bg-layer-2) font-mono text-sm text-base-primary xl:h-auto xl:flex-1">
-          <EditorPane
-            key={editorSeed}
-            initialValue={editorSeed}
-            onCodeChange={handleCodeChange}
-            onMount={handleEditorMount}
-          />
+          <EditorPane code={code} onCodeChange={handleCodeChange} onMount={handleEditorMount} />
         </div>
         <EditorFooter onDryRun={handleDryRun} onSubmit={handleSubmit} />
         <TestcaseResultPanel />
