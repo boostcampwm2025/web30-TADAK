@@ -387,6 +387,7 @@ function CodeEditor() {
       );
       setStatusText('테스트 대기 중');
     } catch (error) {
+      resetOnError('TEST');
       console.error(error);
     }
   }, [battleId, initSubmission, problemId, resetOnError, setStatusText, socket]);
