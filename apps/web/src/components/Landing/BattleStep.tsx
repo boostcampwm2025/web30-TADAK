@@ -70,7 +70,7 @@ export const BattleStep = () => {
                 <div className="flex gap-4 h-full flex-grow">
                   <div className="w-1/3 bg-bg-layer-2 rounded-lg p-4 shadow-sm hidden sm:block">
                     <br />
-                    <h4 className="font-bold text-lg mb-2">크림빵</h4>
+                    <div className="font-bold text-lg mb-2">크림빵</div>
                     <div className="h-2 w-20 bg-base-muted rounded mb-4"></div>
                     <div className="space-y-2">
                       <div className="h-2 w-full bg-base-faint rounded"></div>

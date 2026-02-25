@@ -148,7 +148,7 @@ TADAK의 주요 기능들을 실제 구동 화면으로 확인해보세요.
 
 ### 채점 서버 아키텍처 (Judge Flow)
 
-<img width="4960" height="2820" alt="image" src="https://github.com/user-attachments/assets/1febd26c-c4ea-43e0-8e3d-88820c406fd2" />
+<img width="4787" height="2779" alt="image" src="https://github.com/user-attachments/assets/873f0ef7-9ebb-491b-8aa2-8f305c162a23" />
 
 <br>
 

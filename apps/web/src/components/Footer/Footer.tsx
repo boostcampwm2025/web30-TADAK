@@ -1,10 +1,10 @@
 export const Footer = () => {
   return (
-    <footer className="bg-bg-layer-2 text-base-tertiary py-12 border-t border-border-soft">
+    <footer className="bg-bg-layer-2 text-base-secondary py-12 border-t border-border-soft">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-2">
           <span className="text-2xl font-black text-brand tracking-tight">TADAK</span>
-          <span className="text-xs px-2 py-1 rounded bg-bg-layer-1 text-base-tertiary">BETA</span>
+          <span className="text-xs px-2 py-1 rounded bg-bg-layer-1 text-base-secondary">BETA</span>
         </div>
         <div className="flex gap-8 text-sm">
           <a
