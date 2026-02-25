@@ -3,13 +3,15 @@ import { BATTLE_CONFIG, BATTLE_EVENTS, DEFAULT_CODE_TEMPLATE } from '@shared/con
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { FinalResultMessage, TestcaseUpdateMessage } from '@shared/types/pubsub';
 import { Code } from 'lucide-react';
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import { useShallow } from 'zustand/react/shallow';
 
 import { createDryRun, createSubmission } from '@/apis/submission';
 import EditorFooter from '@/components/Battle/Player/EditorFooter';
 import TestcaseResultPanel from '@/components/Battle/Player/TestcaseResultPanel';
 import Toast from '@/components/Common/Toast';
+import { useBattleExecutionStore } from '@/stores/battleExecutionStore';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
@@ -18,10 +20,37 @@ import { useRoomStore } from '@/stores/roomStore';
 
 const LazyBaseCodeEditor = lazy(() => import('@/components/Common/BaseCodeEditor'));
 
-type SubmissionProgress = TestcaseUpdateMessage['progress'];
-type TestcaseResult = TestcaseUpdateMessage['testcase'] & {
-  results?: TestcaseUpdateMessage['results'];
+type EditorPaneProps = {
+  code: string;
+  onCodeChange: (value: string) => void;
+  onMount: OnMount;
 };
+
+const EditorPane = memo(function EditorPane({ code, onCodeChange, onMount }: EditorPaneProps) {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-full items-center justify-center">에디터를 불러오는 중...</div>
+      }
+    >
+      <LazyBaseCodeEditor
+        value={code}
+        onChange={(nextValue) => {
+          const normalized = nextValue || '';
+          onCodeChange(normalized);
+        }}
+        onMount={onMount}
+        options={{
+          quickSuggestions: false, // 자동 완성 비활성화
+          suggestOnTriggerCharacters: false, // 트리거 문자 입력 시 자동 완성 비활성화
+          snippetSuggestions: 'none', // 스니펫 비활성화
+          wordBasedSuggestions: 'off', // 단어 기반 제안 비활성화
+        }}
+      />
+    </Suspense>
+  );
+});
+
 type TestcaseUpdatePayload = Omit<TestcaseUpdateMessage, 'type'> & {
   results?: TestcaseUpdateMessage['results'];
 };
@@ -44,22 +73,29 @@ function CodeEditor() {
   const { roomId: roomIdParam } = useParams<{ roomId?: string }>();
   const [searchParams] = useSearchParams();
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? 'room-unknown';
-  const me = useRoomStore((state: { me?: Player }) => state.me);
-  const setMe = useRoomStore((state: { setMe: (me: Player) => void }) => state.setMe);
+  const { me, setMe } = useRoomStore(
+    useShallow((state: { me?: Player; setMe: (me: Player) => void }) => ({
+      me: state.me,
+      setMe: state.setMe,
+    })),
+  );
   const isCheatDetectionEnabled = import.meta.env.VITE_CHEAT_DETECTION_ENABLED !== 'false';
 
-  const socket = useBattleSocketStore((state) => state.socket);
-  const connect = useBattleSocketStore((state) => state.connect);
-  const upsertProgress = useBattleProgressStore((state) => state.upsertProgress);
-  const syncProgress = useBattleProgressStore((state) => state.syncProgress);
+  const { socket, connect } = useBattleSocketStore(
+    useShallow((state) => ({
+      socket: state.socket,
+      connect: state.connect,
+    })),
+  );
+  const { upsertProgress, syncProgress } = useBattleProgressStore(
+    useShallow((state) => ({
+      upsertProgress: state.upsertProgress,
+      syncProgress: state.syncProgress,
+    })),
+  );
 
   const [code, setCode] = useState(DEFAULT_CODE_TEMPLATE);
-  const [statusText, setStatusText] = useState('대기 중');
-  const [progress, setProgress] = useState<SubmissionProgress | null>(null);
-  const [isTesting, setIsTesting] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [testcaseResults, setTestcaseResults] = useState<TestcaseResult[]>([]);
-  const [mode, setMode] = useState<'TEST' | 'SUBMISSION' | null>(null);
+  const codeRef = useRef(code);
   const [pasteToastMessage, setPasteToastMessage] = useState<string | null>(null);
 
   const executionRef = useRef<ExecutionState | null>(null);
@@ -69,8 +105,31 @@ function CodeEditor() {
   const editorDomRef = useRef<HTMLElement | null>(null);
   const pasteHandlerRef = useRef<((event: ClipboardEvent) => void) | null>(null);
   const lastPasteAtRef = useRef(0);
-  const problemId = useBattleProblemStore((state) => state.problem?.id ?? null);
-  const battleId = useBattleProblemStore((state) => state.problem?.battleId ?? null);
+  const { problemId, battleId } = useBattleProblemStore(
+    useShallow((state) => ({
+      problemId: state.problem?.id ?? null,
+      battleId: state.problem?.battleId ?? null,
+    })),
+  );
+  const {
+    setStatusText,
+    setProgress,
+    setIsTesting,
+    setIsSubmitting,
+    setMode,
+    setTestcaseResults,
+    upsertTestcaseResult,
+  } = useBattleExecutionStore(
+    useShallow((state) => ({
+      setStatusText: state.setStatusText,
+      setProgress: state.setProgress,
+      setIsTesting: state.setIsTesting,
+      setIsSubmitting: state.setIsSubmitting,
+      setMode: state.setMode,
+      setTestcaseResults: state.setTestcaseResults,
+      upsertTestcaseResult: state.upsertTestcaseResult,
+    })),
+  );
 
   const clearExecutionTimeout = () => {
     if (timeoutRef.current) {
@@ -135,6 +194,7 @@ function CodeEditor() {
       const incomingCode = typeof payload.code === 'string' ? payload.code : '';
       if (incomingCode.trim().length > 0) {
         setCode(incomingCode);
+        codeRef.current = incomingCode;
       }
       hasSyncedRef.current = true;
     };
@@ -160,12 +220,7 @@ function CodeEditor() {
         setProgress(payload.progress);
       }
 
-      setTestcaseResults((prev) => {
-        const next = prev.filter((item) => item.index !== payload.testcase.index);
-        next.push({ ...payload.testcase, results: payload.results });
-        next.sort((a, b) => a.index - b.index);
-        return next;
-      });
+      upsertTestcaseResult({ ...payload.testcase, results: payload.results });
 
       setStatusText(execution.type === 'TEST' ? '테스트 진행 중' : '채점 진행 중');
     };
@@ -232,71 +287,103 @@ function CodeEditor() {
       socket.off('testcase-update', handleTestcaseUpdate);
       socket.off('submission-result', handleSubmissionResult);
     };
-  }, [me?.userId, roomId, socket, upsertProgress, syncProgress]);
+  }, [
+    me?.userId,
+    roomId,
+    socket,
+    upsertProgress,
+    syncProgress,
+    setProgress,
+    setStatusText,
+    setIsSubmitting,
+    setIsTesting,
+    upsertTestcaseResult,
+  ]);
 
-  const handleChange = (value: string) => {
-    hasEditedRef.current = true;
-    setCode(value);
-    if (!socket?.connected) return;
-    if (!me?.userId) return;
+  const handleCodeChange = useCallback(
+    (value: string) => {
+      setCode(value);
+      codeRef.current = value;
+      hasEditedRef.current = true;
+      if (!socket?.connected) return;
+      if (!me?.userId) return;
 
-    socket.emit(BATTLE_EVENTS.CODE_CHANGE, {
-      roomId,
-      userId: me.userId,
-      code: value,
-      language: BATTLE_CONFIG.DEFAULT_LANGUAGE,
-    });
-  };
+      socket.emit(BATTLE_EVENTS.CODE_CHANGE, {
+        roomId,
+        userId: me.userId,
+        code: value,
+        language: BATTLE_CONFIG.DEFAULT_LANGUAGE,
+      });
+    },
+    [me, roomId, socket],
+  );
 
-  const resetExecution = (type: 'TEST' | 'SUBMISSION', statusMessage: string) => {
-    clearExecutionTimeout();
-    executionRef.current = null;
+  const resetExecution = useCallback(
+    (type: 'TEST' | 'SUBMISSION', statusMessage: string) => {
+      clearExecutionTimeout();
+      executionRef.current = null;
 
-    if (type === 'TEST') {
-      setIsTesting(false);
-    } else {
-      setIsSubmitting(false);
-    }
-    setStatusText(statusMessage);
-  };
-
-  const initSubmission = (type: 'TEST' | 'SUBMISSION', submissionId?: string) => {
-    // 이전 타임아웃 정리
-    clearExecutionTimeout();
-
-    executionRef.current = {
-      type,
-      submissionId: submissionId ?? null,
-      isCompleted: false,
-    };
-    setProgress(null);
-    setTestcaseResults([]);
-
-    if (type === 'TEST') {
-      setIsTesting(true);
-      setMode('TEST');
-      setStatusText('테스트 요청 중');
-    } else {
-      setIsSubmitting(true);
-      setMode('SUBMISSION');
-      setStatusText('제출 요청 중');
-    }
-
-    // 타임아웃 설정
-    timeoutRef.current = setTimeout(() => {
-      const execution = executionRef.current;
-      if (execution && !execution.isCompleted) {
-        resetExecution(execution.type, '시간 초과 - 결과를 받지 못했습니다');
+      if (type === 'TEST') {
+        setIsTesting(false);
+      } else {
+        setIsSubmitting(false);
       }
-    }, EXECUTION_TIMEOUT);
-  };
+      setStatusText(statusMessage);
+    },
+    [setIsSubmitting, setIsTesting, setStatusText],
+  );
 
-  const resetOnError = (type: 'TEST' | 'SUBMISSION') => {
-    resetExecution(type, type === 'TEST' ? '테스트 요청 실패' : '제출 요청 실패');
-    setMode(null);
-  };
+  const initSubmission = useCallback(
+    (type: 'TEST' | 'SUBMISSION', submissionId?: string) => {
+      // 이전 타임아웃 정리
+      clearExecutionTimeout();
 
-  const handleDryRun = async () => {
+      executionRef.current = {
+        type,
+        submissionId: submissionId ?? null,
+        isCompleted: false,
+      };
+      setProgress(null);
+      setTestcaseResults([]);
+
+      if (type === 'TEST') {
+        setIsTesting(true);
+        setMode('TEST');
+        setStatusText('테스트 요청 중');
+      } else {
+        setIsSubmitting(true);
+        setMode('SUBMISSION');
+        setStatusText('제출 요청 중');
+      }
+
+      // 타임아웃 설정
+      timeoutRef.current = setTimeout(() => {
+        const execution = executionRef.current;
+        if (execution && !execution.isCompleted) {
+          resetExecution(execution.type, '시간 초과 - 결과를 받지 못했습니다');
+        }
+      }, EXECUTION_TIMEOUT);
+    },
+    [
+      resetExecution,
+      setIsSubmitting,
+      setIsTesting,
+      setMode,
+      setProgress,
+      setStatusText,
+      setTestcaseResults,
+    ],
+  );
+
+  const resetOnError = useCallback(
+    (type: 'TEST' | 'SUBMISSION') => {
+      resetExecution(type, type === 'TEST' ? '테스트 요청 실패' : '제출 요청 실패');
+      setMode(null);
+    },
+    [resetExecution, setMode],
+  );
+
+  const handleDryRun = useCallback(async () => {
     // 이미 실행 중이면 무시
     if (executionRef.current) return;
     if (!socket?.connected || !socket.id) {
@@ -311,15 +398,18 @@ function CodeEditor() {
     initSubmission('TEST');
 
     try {
-      await createDryRun({ problemId, code, language: BATTLE_CONFIG.DEFAULT_LANGUAGE }, socket.id);
+      await createDryRun(
+        { problemId, code: codeRef.current, language: BATTLE_CONFIG.DEFAULT_LANGUAGE },
+        socket.id,
+      );
       setStatusText('테스트 대기 중');
     } catch (error) {
       resetOnError('TEST');
       console.error(error);
     }
-  };
+  }, [initSubmission, problemId, resetOnError, setStatusText, socket]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     // 이미 실행 중이면 무시
     if (executionRef.current) return;
     if (!socket?.connected || !socket.id) {
@@ -337,47 +427,47 @@ function CodeEditor() {
       const response = await createSubmission(
         {
           problemId,
-          code,
+          code: codeRef.current,
           language: BATTLE_CONFIG.DEFAULT_LANGUAGE,
           ...(battleId ? { battleId } : {}),
         },
         socket.id,
       );
       if (response?.submissionId) {
-        initSubmission('SUBMISSION', String(response.submissionId));
         setStatusText('채점 대기 중');
       }
     } catch (error) {
       resetOnError('SUBMISSION');
       console.error(error);
     }
-  };
+  }, [battleId, initSubmission, problemId, resetOnError, setStatusText, socket]);
 
-  const progressLabel = progress ? `${progress.passed}/${progress.total}` : '0/0';
+  const handleEditorMount: OnMount = useCallback(
+    (editor) => {
+      const domNode = editor.getDomNode();
+      if (!domNode) return;
 
-  const handleEditorMount: OnMount = (editor) => {
-    const domNode = editor.getDomNode();
-    if (!domNode) return;
+      editorDomRef.current = domNode;
+      const handlePaste = (event: ClipboardEvent) => {
+        if (!isCheatDetectionEnabled) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const now = Date.now();
+        if (now - lastPasteAtRef.current < 1000) return;
+        lastPasteAtRef.current = now;
+        setPasteToastMessage('외부 코드 붙여넣기는 금지되어 있습니다! 🚫');
 
-    editorDomRef.current = domNode;
-    const handlePaste = (event: ClipboardEvent) => {
-      if (!isCheatDetectionEnabled) return;
-      event.preventDefault();
-      event.stopPropagation();
-      const now = Date.now();
-      if (now - lastPasteAtRef.current < 1000) return;
-      lastPasteAtRef.current = now;
-      setPasteToastMessage('외부 코드 붙여넣기는 금지되어 있습니다! 🚫');
+        const activeSocket = socket ?? connect();
+        if (activeSocket?.connected && isCheatDetectionEnabled) {
+          activeSocket.emit(SOCKET_EVENT.CHEAT_WARNING, { roomId, type: 'PASTE' });
+        }
+      };
 
-      const activeSocket = socket ?? connect();
-      if (activeSocket?.connected && isCheatDetectionEnabled) {
-        activeSocket.emit(SOCKET_EVENT.CHEAT_WARNING, { roomId, type: 'PASTE' });
-      }
-    };
-
-    pasteHandlerRef.current = handlePaste;
-    domNode.addEventListener('paste', handlePaste, true);
-  };
+      pasteHandlerRef.current = handlePaste;
+      domNode.addEventListener('paste', handlePaste, true);
+    },
+    [connect, isCheatDetectionEnabled, roomId, socket],
+  );
 
   return (
     <>
@@ -390,33 +480,10 @@ function CodeEditor() {
           </div>
         </div>
         <div className="min-h-[320px] h-[40vh] bg-(bg-layer-2) font-mono text-sm text-base-primary xl:h-auto xl:flex-1">
-          <Suspense
-            fallback={
-              <div className="flex h-full items-center justify-center">에디터를 불러오는 중...</div>
-            }
-          >
-            <LazyBaseCodeEditor
-              value={code}
-              onChange={(value) => handleChange(value || '')}
-              onMount={handleEditorMount}
-              options={{
-                quickSuggestions: false, // 자동 완성 비활성화
-                suggestOnTriggerCharacters: false, // 트리거 문자 입력 시 자동 완성 비활성화
-                snippetSuggestions: 'none', // 스니펫 비활성화
-                wordBasedSuggestions: 'off', // 단어 기반 제안 비활성화
-              }}
-            />
-          </Suspense>
+          <EditorPane code={code} onCodeChange={handleCodeChange} onMount={handleEditorMount} />
         </div>
-        <EditorFooter
-          statusText={statusText}
-          progressLabel={progressLabel}
-          isTesting={isTesting}
-          isSubmitting={isSubmitting}
-          onDryRun={handleDryRun}
-          onSubmit={handleSubmit}
-        />
-        <TestcaseResultPanel testcaseResults={testcaseResults} mode={mode} />
+        <EditorFooter onDryRun={handleDryRun} onSubmit={handleSubmit} />
+        <TestcaseResultPanel />
       </section>
       {pasteToastMessage && (
         <Toast message={pasteToastMessage} onClose={() => setPasteToastMessage(null)} />
@@ -425,4 +492,4 @@ function CodeEditor() {
   );
 }
 
-export default CodeEditor;
+export default memo(CodeEditor);

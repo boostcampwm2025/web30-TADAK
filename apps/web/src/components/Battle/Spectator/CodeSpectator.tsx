@@ -1,15 +1,14 @@
 import { BATTLE_EVENTS } from '@shared/constants/battle';
 import type { FinalResultMessage } from '@shared/types/pubsub';
-import { Code } from 'lucide-react';
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import { useShallow } from 'zustand/react/shallow';
 
+import CodeSpectatorEditor from '@/components/Battle/Spectator/CodeSpectatorEditor';
 import ProgressBarSpectator from '@/components/Battle/Spectator/ProgressBarSpectator';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
 import { useRoomStore } from '@/stores/roomStore';
-
-const BaseCodeEditor = lazy(() => import('@/components/Common/BaseCodeEditor'));
 
 type SubmissionResultPayload = Omit<FinalResultMessage, 'type'> & {
   userId?: string;
@@ -19,14 +18,24 @@ function CodeSpectator() {
   const { roomId: roomIdParam } = useParams<{ roomId?: string }>();
   const [searchParams] = useSearchParams();
   const roomId = roomIdParam ?? searchParams.get('roomId') ?? 'room-unknown';
-  const players = useRoomStore((state) => state.players);
-  const codes = useRoomStore((state) => state.codes);
+  const { players } = useRoomStore(
+    useShallow((state) => ({
+      players: state.players,
+    })),
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const socket = useBattleSocketStore((state) => state.socket);
-  const connect = useBattleSocketStore((state) => state.connect);
-  const progresses = useBattleProgressStore((state) => state.progresses);
-  const upsertProgress = useBattleProgressStore((state) => state.upsertProgress);
+  const { socket, connect } = useBattleSocketStore(
+    useShallow((state) => ({
+      socket: state.socket,
+      connect: state.connect,
+    })),
+  );
+  const { upsertProgress } = useBattleProgressStore(
+    useShallow((state) => ({
+      upsertProgress: state.upsertProgress,
+    })),
+  );
 
   useEffect(() => {
     const client = socket ?? connect();
@@ -104,10 +113,6 @@ function CodeSpectator() {
   }, [firstParticipantId, participants, selectedId]);
 
   const activeSelectedId = selectedId ?? firstParticipantId;
-  const selectedProgress = activeSelectedId ? progresses[activeSelectedId] : null;
-  const rawSelectedCode = activeSelectedId ? codes[activeSelectedId] : undefined;
-  const isCodeEmpty = !rawSelectedCode || rawSelectedCode.trim().length === 0;
-  const selectedCode = isCodeEmpty ? '아직 입력된 코드가 없어요 🙂' : rawSelectedCode;
 
   return (
     <>
@@ -118,54 +123,10 @@ function CodeSpectator() {
           onSelect={setSelectedId}
         />
 
-        <div className="flex flex-col overflow-hidden rounded-2xl border border-border-soft bg-(bg-layer-2) text-base-primary shadow-inner shadow-slate-950/10 xl:flex-1 xl:min-h-0">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft bg-(--bg-layer-2) px-4 py-3 text-sm font-semibold">
-            <div className="flex items-center gap-2">
-              <Code className="h-5 w-5 text-green-05" strokeWidth={2.5} />
-              <span className="rounded pr-3 text-sm font-bold text-green-05">코드 에디터</span>
-              <span className="text-color-green-05">
-                {participants.find((p) => p.userId === selectedId)?.username ?? '관전자'}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-base-secondary">
-              <span className="rounded-full bg-base-muted px-3 py-1 text-base-primary">
-                JavaScript
-              </span>
-            </div>
-          </div>
-
-          <div className="min-h-[520px] h-[40vh] bg-(bg-layer-2) font-mono text-sm text-base-primary xl:h-auto xl:flex-1">
-            <Suspense
-              fallback={
-                <div className="flex h-full items-center justify-center">
-                  에디터를 불러오는 중...
-                </div>
-              }
-            >
-              <BaseCodeEditor
-                value={selectedCode}
-                options={{
-                  readOnly: true,
-                  renderLineHighlight: 'none',
-                  contextmenu: false,
-                  folding: false,
-                  hideCursorInOverviewRuler: true,
-                }}
-              />
-            </Suspense>
-          </div>
-          <div className="flex items-center justify-end gap-4 border-t border-border-soft bg-(--bg-layer-2) px-4 py-3 text-xs text-base-secondary">
-            <span className="flex items-center gap-1 text-green-05">
-              ● {selectedProgress?.passed ?? 0}개 테스트 통과
-            </span>
-            <span className="flex items-center gap-1 text-pink-05">
-              ● {(selectedProgress?.total ?? 0) - (selectedProgress?.passed ?? 0)}개 실패
-            </span>
-          </div>
-        </div>
+        <CodeSpectatorEditor activeSelectedId={activeSelectedId} participants={participants} />
       </section>
     </>
   );
 }
 
-export default CodeSpectator;
+export default memo(CodeSpectator);
