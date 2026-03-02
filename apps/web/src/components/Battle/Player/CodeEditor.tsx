@@ -1,5 +1,11 @@
 import type { OnMount } from '@monaco-editor/react';
-import { BATTLE_CONFIG, BATTLE_EVENTS, DEFAULT_CODE_TEMPLATE } from '@shared/constants/battle';
+import {
+  BATTLE_CONFIG,
+  BATTLE_EVENTS,
+  DEFAULT_CODE_TEMPLATE,
+  LANGUAGE_TEMPLATES,
+  SUPPORTED_LANGUAGES,
+} from '@shared/constants/battle';
 import { SOCKET_EVENT } from '@shared/constants/socket-event';
 import type { FinalResultMessage, TestcaseUpdateMessage } from '@shared/types/pubsub';
 import { Code } from 'lucide-react';
@@ -22,11 +28,17 @@ const LazyBaseCodeEditor = lazy(() => import('@/components/Common/BaseCodeEditor
 
 type EditorPaneProps = {
   code: string;
+  language: string;
   onCodeChange: (value: string) => void;
   onMount: OnMount;
 };
 
-const EditorPane = memo(function EditorPane({ code, onCodeChange, onMount }: EditorPaneProps) {
+const EditorPane = memo(function EditorPane({
+  code,
+  language,
+  onCodeChange,
+  onMount,
+}: EditorPaneProps) {
   return (
     <Suspense
       fallback={
@@ -35,6 +47,7 @@ const EditorPane = memo(function EditorPane({ code, onCodeChange, onMount }: Edi
     >
       <LazyBaseCodeEditor
         value={code}
+        language={language}
         onChange={(nextValue) => {
           const normalized = nextValue || '';
           onCodeChange(normalized);
@@ -94,6 +107,7 @@ function CodeEditor() {
     })),
   );
 
+  const [language, setLanguage] = useState<string>(BATTLE_CONFIG.DEFAULT_LANGUAGE);
   const [code, setCode] = useState(DEFAULT_CODE_TEMPLATE);
   const codeRef = useRef(code);
   const [pasteToastMessage, setPasteToastMessage] = useState<string | null>(null);
@@ -312,8 +326,27 @@ function CodeEditor() {
         roomId,
         userId: me.userId,
         code: value,
-        language: BATTLE_CONFIG.DEFAULT_LANGUAGE,
+        language,
       });
+    },
+    [language, me, roomId, socket],
+  );
+
+  const handleLanguageChange = useCallback(
+    (newLanguage: string) => {
+      setLanguage(newLanguage);
+      const template = LANGUAGE_TEMPLATES[newLanguage] ?? DEFAULT_CODE_TEMPLATE;
+      setCode(template);
+      codeRef.current = template;
+
+      if (socket?.connected && me?.userId) {
+        socket.emit(BATTLE_EVENTS.CODE_CHANGE, {
+          roomId,
+          userId: me.userId,
+          code: template,
+          language: newLanguage,
+        });
+      }
     },
     [me, roomId, socket],
   );
@@ -398,16 +431,13 @@ function CodeEditor() {
     initSubmission('TEST');
 
     try {
-      await createDryRun(
-        { problemId, code: codeRef.current, language: BATTLE_CONFIG.DEFAULT_LANGUAGE },
-        socket.id,
-      );
+      await createDryRun({ problemId, code: codeRef.current, language }, socket.id);
       setStatusText('테스트 대기 중');
     } catch (error) {
       resetOnError('TEST');
       console.error(error);
     }
-  }, [initSubmission, problemId, resetOnError, setStatusText, socket]);
+  }, [initSubmission, language, problemId, resetOnError, setStatusText, socket]);
 
   const handleSubmit = useCallback(async () => {
     // 이미 실행 중이면 무시
@@ -428,7 +458,7 @@ function CodeEditor() {
         {
           problemId,
           code: codeRef.current,
-          language: BATTLE_CONFIG.DEFAULT_LANGUAGE,
+          language,
           ...(battleId ? { battleId } : {}),
         },
         socket.id,
@@ -440,7 +470,7 @@ function CodeEditor() {
       resetOnError('SUBMISSION');
       console.error(error);
     }
-  }, [battleId, initSubmission, problemId, resetOnError, setStatusText, socket]);
+  }, [battleId, initSubmission, language, problemId, resetOnError, setStatusText, socket]);
 
   const handleEditorMount: OnMount = useCallback(
     (editor) => {
@@ -476,11 +506,26 @@ function CodeEditor() {
           <div className="flex items-center gap-1.5">
             <Code className="h-5 w-5 text-green-05" strokeWidth={2.5} />
             <span className="rounded pr-3 text-sm font-bold text-green-05">코드 에디터</span>
-            <button className="rounded-md bg-base-muted px-3 py-1 text-xs">JavaScript</button>
+            <select
+              value={language}
+              onChange={(e) => handleLanguageChange(e.target.value)}
+              className="rounded-md bg-base-muted px-3 py-1 text-xs"
+            >
+              {SUPPORTED_LANGUAGES.map(({ value, label }) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
         <div className="min-h-[320px] h-[40vh] bg-(bg-layer-2) font-mono text-sm text-base-primary xl:h-auto xl:flex-1">
-          <EditorPane code={code} onCodeChange={handleCodeChange} onMount={handleEditorMount} />
+          <EditorPane
+            code={code}
+            language={language}
+            onCodeChange={handleCodeChange}
+            onMount={handleEditorMount}
+          />
         </div>
         <EditorFooter onDryRun={handleDryRun} onSubmit={handleSubmit} />
         <TestcaseResultPanel />

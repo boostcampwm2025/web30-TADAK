@@ -9,6 +9,7 @@ type BaseCodeEditorProps = EditorProps;
 const BaseCodeEditor = ({
   theme: _ignoredTheme,
   beforeMount,
+  language,
   options,
   ...props
 }: BaseCodeEditorProps) => {
@@ -50,7 +51,7 @@ const BaseCodeEditor = ({
   return (
     <Editor
       height="100%"
-      defaultLanguage={BATTLE_CONFIG.DEFAULT_LANGUAGE}
+      language={language ?? BATTLE_CONFIG.DEFAULT_LANGUAGE}
       theme={theme === 'dark' ? 'tadak-dark' : 'tadak-light'}
       beforeMount={handleBeforeMount}
       options={{ ...defaultOptions, ...options }}

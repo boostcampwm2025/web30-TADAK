@@ -8,6 +8,7 @@ import {
   DOCKER_CONTAINER_NAME,
   DOCKER_CPU_LIMIT,
   DOCKER_DEFAULT_MEMORY_LIMIT_MB,
+  DOCKER_PYTHON_RUNNER_IMAGE,
   DOCKER_RUNNER_IMAGE,
   DOCKER_TMPFS_SIZE_MB,
 } from './docker.constants';
@@ -15,6 +16,7 @@ import {
 export interface DockerRunOptions {
   submissionId: string;
   memoryLimitMb?: number;
+  language?: string;
 }
 
 export interface DockerRunResult {
@@ -63,7 +65,7 @@ export class DockerRunnerService {
   }
 
   private buildRunArgs(options: DockerRunOptions): string[] {
-    const image = this.getString('JUDGE_RUNNER_IMAGE', DOCKER_RUNNER_IMAGE);
+    const image = this.getImageForLanguage(options.language);
 
     // 1. 호스트 경로 가져오기
     const rawHostPath = this.getString('JUDGE_HOST_PATH', '');
@@ -153,6 +155,13 @@ export class DockerRunnerService {
         });
       });
     });
+  }
+
+  private getImageForLanguage(language?: string): string {
+    if (language === 'python') {
+      return this.getString('JUDGE_PYTHON_RUNNER_IMAGE', DOCKER_PYTHON_RUNNER_IMAGE);
+    }
+    return this.getString('JUDGE_RUNNER_IMAGE', DOCKER_RUNNER_IMAGE);
   }
 
   private getString(key: string, fallback: string): string {

@@ -92,13 +92,17 @@ export class SubmissionProcessor extends WorkerHost {
         payload.type,
         payload.problemId,
         payload.code,
+        payload.language,
         payload.socketId,
         payload.battleId,
       );
 
       // 3. Docker 실행과 채점을 병렬로 시작
       const [dockerResult, judgeResult] = await Promise.all([
-        this.dockerRunnerService.runSubmission({ submissionId: executionId }),
+        this.dockerRunnerService.runSubmission({
+          submissionId: executionId,
+          language: payload.language,
+        }),
         this.judgeService.judgeSubmission(executionId),
       ]);
 
