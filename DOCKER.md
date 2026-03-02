@@ -66,6 +66,20 @@ docker compose --env-file .env.dev -f docker-compose.dev.yml exec mysql mysql -u
 docker compose --env-file .env.dev -f docker-compose.dev.yml exec redis redis-cli
 ```
 
+## 런너 이미지 빌드
+
+채점 런너 이미지는 docker-compose와 별도로 수동 빌드가 필요합니다.
+
+```bash
+# JavaScript 런너 이미지 빌드
+docker build -t judge-javascript -f apps/judge/runner/Dockerfile apps/judge/runner/
+
+# Python 런너 이미지 빌드
+docker build -t judge-python -f apps/judge/runner/Dockerfile.python apps/judge/runner/
+```
+
+> 런너 이미지(`apps/judge/runner/`) 파일이 변경된 경우 위 명령어로 재빌드해야 합니다.
+
 ## 참고사항
 
 - **Hot Reload**: 개발 환경에서 파일 변경 시 자동 반영 (Web: HMR, API: watch mode)
