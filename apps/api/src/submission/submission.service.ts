@@ -89,6 +89,11 @@ export class SubmissionService {
           socketId,
         },
         {
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 1000,
+          },
           removeOnComplete: true,
           removeOnFail: { age: 3600, count: 50 },
         },
@@ -124,6 +129,11 @@ export class SubmissionService {
         socketId,
       },
       {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 1000,
+        },
         removeOnComplete: true,
         removeOnFail: { age: 3600, count: 50 },
       },

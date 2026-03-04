@@ -119,6 +119,23 @@ export class SubmissionProcessor extends WorkerHost {
   @OnWorkerEvent('failed')
   onFailed(job: Job<SubmissionJobPayload> | undefined, error: Error): void {
     const jobId = job?.id ?? 'unknown';
-    this.logger.error(`Job ${jobId} failed: ${error.message}`, error.stack);
+    const attempts = job?.attemptsMade ?? 0;
+    const maxAttempts = job?.opts?.attempts ?? 1;
+    this.logger.error(
+      `Job ${jobId} failed (attempt ${attempts}/${maxAttempts}): ${error.message}`,
+      error.stack,
+    );
+
+    // 모든 재시도 소진 시 UI에 ERROR 알림 → 버튼 활성화
+    if (job && attempts >= maxAttempts) {
+      const payload = job.data;
+      void this.pubsubService.publishFinalResult({
+        type: 'FINAL_RESULT',
+        submissionId: String(payload.submissionId),
+        socketId: payload.socketId,
+        status: 'INTERNAL_ERROR',
+        result: { passed: 0, total: 0, time: 0, memory: 0 },
+      });
+    }
   }
 }
