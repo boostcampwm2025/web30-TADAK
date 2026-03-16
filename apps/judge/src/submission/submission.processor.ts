@@ -129,13 +129,20 @@ export class SubmissionProcessor extends WorkerHost {
     // 모든 재시도 소진 시 UI에 ERROR 알림 → 버튼 활성화
     if (job && attempts >= maxAttempts) {
       const payload = job.data;
-      void this.pubsubService.publishFinalResult({
-        type: 'FINAL_RESULT',
-        submissionId: String(payload.submissionId),
-        socketId: payload.socketId,
-        status: 'INTERNAL_ERROR',
-        result: { passed: 0, total: 0, time: 0, memory: 0 },
-      });
+      this.pubsubService
+        .publishFinalResult({
+          type: 'FINAL_RESULT',
+          submissionId: String(payload.submissionId),
+          socketId: payload.socketId,
+          status: 'INTERNAL_ERROR',
+          result: { passed: 0, total: 0, time: 0, memory: 0 },
+        })
+        .catch((publishError: Error) => {
+          this.logger.error(
+            `Failed to publish FINAL_RESULT for job ${jobId}: ${publishError.message}`,
+            publishError.stack,
+          );
+        });
     }
   }
 }
