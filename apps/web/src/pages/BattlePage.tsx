@@ -16,6 +16,7 @@ import { useBattleJoin } from '@/hooks/useBattleJoin';
 import { useRoleModalState } from '@/hooks/useRoleModalState';
 import { useTheme } from '@/hooks/useTheme';
 import { playCountdownSound } from '@/lib/sound';
+import { useBattleExecutionStore } from '@/stores/battleExecutionStore';
 import { useBattleProblemStore } from '@/stores/battleProblemStore';
 import { useBattleProgressStore } from '@/stores/battleProgressStore';
 import type { BattleSocketState } from '@/stores/battleSocketStore';
@@ -178,6 +179,7 @@ function BattlePage() {
       useRoomStore.getState().clearRoom();
       useBattleProblemStore.getState().clearProblem();
       useBattleProgressStore.getState().resetProgresses();
+      useBattleExecutionStore.getState().reset();
     };
   }, []);
 
