@@ -157,12 +157,12 @@ function BattleProblem() {
               {exampleItems.map((ex) => (
                 <div key={ex.label} className="space-y-2 rounded-md bg-base-primary/5 p-3 text-sm">
                   <p className="text-sm font-bold text-base-secondary">{ex.label}</p>
-                  <p className="text-sm">
+                  <div className="text-sm">
                     입력: <pre className="text-green-05">{ex.input}</pre>
-                  </p>
-                  <p className="text-sm">
+                  </div>
+                  <div className="text-sm">
                     출력: <pre className="text-green-05">{ex.output}</pre>
-                  </p>
+                  </div>
                 </div>
               ))}
             </div>
