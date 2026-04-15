@@ -99,6 +99,8 @@ function CodeEditor() {
   const [pasteToastMessage, setPasteToastMessage] = useState<string | null>(null);
 
   const executionRef = useRef<ExecutionState | null>(null);
+  const pendingTotalRef = useRef<number | null>(null);
+  const finalPayloadRef = useRef<SubmissionResultPayload | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasEditedRef = useRef(false);
   const hasSyncedRef = useRef(false);
@@ -199,6 +201,41 @@ function CodeEditor() {
       hasSyncedRef.current = true;
     };
 
+    const tryFinalize = () => {
+      const total = pendingTotalRef.current;
+      if (total === null) return;
+
+      const received = useBattleExecutionStore.getState().testcaseResults.length;
+      if (received < total) return;
+
+      const payload = finalPayloadRef.current;
+      const execution = executionRef.current;
+      if (!execution || !payload) return;
+
+      clearExecutionTimeout();
+      execution.isCompleted = true;
+      executionRef.current = null;
+      pendingTotalRef.current = null;
+      finalPayloadRef.current = null;
+
+      if (payload.result) {
+        setProgress({
+          passed: payload.result.passed,
+          total: payload.result.total,
+          completed: payload.result.total,
+        });
+      }
+
+      const label = execution.type === 'TEST' ? '테스트 완료' : '채점 완료';
+      setStatusText(`${label} (${payload.status})`);
+
+      if (execution.type === 'TEST') {
+        setIsTesting(false);
+      } else {
+        setIsSubmitting(false);
+      }
+    };
+
     const handleTestcaseUpdate = (payload: TestcaseUpdatePayload) => {
       const execution = executionRef.current;
       // 실행 중이 아니거나 이미 완료된 경우 무시
@@ -212,17 +249,13 @@ function CodeEditor() {
         return;
       }
 
-      if (!execution.submissionId) {
-        execution.submissionId = incomingId;
-      }
-
       if (payload.progress) {
         setProgress(payload.progress);
       }
 
       upsertTestcaseResult({ ...payload.testcase, results: payload.results });
-
       setStatusText(execution.type === 'TEST' ? '테스트 진행 중' : '채점 진행 중');
+      tryFinalize();
     };
 
     const handleSubmissionResult = (payload: SubmissionResultPayload) => {
@@ -254,28 +287,12 @@ function CodeEditor() {
         return;
       }
 
-      // 타임아웃 정리
-      clearExecutionTimeout();
-
-      execution.isCompleted = true;
-
       if (payload.result) {
-        setProgress({
-          passed: payload.result.passed,
-          total: payload.result.total,
-          completed: payload.result.total,
-        });
+        pendingTotalRef.current = payload.result.total;
+        finalPayloadRef.current = payload;
       }
 
-      const label = execution.type === 'TEST' ? '테스트 완료' : '채점 완료';
-      setStatusText(`${label} (${payload.status})`);
-
-      executionRef.current = null;
-      if (execution.type === 'TEST') {
-        setIsTesting(false);
-      } else {
-        setIsSubmitting(false);
-      }
+      tryFinalize();
     };
 
     socket.on(BATTLE_EVENTS.CODE_UPDATED, handleCodeUpdated);
