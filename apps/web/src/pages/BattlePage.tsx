@@ -305,7 +305,7 @@ function BattlePage() {
     onInvalidRole: handleInvalidRole,
     onRoomNotFound: () => {
       forceNavigateRef.current = true;
-      navigate('/', { replace: true });
+      navigate('/', { replace: true, state: { toast: '연결이 끊어져 배틀이 종료되었습니다.' } });
     },
   });
 
