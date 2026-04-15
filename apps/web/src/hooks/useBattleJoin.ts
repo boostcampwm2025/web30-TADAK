@@ -19,6 +19,7 @@ type UseBattleJoinParams = {
   resumeSession: BattleSocketState['resumeSession'];
   joinRoom: BattleSocketState['joinRoom'];
   onInvalidRole: () => void;
+  onRoomNotFound?: () => void;
 };
 
 export function useBattleJoin({
@@ -31,6 +32,7 @@ export function useBattleJoin({
   resumeSession,
   joinRoom,
   onInvalidRole,
+  onRoomNotFound,
 }: UseBattleJoinParams) {
   const userRef = useRef(user);
 
@@ -75,28 +77,37 @@ export function useBattleJoin({
   ]);
 
   useEffect(() => {
-    const handleReconnect = () => {
+    const handleReconnect = async () => {
       if (isRoleMismatch) return;
       // 소켓 재연결 시 저장된 세션 기준으로 다시 JOIN_ROOM 시도
-      resumeSession({ roleHint: desiredRole })
-        .catch(() => {})
-        .then(() => {
-          if (!useRoomStore.getState().me) {
-            const currentUser = userRef.current;
-            joinRoom({
-              roomId,
-              requestedRole: desiredRole,
-              userId: currentUser?.id,
-              username: currentUser?.username,
-              avatarUrl: currentUser?.avatarUrl,
-            }).catch((error) => {
-              const code = (error as Error & { code?: string }).code;
-              if (code === SOCKET_ERROR.INVALID_ROLE) {
-                onInvalidRole();
-              }
-            });
+      try {
+        await resumeSession({ roleHint: desiredRole });
+      } catch (error) {
+        const code = (error as Error & { code?: string }).code;
+        if (code === SOCKET_ERROR.ROOM_NOT_FOUND) {
+          onRoomNotFound?.();
+          return;
+        }
+      }
+      if (!useRoomStore.getState().me) {
+        const currentUser = userRef.current;
+        try {
+          await joinRoom({
+            roomId,
+            requestedRole: desiredRole,
+            userId: currentUser?.id,
+            username: currentUser?.username,
+            avatarUrl: currentUser?.avatarUrl,
+          });
+        } catch (error) {
+          const code = (error as Error & { code?: string }).code;
+          if (code === SOCKET_ERROR.INVALID_ROLE) {
+            onInvalidRole();
+          } else if (code === SOCKET_ERROR.ROOM_NOT_FOUND) {
+            onRoomNotFound?.();
           }
-        });
+        }
+      }
     };
     socket.on('connect', handleReconnect);
     return () => {
