@@ -25,7 +25,7 @@ export default function LeaveBattleModal({ isOpen, onCancel, onConfirm }: LeaveB
           variant: 'muted',
         },
         {
-          label: '나가기',
+          label: '포기하기',
           onClick: onConfirm,
           variant: 'black',
         },
