@@ -1,8 +1,8 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
-@Index(['battleId', 'userId'])
-@Index(['userId', 'createdAt'])
+@Index(['battleId', 'userId', 'createdAt'])
+@Index(['userId', 'battleId', 'createdAt'])
 export class Submission {
   @PrimaryGeneratedColumn()
   id: string;
