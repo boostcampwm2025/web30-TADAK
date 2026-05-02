@@ -210,6 +210,13 @@ export class UserService {
       }),
       this.submissionRepository
         .createQueryBuilder('submission')
+        .select([
+          'submission.battleId',
+          'submission.language',
+          'submission.passedTestCases',
+          'submission.totalTestCases',
+          'submission.createdAt',
+        ])
         .where('submission.userId = :userId', { userId })
         .andWhere('submission.battleId IN (:...battleIds)', { battleIds })
         .orderBy('submission.createdAt', 'DESC')
