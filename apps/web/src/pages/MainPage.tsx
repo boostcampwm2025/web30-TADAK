@@ -1,8 +1,9 @@
 import { Info, LogIn } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import Modal from '@/components/Common/Modal';
+import Toast from '@/components/Common/Toast';
 import Header from '@/components/Header/Header';
 import RoomCardList from '@/components/Main/RoomCardList';
 import { useBattleSocketStore } from '@/stores/battleSocketStore';
@@ -20,7 +21,17 @@ const tierFilters = [
 
 function MainPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = useUserStore((state) => state.user);
+  const [toastMessage, setToastMessage] = useState<string | null>(
+    (location.state as { toast?: string } | null)?.toast ?? null,
+  );
+
+  useEffect(() => {
+    if (location.state?.toast) {
+      window.history.replaceState({}, '');
+    }
+  }, []);
 
   const connect = useBattleSocketStore((state) => state.connect);
   const subscribeRoomList = useBattleSocketStore((state) => state.subscribeRoomList);
@@ -107,6 +118,9 @@ function MainPage() {
   return (
     <div className="min-h-screen bg-bg-layer-1">
       <Header />
+      {toastMessage && (
+        <Toast message={toastMessage} onClose={() => setToastMessage(null)} duration={3000} />
+      )}
       <main className="mx-auto flex max-w-6xl flex-col gap-8 px-4 pb-16 pt-10 lg:px-8">
         {/* 상단 헤더 */}
         <div className="flex flex-col gap-1">

@@ -83,6 +83,7 @@ function BattlePage() {
   >(null);
   const showSystemToast = useBattleToastStore((state) => state.show);
   const lastCheatSentAtRef = useRef(0);
+  const forceNavigateRef = useRef(false);
 
   const [showFinishOverlay, setShowFinishOverlay] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
@@ -115,6 +116,7 @@ function BattlePage() {
       !isSpectator &&
       !!battleId &&
       !isLeavingBattle &&
+      !forceNavigateRef.current &&
       currentLocation.pathname !== nextLocation.pathname,
   );
 
@@ -301,6 +303,10 @@ function BattlePage() {
     resumeSession,
     joinRoom,
     onInvalidRole: handleInvalidRole,
+    onRoomNotFound: () => {
+      forceNavigateRef.current = true;
+      navigate('/', { replace: true, state: { toast: '연결이 끊어져 배틀이 종료되었습니다.' } });
+    },
   });
 
   const handleRoleDenied = () => {
