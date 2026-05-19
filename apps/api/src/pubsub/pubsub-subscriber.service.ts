@@ -17,6 +17,7 @@ import { PubsubGateway } from './pubsub.gateway';
 export class PubsubSubscriberService implements OnModuleInit {
   private readonly logger = new Logger(PubsubSubscriberService.name);
   private readonly subscriber: Redis;
+  private readonly queues = new Map<string, Promise<void>>();
 
   constructor(
     @Inject(REDIS_CLIENT) private readonly redisClient: Redis,
@@ -33,8 +34,20 @@ export class PubsubSubscriberService implements OnModuleInit {
     this.logger.log(`Subscribed to channel: ${PUBSUB_CHANNELS.SUBMISSION_RESULT}`);
 
     this.subscriber.on('message', (channel, message) => {
-      void this.handleMessage(channel, message);
+      const parsed = JSON.parse(message) as { submissionId: string };
+      const submissionId = String(parsed.submissionId);
+      this.enqueue(submissionId, () => this.handleMessage(channel, message));
     });
+  }
+
+  private enqueue(submissionId: string, task: () => Promise<void>): void {
+    const prev = this.queues.get(submissionId) ?? Promise.resolve();
+    const next = prev.then(task).finally(() => {
+      if (this.queues.get(submissionId) === next) {
+        this.queues.delete(submissionId);
+      }
+    });
+    this.queues.set(submissionId, next);
   }
 
   private async handleMessage(channel: string, message: string) {

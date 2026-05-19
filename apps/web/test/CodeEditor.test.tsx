@@ -31,13 +31,26 @@ vi.mock('@/components/Common/Toast', () => ({
   default: () => <div data-testid="toast" />,
 }));
 
-// Mock stores
-const mockSocketEmit = vi.fn();
+const { socketHandlers, testcaseResults, mockSocketEmit } = vi.hoisted(() => {
+  const socketHandlers: Record<string, (...args: any[]) => void> = {};
+  const testcaseResults: any[] = [];
+  const mockSocketEmit = vi.fn();
+  return { socketHandlers, testcaseResults, mockSocketEmit };
+});
+
 const mockConnect = vi.fn();
 
 vi.mock('@/stores/battleSocketStore', () => ({
   useBattleSocketStore: () => ({
-    socket: { connected: true, emit: mockSocketEmit, on: vi.fn(), off: vi.fn(), id: 'socket-id' },
+    socket: {
+      connected: true,
+      emit: mockSocketEmit,
+      on: (event: string, fn: (...args: any[]) => void) => {
+        socketHandlers[event] = fn;
+      },
+      off: vi.fn(),
+      id: 'socket-id',
+    },
     connect: mockConnect,
   }),
 }));
@@ -69,18 +82,23 @@ vi.mock('@/stores/battleProblemStore', () => ({
   }),
 }));
 
-const mockSetStatusText = vi.fn();
-vi.mock('@/stores/battleExecutionStore', () => ({
-  useBattleExecutionStore: () => ({
-    setStatusText: mockSetStatusText,
-    setProgress: vi.fn(),
-    setIsTesting: vi.fn(),
-    setIsSubmitting: vi.fn(),
-    setMode: vi.fn(),
-    setTestcaseResults: vi.fn(),
-    upsertTestcaseResult: vi.fn(),
-  }),
-}));
+vi.mock('@/stores/battleExecutionStore', () => {
+  function useBattleExecutionStore() {
+    return {
+      setStatusText: vi.fn(),
+      setProgress: vi.fn(),
+      setIsTesting: vi.fn(),
+      setIsSubmitting: vi.fn(),
+      setMode: vi.fn(),
+      setTestcaseResults: vi.fn(),
+      upsertTestcaseResult: (result: any) => {
+        testcaseResults.push(result);
+      },
+    };
+  }
+  useBattleExecutionStore.getState = () => ({ testcaseResults });
+  return { useBattleExecutionStore };
+});
 
 vi.mock('@/stores/battleProgressStore', () => ({
   useBattleProgressStore: () => ({
@@ -106,6 +124,8 @@ vi.mock('react-router-dom', () => ({
 describe('CodeEditor', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    testcaseResults.length = 0;
+    Object.keys(socketHandlers).forEach((key) => delete socketHandlers[key]);
   });
 
   it('컴포넌트가 올바르게 렌더링되어야 한다', async () => {
@@ -172,6 +192,92 @@ describe('CodeEditor', () => {
         }),
         'socket-id',
       );
+    });
+  });
+});
+
+describe('테스트케이스 수신 완료 처리', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    testcaseResults.length = 0;
+    Object.keys(socketHandlers).forEach((key) => delete socketHandlers[key]);
+    mockCreateDryRun.mockResolvedValue({});
+  });
+
+  it('FINAL_RESULT가 마지막 TC보다 먼저 도착해도 TC 누락 없이 3개 모두 처리된다', async () => {
+    render(<CodeEditor />);
+    const runButton = await screen.findByText('Run');
+
+    // 코드 실행 시작 → executionRef 초기화
+    fireEvent.click(runButton);
+    await waitFor(() => expect(mockCreateDryRun).toHaveBeenCalled());
+
+    const submissionId = 'sub-1';
+
+    // TC1, TC2 정상 수신
+    socketHandlers['testcase-update']?.({
+      submissionId,
+      testcase: { index: 1, status: 'WRONG_ANSWER' },
+      results: [],
+    });
+    socketHandlers['testcase-update']?.({
+      submissionId,
+      testcase: { index: 2, status: 'WRONG_ANSWER' },
+      results: [],
+    });
+
+    // FINAL_RESULT가 TC3보다 먼저 도착 (순서 역전)
+    socketHandlers['submission-result']?.({
+      submissionId,
+      result: { passed: 1, total: 3 },
+      status: 'WRONG_ANSWER',
+    });
+
+    // TC3 늦게 도착
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    socketHandlers['testcase-update']?.({
+      submissionId,
+      testcase: { index: 3, status: 'ACCEPTED' },
+      results: [],
+    });
+
+    await waitFor(() => {
+      expect(testcaseResults).toHaveLength(3);
+    });
+  });
+
+  it('정상 순서(TC1→TC2→TC3→FINAL_RESULT)에서도 3개 모두 처리된다', async () => {
+    render(<CodeEditor />);
+    const runButton = await screen.findByText('Run');
+
+    fireEvent.click(runButton);
+    await waitFor(() => expect(mockCreateDryRun).toHaveBeenCalled());
+
+    const submissionId = 'sub-1';
+
+    socketHandlers['testcase-update']?.({
+      submissionId,
+      testcase: { index: 1, status: 'WRONG_ANSWER' },
+      results: [],
+    });
+    socketHandlers['testcase-update']?.({
+      submissionId,
+      testcase: { index: 2, status: 'WRONG_ANSWER' },
+      results: [],
+    });
+    socketHandlers['testcase-update']?.({
+      submissionId,
+      testcase: { index: 3, status: 'ACCEPTED' },
+      results: [],
+    });
+    socketHandlers['submission-result']?.({
+      submissionId,
+      result: { passed: 1, total: 3 },
+      status: 'WRONG_ANSWER',
+    });
+
+    await waitFor(() => {
+      expect(testcaseResults).toHaveLength(3);
     });
   });
 });
