@@ -16,8 +16,8 @@ export default function LeaveBattleModal({ isOpen, onCancel, onConfirm }: LeaveB
       icon={AlertCircle}
       iconColor="text-error-01"
       iconBgColor="bg-error-01/20"
-      title="대결에서 나가시겠습니까?"
-      description="진행 중인 문제 풀이가 모두 사라집니다."
+      title="배틀을 포기하시겠습니까?"
+      description="나가면 기권 패배 처리되며, 레이팅이 하락합니다."
       buttons={[
         {
           label: '취소',
@@ -25,7 +25,7 @@ export default function LeaveBattleModal({ isOpen, onCancel, onConfirm }: LeaveB
           variant: 'muted',
         },
         {
-          label: '나가기',
+          label: '포기하기',
           onClick: onConfirm,
           variant: 'black',
         },
