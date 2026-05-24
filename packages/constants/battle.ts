@@ -8,6 +8,20 @@ export const DEFAULT_CODE_TEMPLATE = `function solution(input) {
   // TODO: 문제 풀이 로직 작성
 }`;
 
+export const PYTHON_CODE_TEMPLATE = `def solution(input_str):
+    # TODO: 문제 풀이 로직 작성
+    pass`;
+
+export const LANGUAGE_TEMPLATES: Record<string, string> = {
+  javascript: DEFAULT_CODE_TEMPLATE,
+  python: PYTHON_CODE_TEMPLATE,
+};
+
+export const SUPPORTED_LANGUAGES = [
+  { value: 'javascript', label: 'JavaScript' },
+  { value: 'python', label: 'Python' },
+] as const;
+
 export const BATTLE_EVENTS = {
   // 배틀 생성 및 시작
   BATTLE_CREATED: 'battle-created',

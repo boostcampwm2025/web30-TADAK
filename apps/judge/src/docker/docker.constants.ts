@@ -1,4 +1,5 @@
 export const DOCKER_RUNNER_IMAGE = 'judge-javascript';
+export const DOCKER_PYTHON_RUNNER_IMAGE = 'judge-python';
 export const DOCKER_PROBLEMS_PATH = 'judge-data';
 export const DOCKER_SUBMISSIONS_PATH = 'judge-data/submissions';
 export const DOCKER_CONTAINER_NAME = 'submission';

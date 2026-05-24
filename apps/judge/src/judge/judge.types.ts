@@ -7,6 +7,7 @@ export interface Metadata {
   timeLimit: number;
   memoryLimit: number;
   type: SubmissionJobType;
+  language?: string;
   socketId?: string;
 }
 

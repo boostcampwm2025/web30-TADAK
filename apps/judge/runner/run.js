@@ -61,6 +61,7 @@ async function main() {
   const timeLimit = meta.timeLimit || 2000; // 기본값 2초
   const memoryLimit = meta.memoryLimit || 256; // 기본값 256MB
   const type = meta.type || 'SUBMISSION'; // 'TEST'(테스트실행) 또는 'SUBMISSION'(정답제출)
+  const language = meta.language || 'javascript'; // 기본값 javascript
 
   console.log(
     `[Runner] Problem: ${problemId}, Type: ${type}, TimeLimit: ${timeLimit}ms, memoryLimit: ${memoryLimit}MB `,
@@ -81,12 +82,16 @@ async function main() {
   console.log(`[Runner] Loading cases from: ${casesFileName}`);
 
   const testCasesParent = JSON.parse(fs.readFileSync(casesPath, 'utf8'));
-  const solutionFile = path.join(OUTPUT_DIR, 'solution.js');
   const testCases = testCasesParent.testCases || testCasesParent; // 구조에 따라 적절히 선택
+
+  // 언어별 솔루션 파일명 결정
+  const solutionFileMap = { javascript: 'solution.js', python: 'solution.py' };
+  const solutionFilename = solutionFileMap[language] || 'solution.js';
+  const solutionFile = path.join(OUTPUT_DIR, solutionFilename);
 
   if (!fs.existsSync(solutionFile)) {
     console.error(`[Error] Solution file not found: ${solutionFile}`);
-    process.exit(1); // solution.js 파일 없을 시 즉시 종료
+    process.exit(1);
   }
 
   // 3. 테스트 케이스별 실행 (Execute User Code)
@@ -95,7 +100,13 @@ async function main() {
     console.log(`[Runner] Running Case #${i + 1} (ID: ${testCase.id})...`);
 
     // 개별 케이스 실행
-    const result = await runTestCase(solutionFile, testCase.input, timeLimit, memoryLimit);
+    const result = await runTestCase(
+      solutionFile,
+      testCase.input,
+      timeLimit,
+      memoryLimit,
+      language,
+    );
 
     // 4. 실행 결과 파일 저장 (Save Results)
     // stdout에서 메트릭 정보 분리
@@ -133,26 +144,29 @@ async function main() {
  * @param {string} input - 테스트 케이스 입력값
  * @param {number} timeLimit - 시간 제한 (ms)
  * @param {number} memoryLimit - 메모리 제한 (MB)
+ * @param {string} language - 실행 언어
  */
-function runTestCase(solutionFile, input, timeLimit, memoryLimit) {
+function runTestCase(solutionFile, input, timeLimit, memoryLimit, language) {
   return new Promise((resolve) => {
     const startTime = Date.now();
     let status = 'PENDING';
 
-    // 자식 프로세스 생성 (spawn)
-    // node --max-old-space-size={Limit} wrapper.js solution.js
-    const wrapperPath = IS_DOCKER ? '/runner/wrapper.js' : path.join(__dirname, 'wrapper.js');
-    const child = spawn(
-      'node',
-      [
-        `--max-old-space-size=${memoryLimit}`, // V8 메모리 제한 옵션
-        wrapperPath,
-        solutionFile,
-      ],
-      {
-        stdio: ['pipe', 'pipe', 'pipe'], // 다시 pipe로 복구
-      },
-    );
+    // 언어별 실행 명령어 결정
+    let cmd, args;
+    if (language === 'python') {
+      const wrapperPy = IS_DOCKER ? '/runner/wrapper.py' : path.join(__dirname, 'wrapper.py');
+      cmd = 'python3';
+      args = [wrapperPy, solutionFile];
+    } else {
+      // javascript (기본)
+      const wrapperJs = IS_DOCKER ? '/runner/wrapper.js' : path.join(__dirname, 'wrapper.js');
+      cmd = 'node';
+      args = [`--max-old-space-size=${memoryLimit}`, wrapperJs, solutionFile];
+    }
+
+    const child = spawn(cmd, args, {
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
 
     let stdoutBuffer = '';
     let stderrBuffer = '';

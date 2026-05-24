@@ -65,6 +65,7 @@ export class SubmissionService {
     type: SubmissionJobType,
     problemId: string,
     code: string,
+    language: string,
     socketId?: string,
     battleId?: string,
   ): Promise<void> {
@@ -86,6 +87,7 @@ export class SubmissionService {
       timeLimit: problem.timeLimit,
       memoryLimit: problem.memoryLimit,
       type,
+      language,
       ...(socketId ? { socketId } : {}),
       ...(battleId ? { battleId } : {}),
     };
@@ -96,7 +98,12 @@ export class SubmissionService {
     const metadataPath = path.join(submissionDir, 'meta.json');
     fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
 
-    const solutionPath = path.join(submissionDir, 'solution.js');
+    const solutionFilenameMap: Record<string, string> = {
+      javascript: 'solution.js',
+      python: 'solution.py',
+    };
+    const solutionFilename = solutionFilenameMap[language] ?? 'solution.js';
+    const solutionPath = path.join(submissionDir, solutionFilename);
     fs.writeFileSync(solutionPath, code);
   }
 

@@ -39,7 +39,6 @@ function CodeSpectator() {
 
   useEffect(() => {
     const client = socket ?? connect();
-    const { upsertCode } = useRoomStore.getState();
 
     const handleCodeUpdate = (payload: {
       roomId: string;
@@ -48,7 +47,9 @@ function CodeSpectator() {
       language: string;
     }) => {
       if (payload.roomId !== roomId) return;
+      const { upsertCode, upsertLanguage } = useRoomStore.getState();
       upsertCode(payload.userId, payload.code);
+      upsertLanguage(payload.userId, payload.language);
       if (!selectedId) {
         setSelectedId(payload.userId);
       }

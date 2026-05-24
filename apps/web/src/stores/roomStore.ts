@@ -15,16 +15,19 @@ type State = {
   clearRoom: () => void;
   players: Player[];
   codes: CodeMap;
+  languages: CodeMap;
   me?: Player;
   setPlayers: (players: Player[]) => void;
   setMe: (me: Player) => void;
   upsertPlayer: (player: Player) => void;
   upsertCode: (userId: string, code: string) => void;
+  upsertLanguage: (userId: string, language: string) => void;
 };
 
 export const useRoomStore = create<State>((set) => ({
   players: [],
   codes: {},
+  languages: {},
   setPlayers: (players) => set({ players }),
   setMe: (me) => set({ me }),
   upsertPlayer: (player) =>
@@ -36,5 +39,7 @@ export const useRoomStore = create<State>((set) => ({
       return { players: next };
     }),
   upsertCode: (userId, code) => set((s) => ({ codes: { ...s.codes, [userId]: code } })),
-  clearRoom: () => set({ players: [], codes: {}, me: undefined }),
+  upsertLanguage: (userId, language) =>
+    set((s) => ({ languages: { ...s.languages, [userId]: language } })),
+  clearRoom: () => set({ players: [], codes: {}, languages: {}, me: undefined }),
 }));

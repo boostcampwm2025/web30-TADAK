@@ -1,3 +1,4 @@
+import { BATTLE_CONFIG, SUPPORTED_LANGUAGES } from '@shared/constants/battle';
 import { Code } from 'lucide-react';
 import { lazy, memo, Suspense, useMemo } from 'react';
 
@@ -23,6 +24,14 @@ function CodeSpectatorEditor({ activeSelectedId, participants }: CodeSpectatorEd
   const rawSelectedCode = useRoomStore((state) =>
     activeSelectedId ? state.codes[activeSelectedId] : undefined,
   );
+  const selectedLanguage = useRoomStore((state) =>
+    activeSelectedId
+      ? (state.languages[activeSelectedId] ?? BATTLE_CONFIG.DEFAULT_LANGUAGE)
+      : BATTLE_CONFIG.DEFAULT_LANGUAGE,
+  );
+
+  const selectedLanguageLabel =
+    SUPPORTED_LANGUAGES.find((l) => l.value === selectedLanguage)?.label ?? 'JavaScript';
 
   const selectedCode = useMemo(() => {
     const isCodeEmpty = !rawSelectedCode || rawSelectedCode.trim().length === 0;
@@ -41,7 +50,9 @@ function CodeSpectatorEditor({ activeSelectedId, participants }: CodeSpectatorEd
           <span className="text-color-green-05">{selectedName}</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-base-secondary">
-          <span className="rounded-full bg-base-muted px-3 py-1 text-base-primary">JavaScript</span>
+          <span className="rounded-full bg-base-muted px-3 py-1 text-base-primary">
+            {selectedLanguageLabel}
+          </span>
         </div>
       </div>
 
@@ -53,6 +64,7 @@ function CodeSpectatorEditor({ activeSelectedId, participants }: CodeSpectatorEd
         >
           <BaseCodeEditor
             value={selectedCode}
+            language={selectedLanguage}
             options={{
               readOnly: true,
               renderLineHighlight: 'none',
