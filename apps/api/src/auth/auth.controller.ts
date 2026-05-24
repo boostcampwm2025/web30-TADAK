@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request, Response } from 'express';
 
@@ -49,8 +49,10 @@ export class AuthController {
   }
 
   // k6 부하 테스트용 토큰 발급 (개발 환경 전용)
+  // 사용법: POST /api/auth/test-token?index=1
   @Post('test-token')
-  createTestToken() {
-    return this.authService.createTestToken();
+  createTestToken(@Query('index') index?: string) {
+    const parsedIndex = index !== undefined ? parseInt(index, 10) : undefined;
+    return this.authService.createTestToken(parsedIndex);
   }
 }

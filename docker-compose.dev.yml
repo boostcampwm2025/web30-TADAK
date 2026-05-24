@@ -2,6 +2,11 @@ services:
   mysql:
     image: mysql:8.0
     restart: unless-stopped
+    labels:
+      app: mysql
+      role: database
+      env: dev
+      monitoring: enabled
     env_file:
       - .env.dev
     ports:
@@ -17,6 +22,11 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    labels:
+      app: redis
+      role: cache
+      env: dev
+      monitoring: enabled
     ports:
       - "6379:6379"
     volumes:
@@ -33,6 +43,11 @@ services:
       dockerfile: apps/api/Dockerfile
       target: development
     restart: unless-stopped
+    labels:
+      app: api
+      role: backend
+      env: dev
+      monitoring: enabled
     depends_on:
       mysql:
         condition: service_healthy
@@ -41,7 +56,6 @@ services:
     env_file:
       - .env.dev
     environment:
-      # 도커 볼륨 마운트에서 파일 변경 감지를 위한 polling 설정
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
     ports:
@@ -58,6 +72,11 @@ services:
       dockerfile: apps/web/Dockerfile
       target: development
     restart: unless-stopped
+    labels:
+      app: web
+      role: frontend
+      env: dev
+      monitoring: enabled
     depends_on:
       - api
     env_file:
@@ -76,6 +95,11 @@ services:
       dockerfile: apps/judge/Dockerfile
       target: development
     restart: unless-stopped
+    labels:
+      app: judge
+      role: worker
+      env: dev
+      monitoring: enabled
     depends_on:
       mysql:
         condition: service_healthy
@@ -87,19 +111,83 @@ services:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
       - JUDGE_VOLUME=/judge-data
-      # - JUDGE_HOST_PATH=${JUDGE_HOST_PATH:-${PWD}/judge-data}
       - JUDGE_HOST_PATH=${JUDGE_HOST_PATH}:/judge-data
       - JUDGE_DISABLE_CLEANUP=${JUDGE_DISABLE_CLEANUP}
     ports:
       - "4000:4000"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock # 도커 소켓 마운트 (코드 실행용 컨테이너 생성을 위해 필수)
+      - /var/run/docker.sock:/var/run/docker.sock
       - ${JUDGE_HOST_PATH}:/judge-data
       - ./apps/judge:/app/apps/judge
       - ./packages:/app/packages
       - /app/apps/judge/node_modules
       - /app/node_modules
 
+  prometheus:
+    image: prom/prometheus:v3.9.1
+    restart: unless-stopped
+    labels:
+      app: prometheus
+      role: monitoring
+      env: dev
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+
+  grafana:
+    image: grafana/grafana:12.3.2
+    restart: unless-stopped
+    labels:
+      app: grafana
+      role: monitoring
+      env: dev
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_LOG_LEVEL=warn         # info 대신 warn으로 설정하여 일반 요청 로그 차단
+      - GF_LOG_FILTERS=context:err # 특정 모듈(context 등)은 에러만 찍도록 필터링
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+
+  cadvisor:
+    # 윈도우/WSL2에서 가장 안정적인 0.47.0 혹은 0.49.1 버전을 추천합니다.
+    image: gcr.io/cadvisor/cadvisor:v0.47.0
+    restart: unless-stopped
+    labels:
+      app: cadvisor
+      role: monitoring
+      env: dev
+    privileged: true
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # machine-id 에러 방지를 위해 호스트 파일을 연결 (없을 경우 빈 파일이라도 생성해서 연결 가능)
+      - /etc/machine-id:/etc/machine-id:ro
+      - /etc/localtime:/etc/localtime:ro
+    command:
+      - '--docker_only=true'
+      - '--housekeeping_interval=10s'
+      - '--max_housekeeping_interval=15s'
+      - '--disable_metrics=advtcp,udp,sched,process,hugetlb' # 불필요한 메트릭 제외로 부하 감소
+
 volumes:
   mysql_data:
   redis_data:
+  prometheus_data:
+  grafana_data:
